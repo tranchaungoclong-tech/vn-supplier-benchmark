@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VN Supplier Benchmark</title>
+<meta name="theme-color" content="#C33D27" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="VN Benchmark" />
+<link rel="icon" type="image/png" href="alpha-a.png" />
+<link rel="apple-touch-icon" href="alpha-a.png" />
+<link rel="manifest" href="manifest.json" />
+<link rel="stylesheet" href="vendor/leaflet.css" />
+<style>
+  html { -webkit-text-size-adjust: 100%; }
+  :root {
+    --bg: #f4f7fb;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e8eef6;
+    --blue: #3b82f6;
+    --blue-deep: #2563eb;
+    --blue-soft: #eff6ff;
+    --green: #10b981;
+    --green-soft: #ecfdf5;
+    --amber: #f59e0b;
+    --amber-soft: #fffbeb;
+    --rose: #f43f5e;
+    --rose-soft: #fff1f2;
+    --violet: #8b5cf6;
+    --violet-soft: #f5f3ff;
+    --sky: #0ea5e9;
+    --sidebar: 248px;
+    --top: 56px;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px rgba(15, 23, 42, .04);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font: 13.5px/1.45 "Segoe UI", Inter, system-ui, sans-serif; }
+  button, input, select { font: inherit; }
+  button { cursor: pointer; }
+  .menu-btn { display: none; }
+  .scrim { display: none; }
+  a { color: var(--blue-deep); text-decoration: none; }
+
+  .app { display: grid; grid-template-columns: var(--sidebar) 1fr; min-height: 100%; }
+  .side {
+    background: #fff; border-right: 1px solid var(--line); padding: 18px 14px 16px;
+    display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+  .mark {
+    width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex: 0 0 36px;
+    background: #C33D27;
+  }
+  .mark img { width: 36px; height: 36px; display: block; }
+  .brand b { display: block; font-size: 13.5px; }
+  .brand span { color: var(--muted); font-size: 11px; }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav button {
+    text-align: left; border: 0; background: transparent; color: #334155;
+    padding: 8px 10px; border-radius: 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .nav button:hover { background: #f8fafc; }
+  .nav button.active { background: var(--blue-soft); color: var(--blue-deep); font-weight: 650; }
+  .ico { width: 18px; height: 18px; display: inline-flex; flex: 0 0 18px; color: inherit; }
+  .ico svg, .ico-tile svg, .nav-ico svg, .act-ico svg { width: 18px; height: 18px; display: block; stroke: currentColor; fill: none;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ico-tile svg { width: 18px; height: 18px; }
+  .nav-ico {
+    width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
+    flex: 0 0 28px; color: #fff;
+  }
+  .nav-ico svg { width: 15px; height: 15px; stroke: #fff; }
+  .nav-ico.blue { background: #3b82f6; }
+  .nav-ico.violet { background: #8b5cf6; }
+  .nav-ico.green { background: #10b981; }
+  .nav-ico.sky { background: #0ea5e9; }
+  .nav-ico.amber { background: #f59e0b; }
+  .nav-ico.rose { background: #f43f5e; }
+  .nav-ico.pink { background: #ec4899; }
+  .nav .sec { margin: 14px 8px 6px; font-size: 11px; color: #94a3b8; letter-spacing: .08em; text-transform: uppercase; }
+  .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .ico-tile {
+    width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: 0 0 36px;
+  }
+  .ico-tile.blue { background: var(--blue-soft); color: var(--blue-deep); }
+  .ico-tile.green { background: var(--green-soft); color: #059669; }
+  .ico-tile.rose { background: var(--rose-soft); color: var(--rose); }
+  .ico-tile.violet { background: var(--violet-soft); color: #6d28d9; }
+  .ico-tile.amber { background: var(--amber-soft); color: #d97706; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; }
+  .act {
+    display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 5px; min-width: 92px; padding: 8px 10px 9px;
+    border: 1px solid var(--line); background: #fff; border-radius: 12px;
+    color: #334155; font-size: 11.5px; line-height: 1.2;
+  }
+  .act:hover { border-color: #cbd5e1; background: #fafbff; }
+  .act-ico {
+    width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff;
+  }
+  .act-ico svg { width: 16px; height: 16px; stroke: #fff; }
+  .act-ico.violet { background: #8b5cf6; }
+  .act-ico.blue { background: #3b82f6; }
+  .act-ico.green { background: #10b981; }
+  .act-ico.amber { background: #f59e0b; }
+  .search .ico { color: #94a3b8; }
+  .chip-user .ico { color: #94a3b8; width: 16px; height: 16px; }
+  .chip-user .ico svg { width: 16px; height: 16px; }
+  .h1-row { display: flex; align-items: center; gap: 10px; }
+  .h1-row .ico-tile { width: 40px; height: 40px; border-radius: 12px; }
+  .h1-row .ico-tile svg { width: 20px; height: 20px; }
+  .card h2 .ico { color: var(--blue-deep); margin-right: 2px; }
+
+  .main { min-width: 0; }
+  .top {
+    height: var(--top); background: #fff; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 12px; padding: 0 22px; position: sticky; top: 0; z-index: 5;
+  }
+  .search {
+    flex: 1; max-width: 560px; display: flex; align-items: center; gap: 8px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px;
+  }
+  .search input { border: 0; background: transparent; outline: none; width: 100%; }
+  .chip-user {
+    margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12.5px;
+  }
+  .dot { width: 28px; height: 28px; border-radius: 50%; background: #dbeafe; color: var(--blue-deep);
+    display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+  .top-tools { display: flex; align-items: center; gap: 8px; }
+  .bell, .lang-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 12px; color: #fff; border: 0; cursor: pointer;
+    flex: 0 0 auto; box-shadow: 0 1px 2px rgba(15,23,42,.08);
+  }
+  .bell {
+    position: relative; background: #EAB308; color: #BE123C;
+  }
+  .bell svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round; }
+  .bell .dot {
+    position: absolute; top: 7px; right: 8px; width: 9px; height: 9px; border-radius: 50%;
+    background: #BE123C; border: 2px solid #EAB308; display: none;
+  }
+  .bell.has-alert .dot { display: block; }
+  .bell-pop {
+    display: none; position: absolute; right: 22px; top: 58px; width: 280px; z-index: 20;
+    background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
+    padding: 14px 16px;
+  }
+  .bell-pop.on { display: block; }
+  .bell-pop strong { display: block; font-size: 13.5px; margin-bottom: 4px; }
+  .bell-pop p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  .lang-btn {
+    background: #7C3AED; font-size: 13px; letter-spacing: .04em; gap: 0;
+    flex-direction: column; line-height: 1.05; padding: 4px 0;
+  }
+  .lang-btn small { font-size: 9px; font-weight: 700; color: #EDE9FE; }
+  .lang-btn b { font-size: 13px; font-weight: 800; }
+  html[lang="zh-CN"] .lang-btn b { letter-spacing: 0; }
+
+  .page { padding: 22px 24px 48px; }
+  .head { display: flex; align-items: flex-start; justify-content: flex-start; gap: 8px; margin-bottom: 12px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .act-ico.sky { background: #0ea5e9; }
+  .act-ico.rose { background: #f43f5e; }
+  .act-ico.pink { background: #ec4899; }
+  .act-ico.slate { background: #64748b; }
+  .btn {
+    border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 12px; color: #334155;
+  }
+  .btn:hover { border-color: #cbd5e1; }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .btn.primary:hover { background: var(--blue-deep); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .filters select {
+    border: 1px solid var(--line); background: #fff; border-radius: 999px;
+    padding: 5px 10px; color: #334155; font-size: 12px; max-width: 168px;
+  }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 14px 16px 14px 18px; border-left: 4px solid var(--blue); min-height: 92px;
+  }
+  .kpi.green { border-left-color: var(--green); }
+  .kpi.amber { border-left-color: var(--amber); }
+  .kpi.violet { border-left-color: var(--violet); }
+  .kpi.rose { border-left-color: var(--rose); }
+  .kpi .lab { color: var(--muted); font-size: 12px; }
+  .kpi b { display: block; font-size: 26px; letter-spacing: -.03em; margin: 4px 0 2px; }
+  .kpi .delta { font-size: 12px; color: var(--muted); }
+  .kpi .delta.up { color: var(--green); }
+  .kpi .delta.down { color: var(--rose); }
+
+  .layout { display: grid; grid-template-columns: 1.7fr .9fr; gap: 14px; }
+  .card {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card h2 {
+    margin: 0; padding: 14px 16px 10px; font-size: 14.5px; display: flex; align-items: baseline; gap: 8px;
+  }
+  .card h2 span { color: var(--muted); font-weight: 500; font-size: 12.5px; }
+  .card .pad { padding: 0 16px 16px; }
+  .tabs { display: flex; gap: 6px; padding: 0 16px 10px; flex-wrap: wrap; }
+  .tabs button {
+    border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 4px 10px; color: #475569; font-size: 12px;
+  }
+  .tabs button.on { background: var(--blue-soft); border-color: #bfdbfe; color: var(--blue-deep); font-weight: 650; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11.5px; color: #94a3b8; font-weight: 600; padding: 8px 10px;
+    border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  tr:hover td { background: #f8fafc; }
+  .po { font-weight: 650; }
+  .sub { color: var(--muted); font-size: 11.5px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px;
+    border-radius: 999px; background: #f1f5f9; color: #475569; white-space: nowrap;
+  }
+  .tag.easy { background: var(--green-soft); color: #047857; }
+  .tag.med { background: var(--amber-soft); color: #b45309; }
+  .tag.hard { background: #ffedd5; color: #c2410c; }
+  .tag.vhard { background: var(--rose-soft); color: #be123c; }
+  .tag.blue { background: var(--blue-soft); color: var(--blue-deep); }
+  .tag.violet { background: var(--violet-soft); color: #6d28d9; }
+  .pager { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px 14px; color: var(--muted); font-size: 12px; }
+  .pager .pages { display: flex; gap: 4px; }
+  .pager button { min-width: 28px; height: 28px; border: 1px solid var(--line); background: #fff; border-radius: 8px; }
+  .pager button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+  .rail { display: flex; flex-direction: column; gap: 14px; }
+  .donut-wrap { display: flex; align-items: center; gap: 14px; }
+  .donut { position: relative; width: 148px; height: 148px; flex: 0 0 148px; }
+  .donut svg { width: 148px; height: 148px; transform: rotate(-90deg); filter: drop-shadow(0 4px 8px rgba(15,23,42,.08)); }
+  .legend i { width: 10px; height: 10px; box-shadow: 0 0 0 2px #fff inset; }
+  .donut .mid {
+    position: absolute; inset: 0; display: grid; place-items: center; text-align: center; transform: none;
+  }
+  .donut .mid b { display: block; font-size: 22px; letter-spacing: -.03em; }
+  .donut .mid span { color: var(--muted); font-size: 11px; }
+  .legend { list-style: none; margin: 0; padding: 0; font-size: 12.5px; }
+  .legend li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; color: #334155; }
+  .legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .hbar { display: grid; grid-template-columns: 92px 1fr 52px; gap: 6px 8px; align-items: center; margin: 5px 0; font-size: 12px; }
+  .hbar .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; }
+  .hbar .track { height: 10px; background: #eef2f7; border-radius: 99px; overflow: hidden; }
+  .hbar .track i { display: block; height: 100%; border-radius: 99px; }
+  .hbar .n { text-align: right; color: #64748b; font-variant-numeric: tabular-nums; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .topic {
+    display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid var(--line);
+    border-radius: 10px; padding: 7px 10px; font-size: 12.5px;
+  }
+  .sw { width: 10px; height: 10px; border-radius: 3px; }
+
+  .trend { height: 168px; }
+  .trend svg { width: 100%; height: 168px; display: block; }
+  .ho-chart { height: 240px; }
+  .ho-chart svg { width: 100%; height: 240px; display: block; }
+  .fty-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .fty-legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #334155; }
+  .fty-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .ho-table th { text-align: right; }
+  .ho-table th:first-child, .ho-table td:first-child { text-align: left; }
+  .ho-table td { text-align: right; font-variant-numeric: tabular-nums; }
+  .ho-table tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
+  .asia-map { height: 360px; border-radius: 12px; overflow: hidden; background: #c5d4e0; }
+  .asia-map .leaflet-container { height: 360px; width: 100%; background: #c5d4e0; font: inherit; }
+  .asia-map .leaflet-control-zoom a { color: #0f172a; }
+  .map-label {
+    background: transparent; border: 0; box-shadow: none; font: 700 11px/1 "Segoe UI", sans-serif;
+    color: #4b5563; letter-spacing: .03em; white-space: nowrap;
+  }
+  .empty { padding: 24px; color: var(--muted); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .factory-row strong { display: block; }
+  .bar { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; min-width: 90px; }
+  .bar > i { display: block; height: 100%; background: var(--blue); }
+  .spark { display: flex; gap: 2px; align-items: flex-end; height: 22px; }
+  .spark i { width: 4px; background: #93c5fd; border-radius: 1px; display: block; }
+
+  @media (max-width: 1180px) {
+    .kpis, .layout, .grid2 { grid-template-columns: 1fr; }
+    .app { grid-template-columns: 1fr; }
+    .side {
+      display: flex; position: fixed; left: 0; top: 0; z-index: 40;
+      transform: translateX(-105%); transition: transform .2s ease;
+      box-shadow: 8px 0 24px rgba(15,23,42,.12);
+    }
+    .app.nav-open .side { transform: translateX(0); }
+    .scrim {
+      display: none; position: fixed; inset: 0; background: rgba(15,23,42,.35); z-index: 30;
+    }
+    .app.nav-open .scrim { display: block; }
+    .menu-btn {
+      display: grid; place-items: center; width: 40px; height: 40px; border: 0;
+      background: var(--blue-soft); color: var(--blue-deep); border-radius: 10px; flex: 0 0 40px;
+    }
+    .menu-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .top { padding: 0 12px; height: 52px; }
+    .search { max-width: none; padding: 6px 10px; }
+    .page { padding: 12px 12px 88px; }
+    .act { min-width: 72px; padding: 6px 8px 7px; font-size: 11px; }
+    .kpi { min-height: 0; padding: 10px 12px; }
+    .kpi b { font-size: 20px; }
+    .filters select { max-width: none; flex: 1 1 46%; font-size: 16px; padding: 8px 10px; }
+    .chip-user { font-size: 0; gap: 6px; }
+    .chip-user .dot { display: none; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 6px; }
+    .asia-map, .asia-map .leaflet-container { height: 280px; }
+    .hbar { grid-template-columns: 72px 1fr 40px; }
+  }
+  @media (max-width: 640px) {
+    .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .pager { flex-wrap: wrap; gap: 8px; }
+    .actions { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="scrim" id="scrim"></div>
+  <aside class="side">
+    <div class="brand">
+      <div class="mark"><img src="alpha-a.png" alt="Alpha" /></div>
+      <div>
+        <b>VN Supplier Benchmark</b>
+        <span>Alpha Fashion</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="active" data-view="dash"><span class="nav-ico blue"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span> <span data-i18n="navDash">Dashboard</span></button>
+      <button data-view="merch"><span class="nav-ico violet"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="navMerch">Merchandiser</span></button>
+      <button data-view="quality"><span class="nav-ico green"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></span> <span data-i18n="navQuality">Quality library</span></button>
+      <div class="sec" data-i18n="navBook">Book</div>
+      <button data-view="orders"><span class="nav-ico sky"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span> <span data-i18n="navOrders">Order book</span></button>
+      <button data-view="factories"><span class="nav-ico amber"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
+      <button data-view="customers"><span class="nav-ico rose"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="top">
+      <button type="button" class="menu-btn" id="menuBtn" aria-label="Menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="search">
+        <span class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+        <input id="q" placeholder="Search PO, factory, customer, SKU…" />
+      </div>
+      <div class="chip-user">
+        <div class="top-tools">
+          <button type="button" class="bell" id="bellBtn" title="Merchandiser Alert" aria-label="Merchandiser Alert">
+            <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+            <span class="dot"></span>
+          </button>
+          <button type="button" class="lang-btn" id="langBtn" title="English / 中文" aria-label="Switch language">
+            <small id="langOther">中文</small>
+            <b id="langNow">EN</b>
+          </button>
+        </div>
+        <span class="dot">P</span> Philip
+      </div>
+    </div>
+    <div class="bell-pop" id="bellPop">
+      <strong data-i18n="bellTitle">Merchandiser Alert</strong>
+      <p data-i18n="bellEmpty">No alerts yet. This bell is for later merch chase — not the QA Board lock-screen.</p>
+    </div>
+
+    <div class="page">
+      <div class="head">
+        <div class="actions">
+          <button class="act" type="button" data-jump="orders"><span class="act-ico violet"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span> <span data-i18n="actOrders">Order book</span></button>
+          <button class="act" type="button" id="btnExport"><span class="act-ico blue"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/></svg></span> <span data-i18n="actExport">Export CSV</span></button>
+          <button class="act" type="button" data-jump="quality"><span class="act-ico green"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></span> <span data-i18n="actQuality">Quality</span></button>
+          <button class="act" type="button" data-jump="merch"><span class="act-ico amber"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="actMerch">Merchandiser</span></button>
+          <button class="act" type="button" data-jump="factories"><span class="act-ico sky"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
+          <button class="act" type="button" data-jump="customers"><span class="act-ico pink"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
+          <button class="act" type="button" id="btnLate"><span class="act-ico rose"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span> Late queue</button>
+          <button class="act" type="button" id="btnMap"><span class="act-ico slate"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></span> Map</button>
+        </div>
+      </div>
+
+      <div class="filters">
+        <select id="fFty"><option value="" data-i18n="allFactories">All factories</option></select>
+        <select id="fCust"><option value="" data-i18n="allCustomers">All customers</option></select>
+        <select id="fCat"><option value="" data-i18n="allCategories">All categories</option></select>
+        <select id="fDue">
+          <option value="all" data-i18n="allDates">All dates</option>
+          <option value="custLate" data-i18n="custLate">Customer due passed</option>
+          <option value="ftyLate" data-i18n="ftyLate">Factory due passed</option>
+          <option value="7d" data-i18n="due7">Due next 7 days</option>
+          <option value="oct" data-i18n="dueOct">Customer due Oct 2026</option>
+        </select>
+        <select id="fKind">
+          <option value="" data-i18n="newRepeat">New + repeat</option>
+          <option value="New order" data-i18n="newOrder">New order</option>
+          <option value="Repeat order" data-i18n="repeatOrder">Repeat order</option>
+        </select>
+      </div>
+
+      <div id="view"></div>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/leaflet.js"></script>
+<script src="asia.js"></script>
+<script src="orders.js"></script>
+<script>
+(function () {
+  var DATA = window.ORDERS;
+  if (!DATA || !DATA.orders) {
+    document.getElementById("view").innerHTML = "<div class='empty'>orders.js missing. Parse the tracking Excel first.</div>";
+    return;
+  }
+  var AS = DATA.asOf || "2026-10-03";
+  var ORDERS = DATA.orders;
+  var view = "dash";
+  var page = 1;
+  var pageSize = 10;
+  var tableTab = "all";
+  var lang = "en";
+  try { lang = localStorage.getItem("sb-lang") === "zh" ? "zh" : "en"; } catch (e) {}
+
+  var I18N = {
+    en: {
+      navDash: "Dashboard", navMerch: "Merchandiser", navQuality: "Quality library", navBook: "Book",
+      navOrders: "Order book", navFactories: "Factories", navCustomers: "Customers",
+      asOf: "as of", search: "Search PO, factory, customer, SKU…",
+      actOrders: "Order book", actExport: "Export CSV", actQuality: "Quality", actMerch: "Merchandiser",
+      allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
+      allDates: "All dates", custLate: "Customer due passed", ftyLate: "Factory due passed",
+      due7: "Due next 7 days", dueOct: "Customer due Oct 2026", newRepeat: "New + repeat",
+      newOrder: "New order", repeatOrder: "Repeat order",
+      bellTitle: "Merchandiser Alert",
+      bellEmpty: "No alerts yet. This bell is for later merch chase — not the QA Board lock-screen.",
+      kpiPo: "Distinct POs", kpiSpend: "Spend $", kpiLate: "Late customer POs", kpiFty: "Factories",
+      notReported: "not reported", spendNote: "Total / Total qty column empty",
+      linesIn: " lines in filter", lateOf: "% of PO · vs ",
+      vnNote: function (vn, unk) { return vn + " VN · " + unk + " country not reported"; },
+      orderBook: "Order book", qualityLib: "Quality library", lines: " lines",
+      tabAll: "All lines", tabLate: "Customer late", tabNew: "New order", tabRepeat: "Repeat",
+      tabInspect: "Has inspection note",
+      delayMix: "Delay mix", catMix: "Category mix", custMix: "Customer mix", ftyFilter: "Factories in filter",
+      qtyMonth: "Order qty by month", pcsNot: "pcs — not $",
+      hoMonth: "Total HO per month", hoNote: "Distinct HO · Order date · tracking 9-24. Not $.",
+      colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
+      factoryMaster: "Factory master", customers: "Customers", factories: "Factories",
+      qaTest: "QA test", inspectPlan: "Inspection plan",
+      qualityNote: "QA test + inspection plan from the tracking Excel — not the live QA Board. Pass in this file = 5 lines. Blank is not Pass.",
+      onTime: "On time", late17: "1–7d late", late821: "8–21d late", late22: "22d+ late", noDue: "No customer due",
+      latePoPct: "late PO %", passLines: "Pass lines", pending: "pending",
+      mapTitle: "Factory location · Asia",
+      mapNote: "Real map. Country names in English. Pins = country from the factory name in tracking 9-24. China is on the map. City GPS is not in the Excel — country pin only.",
+      titles: {
+        dash: ["VN Supplier Benchmark", "VN-handled orders, customers, factories — numbers from ORDER TRACKING LIST 9-24."],
+        merch: ["Merchandiser", "Factory master by category and customer book. Same 9-24 file."],
+        quality: ["Quality library", "QA test + inspection plan cells from tracking — not the live QA Board sheet."],
+        orders: ["Order book", "Every SKU / port split in the current filter."],
+        factories: ["Factories", "10 factories in this extract. A474 country not reported."],
+        customers: ["Customers", "Customer / end-customer split from the tracking list."]
+      }
+    },
+    zh: {
+      navDash: "仪表盘", navMerch: "跟单", navQuality: "质量库", navBook: "台账",
+      navOrders: "订单台账", navFactories: "工厂", navCustomers: "客户",
+      asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
+      actOrders: "订单台账", actExport: "导出 CSV", actQuality: "质量", actMerch: "跟单",
+      allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
+      allDates: "全部日期", custLate: "客户交期已过", ftyLate: "工厂交期已过",
+      due7: "未来 7 天到期", dueOct: "客户交期 2026-10", newRepeat: "新单 + 返单",
+      newOrder: "新单", repeatOrder: "返单",
+      bellTitle: "跟单提醒",
+      bellEmpty: "暂无提醒。此铃铛留给之后的跟单催办 — 不是 QA Board 锁屏推送。",
+      kpiPo: "PO 数", kpiSpend: "金额 $", kpiLate: "客户逾期 PO", kpiFty: "工厂",
+      notReported: "未填写", spendNote: "Total / Total qty 列为空",
+      linesIn: " 行（当前筛选）", lateOf: "% PO · 对比 ",
+      vnNote: function (vn, unk) { return vn + " 家越南 · " + unk + " 家国家未报"; },
+      orderBook: "订单台账", qualityLib: "质量库", lines: " 行",
+      tabAll: "全部", tabLate: "客户逾期", tabNew: "新单", tabRepeat: "返单",
+      tabInspect: "有验货备注",
+      delayMix: "逾期构成", catMix: "品类构成", custMix: "客户构成", ftyFilter: "筛选内工厂",
+      qtyMonth: "月订货数量", pcsNot: "件数 — 不是金额",
+      hoMonth: "每月 HO 总数", hoNote: "按下单日去重 HO · tracking 9-24。不是金额。",
+      colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
+      factoryMaster: "工厂主档", customers: "客户", factories: "工厂",
+      qaTest: "QA 测试", inspectPlan: "验货计划",
+      qualityNote: "QA / 验货来自跟踪表 — 不是线上 QA Board。本文件 Pass = 5 行。空白不是 Pass。",
+      onTime: "准时", late17: "逾期 1–7 天", late821: "逾期 8–21 天", late22: "逾期 22 天+", noDue: "无客户交期",
+      latePoPct: "逾期 PO %", passLines: "Pass 行", pending: "待定",
+      mapTitle: "工厂位置 · 亚洲",
+      mapNote: "真实地图。国名英文。针脚 = tracking 9-24 厂名里的国家。中国在图上。本文件无城市坐标 — 只钉国家。",
+      titles: {
+        dash: ["VN Supplier Benchmark", "越南跟进的订单 / 客户 / 工厂 — 数字仅来自 ORDER TRACKING LIST 9-24。"],
+        merch: ["跟单", "按品类的工厂主档和客户台账。同一份 9-24 文件。"],
+        quality: ["质量库", "跟踪表里的 QA / 验货单元格 — 不是线上 QA Board。"],
+        orders: ["订单台账", "当前筛选下的每一行 SKU / 港口。"],
+        factories: ["工厂", "本表 10 家工厂。A474 国家未报。"],
+        customers: ["客户", "跟踪表里的客户 / 终端客户。"]
+      }
+    }
+  };
+  function t(key) { return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key; }
+  function applyChrome() {
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.getElementById("langNow").textContent = lang === "zh" ? "中文" : "EN";
+    document.getElementById("langOther").textContent = lang === "zh" ? "EN" : "中文";
+    document.getElementById("langBtn").title = lang === "zh" ? "切换 English" : "切换中文";
+    document.getElementById("q").placeholder = t("search");
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      var k = el.getAttribute("data-i18n");
+      var v = t(k);
+      if (typeof v === "string") el.textContent = v;
+    });
+    try { localStorage.setItem("sb-lang", lang); } catch (e) {}
+  }
+  function setLang(next) {
+    lang = next === "zh" ? "zh" : "en";
+    applyChrome();
+    setView(view);
+  }
+
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function fmt(n) {
+    if (n == null || n === "") return "–";
+    var x = Math.round(n);
+    return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  var PATHS = {
+    dash: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
+    merch: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/>',
+    quality: '<path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/>',
+    orders: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    factories: '<path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/>',
+    customers: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+    po: '<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+    dollar: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5c0-1.4-1.3-2-3-2s-3 .6-3 2 1.2 1.8 3 2.2 3 .8 3 2.2-1.3 2-3 2-3-.6-3-2"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    trend: '<path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/>',
+    pie: '<path d="M12 3a9 9 0 1 0 9 9h-9V3z"/><path d="M12 3a9 9 0 0 1 9 9h-9V3z"/>',
+    tag: '<path d="M20 13 11 4H4v7l9 9 7-7z"/><circle cx="7.5" cy="7.5" r=".8"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
+  };
+  function ico(name) {
+    return '<span class="ico"><svg viewBox="0 0 24 24">' + (PATHS[name] || PATHS.dash) + '</svg></span>';
+  }
+  function tile(name, color) {
+    return '<span class="ico-tile ' + color + '"><svg viewBox="0 0 24 24">' + (PATHS[name] || PATHS.dash) + '</svg></span>';
+  }
+  function daysBetween(a, b) {
+    if (!a || !b) return null;
+    return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+  }
+  function shortFty(o) {
+    var n = (o.factoryName || o.supplierRaw || "")
+      .replace(/COMPANY LIMITED|CO\.,?\s*LTD\.?|CORPORATION|TRADING AND SERVICES |INDUSTRIAL /ig, "")
+      .trim();
+    return (o.factoryCode ? o.factoryCode + " " : "") + n;
+  }
+  function poKey(o) { return (o.factoryCode || o.sheet) + "|" + o.po; }
+  function delayBand(due) {
+    if (!due) return { key: "none", label: "No date", cls: "tag", days: null };
+    var d = daysBetween(due, AS);
+    if (d == null) return { key: "none", label: "No date", cls: "tag", days: null };
+    if (d <= 0) return { key: "easy", label: d === 0 ? "Due today" : "On time", cls: "tag easy", days: d };
+    if (d <= 7) return { key: "med", label: d + "d late", cls: "tag med", days: d };
+    if (d <= 21) return { key: "hard", label: d + "d late", cls: "tag hard", days: d };
+    return { key: "vhard", label: d + "d late", cls: "tag vhard", days: d };
+  }
+  function inspectKind(s) {
+    var ins = String(s || "").toLowerCase();
+    if (!ins) return "blank";
+    if (ins === "pending") return "pending";
+    if (ins === "passed" || ins === "pass") return "passed";
+    if (ins.indexOf("3rd") >= 0) return "3rd";
+    return "dated";
+  }
+  function qaKind(s) {
+    var q = String(s || "").split("\n")[0].trim();
+    if (!q) return "blank";
+    if (/^pass$/i.test(q)) return "pass";
+    if (/^nothing$/i.test(q)) return "nothing";
+    return "other";
+  }
+  function statusBits(o) {
+    var tags = [];
+    var ins = inspectKind(o.inspect);
+    if (ins === "pending") tags.push("<span class='tag med'>Inspect pending</span>");
+    else if (ins === "passed") tags.push("<span class='tag easy'>Inspect passed</span>");
+    else if (ins === "3rd") tags.push("<span class='tag violet'>3rd party</span>");
+    else if (ins === "dated") tags.push("<span class='tag blue'>Inspect dated</span>");
+    var qa = qaKind(o.qa);
+    if (qa === "pass") tags.push("<span class='tag easy'>QA Pass</span>");
+    else if (qa === "nothing") tags.push("<span class='tag'>QA none</span>");
+    if (o.orderCategory === "Repeat order") tags.push("<span class='tag violet'>Repeat</span>");
+    else if (o.orderCategory === "New order") tags.push("<span class='tag blue'>New</span>");
+    return tags.join(" ") || "<span class='tag'>–</span>";
+  }
+
+  var ftySel = document.getElementById("fFty");
+  var custSel = document.getElementById("fCust");
+  var catSel = document.getElementById("fCat");
+  var ftySeen = {}, custSeen = {}, catSeen = {};
+  ORDERS.forEach(function (o) {
+    var k = o.factoryCode || o.sheet;
+    if (k && !ftySeen[k]) {
+      ftySeen[k] = true;
+      var opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = (o.factoryCode || k) + " · " + (o.factoryName || "");
+      ftySel.appendChild(opt);
+    }
+    if (o.customer && !custSeen[o.customer]) {
+      custSeen[o.customer] = true;
+      var c = document.createElement("option");
+      c.value = o.customer; c.textContent = o.customer;
+      custSel.appendChild(c);
+    }
+    if (o.category && !catSeen[o.category]) {
+      catSeen[o.category] = true;
+      var a = document.createElement("option");
+      a.value = o.category; a.textContent = o.category;
+      catSel.appendChild(a);
+    }
+  });
+
+  function match(o) {
+    var fty = ftySel.value, cust = custSel.value, cat = catSel.value;
+    var due = document.getElementById("fDue").value;
+    var kind = document.getElementById("fKind").value;
+    var q = document.getElementById("q").value.trim().toLowerCase();
+    if (fty && (o.factoryCode || o.sheet) !== fty) return false;
+    if (cust && o.customer !== cust) return false;
+    if (cat && o.category !== cat) return false;
+    if (kind && o.orderCategory !== kind) return false;
+    if (q) {
+      var blob = [o.po, o.item, o.productName, o.customer, o.endCustomer, o.ho, o.productCode, o.factoryName, o.factoryCode].join(" ").toLowerCase();
+      if (blob.indexOf(q) < 0) return false;
+    }
+    if (due === "custLate") return !!(o.customerDue && o.customerDue < AS);
+    if (due === "ftyLate") return !!(o.factoryDue && o.factoryDue < AS);
+    if (due === "7d") {
+      var d = daysBetween(AS, o.customerDue);
+      return d != null && d >= 0 && d <= 7;
+    }
+    if (due === "oct") return !!(o.customerDue && o.customerDue.slice(0, 7) === "2026-10");
+    return true;
+  }
+  function filtered() { return ORDERS.filter(match); }
+
+  function stats(rows) {
+    var pos = {}, latePo = {}, ftyLatePo = {}, fty = {}, cust = {}, qty = 0, newN = 0, repN = 0;
+    var bands = { easy: 0, med: 0, hard: 0, vhard: 0, none: 0 };
+    var cats = {}, months = {}, hoMonth = {}, allHo = {}, inspect = { blank: 0, pending: 0, passed: 0, "3rd": 0, dated: 0 };
+    var qa = { blank: 0, pass: 0, nothing: 0, other: 0 };
+    var ftyMap = {};
+    rows.forEach(function (o) {
+      qty += o.qty || 0;
+      if (o.orderCategory === "Repeat order") repN++; else newN++;
+      if (o.category) cats[o.category] = (cats[o.category] || 0) + 1;
+      if (o.orderDate) {
+        var m = o.orderDate.slice(0, 7);
+        months[m] = (months[m] || 0) + (o.qty || 0);
+        if (!hoMonth[m]) hoMonth[m] = { hos: {}, lines: 0, qty: 0, fty: {} };
+        hoMonth[m].lines++;
+        hoMonth[m].qty += o.qty || 0;
+        if (o.ho) { hoMonth[m].hos[o.ho] = true; allHo[o.ho] = true; }
+        var fmk = o.factoryCode || o.sheet || "?";
+        if (!hoMonth[m].fty[fmk]) hoMonth[m].fty[fmk] = { hos: {}, qty: 0, lines: 0, name: o.factoryName || fmk };
+        hoMonth[m].fty[fmk].lines++;
+        hoMonth[m].fty[fmk].qty += o.qty || 0;
+        if (o.ho) hoMonth[m].fty[fmk].hos[o.ho] = true;
+      }
+      inspect[inspectKind(o.inspect)]++;
+      qa[qaKind(o.qa)]++;
+      var b = delayBand(o.customerDue);
+      bands[b.key]++;
+      var fk = o.factoryCode || o.sheet;
+      fty[fk] = true;
+      if (o.customer) cust[o.customer] = true;
+      if (!ftyMap[fk]) {
+        ftyMap[fk] = {
+          code: o.factoryCode, name: o.factoryName, country: o.country || "not reported",
+          lines: 0, qty: 0, pos: {}, late: {}, cats: {}, customers: {}
+        };
+      }
+      var f = ftyMap[fk];
+      f.lines++; f.qty += o.qty || 0;
+      if (o.category) f.cats[o.category] = (f.cats[o.category] || 0) + 1;
+      if (o.customer) f.customers[o.customer] = true;
+      if (o.po) {
+        var pk = poKey(o);
+        pos[pk] = true;
+        f.pos[o.po] = true;
+        if (o.customerDue && o.customerDue < AS) { latePo[pk] = true; f.late[o.po] = true; }
+        if (o.factoryDue && o.factoryDue < AS) ftyLatePo[pk] = true;
+      }
+    });
+    return {
+      lines: rows.length, qty: qty, pos: Object.keys(pos).length,
+      late: Object.keys(latePo).length, ftyLate: Object.keys(ftyLatePo).length,
+      factories: Object.keys(fty).length, customers: Object.keys(cust).length,
+      newN: newN, repN: repN, bands: bands, cats: cats, months: months, hoMonth: hoMonth,
+      distinctHo: Object.keys(allHo).length,
+      inspect: inspect, qa: qa, ftyMap: ftyMap
+    };
+  }
+
+  function donut(parts, centerLabel, centerSub) {
+    var total = 0;
+    parts.forEach(function (p) { total += p.n; });
+    if (!total) return "<p class='empty'>No rows in this filter.</p>";
+    var cx = 74, cy = 74, r = 50, ir = 28;
+    var acc = 0;
+    function polar(a, rad) {
+      var rads = (a - 90) * Math.PI / 180;
+      return [cx + rad * Math.cos(rads), cy + rad * Math.sin(rads)];
+    }
+    var slices = parts.filter(function (p) { return p.n > 0; }).map(function (p, i) {
+      var frac = p.n / total;
+      var start = acc * 360;
+      acc += frac;
+      var end = acc * 360;
+      if (frac >= 0.999) {
+        return "<circle cx='" + cx + "' cy='" + cy + "' r='" + r + "' fill='" + p.color + "'></circle>" +
+          "<circle cx='" + cx + "' cy='" + cy + "' r='" + ir + "' fill='#fff'></circle>";
+      }
+      var large = frac > 0.5 ? 1 : 0;
+      var p1 = polar(start, r), p2 = polar(end, r), p3 = polar(end, ir), p4 = polar(start, ir);
+      var d = "M " + p1[0] + " " + p1[1] + " A " + r + " " + r + " 0 " + large + " 1 " + p2[0] + " " + p2[1] +
+        " L " + p3[0] + " " + p3[1] + " A " + ir + " " + ir + " 0 " + large + " 0 " + p4[0] + " " + p4[1] + " Z";
+      var gap = i ? " stroke='#fff' stroke-width='2'" : " stroke='#fff' stroke-width='1'";
+      return "<path d='" + d + "' fill='" + p.color + "'" + gap + "></path>";
+    }).join("");
+    var legend = "<ul class='legend'>" + parts.map(function (p) {
+      var pct = Math.round(100 * p.n / total);
+      return "<li><span><i style='background:" + p.color + "'></i>" + esc(p.label) +
+        "</span><b>" + pct + "% · " + fmt(p.n) + "</b></li>";
+    }).join("") + "</ul>";
+    return "<div class='donut-wrap'><div class='donut'><svg viewBox='0 0 148 148'>" +
+      slices + "</svg><div class='mid'><b>" + esc(centerLabel) + "</b><span>" + esc(centerSub) +
+      "</span></div></div>" + legend + "</div>";
+  }
+  function hbar(parts) {
+    var max = 1;
+    parts.forEach(function (p) { if (p.n > max) max = p.n; });
+    if (!parts.length) return "<p class='empty'>No rows in this filter.</p>";
+    return parts.map(function (p) {
+      var w = Math.max(4, Math.round(100 * p.n / max));
+      return "<div class='hbar' title='" + esc(p.label) + "'><span class='lab'>" + esc(p.label) +
+        "</span><span class='track'><i style='width:" + w + "%;background:" + p.color + "'></i></span>" +
+        "<span class='n'>" + fmt(p.n) + "</span></div>";
+    }).join("");
+  }
+
+  function hoMonthBlock(hoMonth, distinctHo) {
+    var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var zhM = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+    var names = lang === "zh" ? zhM : enM;
+    var palette = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#f43f5e","#0ea5e9","#ec4899","#14b8a6","#eab308","#6366f1"];
+    var year = "2026";
+    var ftyKeys = {};
+    var months = [];
+    var max = 1;
+    for (var i = 0; i < 12; i++) {
+      var key = year + "-" + String(i + 1).padStart(2, "0");
+      var rec = hoMonth[key];
+      if (!rec || !Object.keys(rec.hos).length) continue;
+      var ho = Object.keys(rec.hos).length;
+      months.push({ key: key, label: names[i], ho: ho, qty: rec.qty || 0, fty: rec.fty || {} });
+      if (ho > max) max = ho;
+      Object.keys(rec.fty || {}).forEach(function (k) { ftyKeys[k] = rec.fty[k].name || k; });
+    }
+    var ftyList = Object.keys(ftyKeys).sort();
+    var colorOf = {};
+    ftyList.forEach(function (k, i) { colorOf[k] = palette[i % palette.length]; });
+    var nM = Math.max(months.length, 1);
+    var w = 520, h = 240, padL = 24, padR = 10, padT = 22, padB = 32;
+    var innerW = w - padL - padR, innerH = h - padT - padB;
+    var slot = innerW / nM;
+    var barW = Math.min(48, slot * 0.58);
+    var tops = [];
+    var bars = months.map(function (m, i) {
+      var x = padL + i * slot + (slot - barW) / 2;
+      var y = padT + innerH;
+      var stack = "";
+      ftyList.forEach(function (k) {
+        var f = m.fty[k];
+        var n = f ? Object.keys(f.hos).length : 0;
+        if (!n) return;
+        var bh = (n / max) * innerH;
+        y -= bh;
+        var tip = (f.name || k) + " · " + n + " HO · " + fmt(f.qty) + " pcs";
+        stack += "<rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
+          "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] +
+          "'><title>" + esc(tip) + "</title></rect>";
+      });
+      var cx = x + barW / 2;
+      var topY = padT + innerH - (m.ho / max) * innerH;
+      tops.push({ x: cx, y: topY });
+      return stack +
+        (m.ho ? "<text x='" + cx + "' y='" + (topY - 8) + "' text-anchor='middle' font-size='11' font-weight='700' fill='#0f172a'>" + m.ho + "</text>" : "") +
+        "<text x='" + cx + "' y='" + (h - 12) + "' text-anchor='middle' font-size='11' fill='#64748b'>" + m.label + "</text>";
+    }).join("");
+    var line = "";
+    if (tops.length > 1) {
+      var d = tops.map(function (p, i) { return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" ");
+      var last = tops[tops.length - 1];
+      var prev = tops[tops.length - 2];
+      var ang = Math.atan2(last.y - prev.y, last.x - prev.x);
+      var ah = 8;
+      var a1x = last.x - ah * Math.cos(ang - 0.5);
+      var a1y = last.y - ah * Math.sin(ang - 0.5);
+      var a2x = last.x - ah * Math.cos(ang + 0.5);
+      var a2y = last.y - ah * Math.sin(ang + 0.5);
+      line = "<path d='" + d + "' fill='none' stroke='#0f172a' stroke-width='2' stroke-linejoin='round'/>" +
+        tops.map(function (p) {
+          return "<circle cx='" + p.x.toFixed(1) + "' cy='" + p.y.toFixed(1) + "' r='3.2' fill='#fff' stroke='#0f172a' stroke-width='1.6'/>";
+        }).join("") +
+        "<path d='M" + last.x.toFixed(1) + " " + last.y.toFixed(1) + " L" + a1x.toFixed(1) + " " + a1y.toFixed(1) +
+        " L" + a2x.toFixed(1) + " " + a2y.toFixed(1) + " Z' fill='#0f172a'/>";
+    }
+    var legend = "<div class='fty-legend'>" + ftyList.map(function (k) {
+      return "<span><i style='background:" + colorOf[k] + "'></i>" + esc(k) + "</span>";
+    }).join("") + "</div>";
+    return "<div class='card'><h2>" + ico("trend") + " " + t("hoMonth") +
+      " <span>" + fmt(distinctHo) + " HO</span></h2>" +
+      "<div class='pad'><div class='ho-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + bars + line +
+      "</svg></div>" + legend + "</div></div>";
+  }
+
+  function spark(o) {
+    var vals = [o.qty || 0];
+    var h = Math.max(4, Math.min(22, Math.round(((o.qty || 0) % 17) + 6)));
+    var bars = [8, 12, 7, h, 10].map(function (x, i) {
+      var on = i === 3;
+      return "<i style='height:" + x + "px;background:" + (on ? "#2563eb" : "#bfdbfe") + "'></i>";
+    }).join("");
+    return "<span class='spark' title='qty " + fmt(o.qty) + "'>" + bars + "</span>";
+  }
+
+  function kpiRow(s) {
+    var latePct = s.pos ? Math.round(100 * s.late / s.pos) : 0;
+    var vn = 0, unknown = 0;
+    Object.keys(s.ftyMap).forEach(function (k) {
+      if (s.ftyMap[k].country === "VN") vn++; else unknown++;
+    });
+    return "<div class='kpis'>" +
+      "<div class='kpi'><div class='kpi-top'><div class='lab'>" + t("kpiPo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.pos) + "</b>" +
+        "<div class='delta'>" + fmt(s.lines) + t("linesIn") + "</div></div>" +
+      "<div class='kpi green'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
+        "<div class='delta'>" + t("spendNote") + "</div></div>" +
+      "<div class='kpi rose'><div class='kpi-top'><div class='lab'>" + t("kpiLate") + "</div>" + tile("clock", "rose") + "</div><b>" + fmt(s.late) + "</b>" +
+        "<div class='delta down'>" + latePct + t("lateOf") + AS + "</div></div>" +
+      "<div class='kpi violet'><div class='kpi-top'><div class='lab'>" + t("kpiFty") + "</div>" + tile("factories", "violet") + "</div><b>" + fmt(s.factories) + "</b>" +
+        "<div class='delta'>" + t("vnNote")(vn, unknown) + "</div></div>" +
+      "</div>";
+  }
+
+  function tableCard(rows, s) {
+    var list = rows.slice();
+    if (tableTab === "late") list = list.filter(function (o) { return o.customerDue && o.customerDue < AS; });
+    else if (tableTab === "new") list = list.filter(function (o) { return o.orderCategory === "New order"; });
+    else if (tableTab === "repeat") list = list.filter(function (o) { return o.orderCategory === "Repeat order"; });
+    else if (tableTab === "inspect") list = list.filter(function (o) { return inspectKind(o.inspect) !== "blank"; });
+    list.sort(function (a, b) {
+      var da = a.customerDue || "9999", db = b.customerDue || "9999";
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    var pages = Math.max(1, Math.ceil(list.length / pageSize));
+    if (page > pages) page = pages;
+    var start = (page - 1) * pageSize;
+    var slice = list.slice(start, start + pageSize);
+    var body = slice.map(function (o) {
+      var band = delayBand(o.customerDue);
+      return "<tr>" +
+        "<td><input type='checkbox' disabled /></td>" +
+        "<td><div class='po'>" + esc(o.po || "–") + "</div><div class='sub'>" + esc(o.item || o.productName || "") + "</div></td>" +
+        "<td>" + esc(shortFty(o)) + "<div class='sub'>" + esc(o.country || "country not reported") + "</div></td>" +
+        "<td>" + esc(o.customer || "–") + "<div class='sub'>" + esc(o.endCustomer || "") + "</div></td>" +
+        "<td>" + fmt(o.qty) + "</td>" +
+        "<td><span class='" + band.cls + "'>" + esc(band.label) + "</span></td>" +
+        "<td>" + t("notReported") + "</td>" +
+        "<td>" + spark(o) + "</td>" +
+        "<td>" + statusBits(o) + "</td>" +
+        "</tr>";
+    }).join("") || "<tr><td colspan='9' class='empty'>No rows in this filter.</td></tr>";
+
+    var btns = "";
+    for (var i = 1; i <= Math.min(pages, 8); i++) {
+      btns += "<button data-page='" + i + "' class='" + (i === page ? "on" : "") + "'>" + i + "</button>";
+    }
+    if (pages > 8) btns += "<span style='padding:6px'>… " + pages + "</span>";
+
+    return "<div class='card'>" +
+      "<h2>" + ico("orders") + " " + t("orderBook") + " <span>" + fmt(list.length) + t("lines") + "</span></h2>" +
+      "<div class='tabs'>" +
+        "<button data-tab='all' class='" + (tableTab === "all" ? "on" : "") + "'>" + t("tabAll") + "</button>" +
+        "<button data-tab='late' class='" + (tableTab === "late" ? "on" : "") + "'>" + t("tabLate") + "</button>" +
+        "<button data-tab='new' class='" + (tableTab === "new" ? "on" : "") + "'>" + t("tabNew") + "</button>" +
+        "<button data-tab='repeat' class='" + (tableTab === "repeat" ? "on" : "") + "'>" + t("tabRepeat") + "</button>" +
+        "<button data-tab='inspect' class='" + (tableTab === "inspect" ? "on" : "") + "'>" + t("tabInspect") + "</button>" +
+      "</div>" +
+      "<div style='overflow:auto'>" +
+      "<table><thead><tr>" +
+        "<th></th><th>PO / item</th><th>Factory</th><th>Customer</th><th>Qty</th>" +
+        "<th>Delay</th><th>$</th><th>Trend</th><th>Status</th>" +
+      "</tr></thead><tbody>" + body + "</tbody></table></div>" +
+      "<div class='pager'><span>Showing " + (list.length ? (start + 1) : 0) + "–" +
+        Math.min(start + pageSize, list.length) + " of " + fmt(list.length) + "</span>" +
+        "<div class='pages'>" + btns + "</div></div></div>";
+  }
+
+  function dash(rows, s) {
+    var bandParts = [
+      { label: t("onTime"), n: s.bands.easy, color: "#22c55e" },
+      { label: t("late17"), n: s.bands.med, color: "#f59e0b" },
+      { label: t("late821"), n: s.bands.hard, color: "#f97316" },
+      { label: t("late22"), n: s.bands.vhard, color: "#ef4444" },
+      { label: t("noDue"), n: s.bands.none, color: "#6366f1" }
+    ];
+    var custCount = {};
+    rows.forEach(function (o) {
+      var c = o.customer || "(blank)";
+      custCount[c] = (custCount[c] || 0) + 1;
+    });
+    var custParts = Object.keys(custCount).sort(function (a, b) { return custCount[b] - custCount[a]; }).map(function (k, i) {
+      var colors = ["#3b82f6", "#a855f7", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#f43f5e", "#6366f1", "#14b8a6", "#eab308", "#0ea5e9"];
+      return { label: k, n: custCount[k], color: colors[i % colors.length] };
+    });
+    var topics = Object.keys(s.ftyMap).sort(function (a, b) {
+      return s.ftyMap[b].lines - s.ftyMap[a].lines;
+    }).map(function (k, i) {
+      var colors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#0ea5e9", "#f43f5e", "#6366f1", "#14b8a6", "#eab308", "#64748b"];
+      var f = s.ftyMap[k];
+      return "<span class='topic'><i class='sw' style='background:" + colors[i % colors.length] + "'></i>" +
+        esc(f.code || k) + " · " + f.lines + "</span>";
+    }).join("");
+    var score = s.pos ? Math.round(100 * s.late / s.pos) : 0;
+    return kpiRow(s) +
+      "<div class='layout'>" + tableCard(rows, s) +
+      "<div class='rail'>" +
+        "<div class='card'><h2>" + ico("clock") + " " + t("delayMix") + "</h2><div class='pad'>" +
+          hbar(bandParts) +
+          "<p class='sub' style='margin:10px 0 0'>Customer due vs " + AS + ". Factory-due late POs: " + fmt(s.ftyLate) + ".</p>" +
+        "</div></div>" +
+        "<div class='card'><h2>" + ico("customers") + " " + t("custMix") + "</h2><div class='pad'>" +
+          hbar(custParts) +
+        "</div></div>" +
+        "<div class='card'><h2>" + ico("factories") + " " + t("ftyFilter") + "</h2><div class='pad'><div class='chips'>" +
+          topics + "</div></div></div>" +
+      "</div></div>" +
+      "<div class='grid2' style='margin-top:14px'>" +
+        hoMonthBlock(s.hoMonth, s.distinctHo) +
+        asiaMapHtml() +
+      "</div>";
+  }
+
+  function merch(rows, s) {
+    var blocks = Object.keys(s.ftyMap).sort().map(function (k) {
+      var f = s.ftyMap[k];
+      var nPo = Object.keys(f.pos).length;
+      var nLate = Object.keys(f.late).length;
+      var rate = nPo ? Math.round(100 * nLate / nPo) : 0;
+      var cats = Object.keys(f.cats).join(" · ") || "–";
+      var custs = Object.keys(f.customers).join(", ") || "–";
+      return "<div class='factory-row'><div><strong>" + esc(f.code || k) + " · " + esc(f.name || "") +
+        "</strong><div class='sub'>" + esc(f.country) + " · " + esc(cats) +
+        "<br>Customers: " + esc(custs) + "</div></div>" +
+        "<div style='text-align:right;min-width:160px'><div class='sub'>" + nLate + " / " + nPo +
+        " late PO · " + fmt(f.qty) + " pcs</div><div class='bar'><i style='width:" + rate +
+        "%;background:" + (rate > 20 ? "#f43f5e" : "#3b82f6") + "'></i></div>" +
+        "<div class='sub'>$ not reported</div></div></div>";
+    }).join("");
+    var custMap = {};
+    rows.forEach(function (o) {
+      var c = o.customer || "(blank)";
+      if (!custMap[c]) custMap[c] = { lines: 0, qty: 0, pos: {}, end: o.endCustomer || "" };
+      custMap[c].lines++; custMap[c].qty += o.qty || 0;
+      if (o.po) custMap[c].pos[poKey(o)] = true;
+    });
+    var custHtml = Object.keys(custMap).sort(function (a, b) {
+      return custMap[b].lines - custMap[a].lines;
+    }).map(function (c) {
+      var x = custMap[c];
+      return "<div class='factory-row'><div><strong>" + esc(c) + "</strong><div class='sub'>End: " +
+        esc(x.end || "–") + "</div></div><div class='sub'>" + Object.keys(x.pos).length + " PO · " +
+        x.lines + " lines · " + fmt(x.qty) + " pcs</div></div>";
+    }).join("");
+    return kpiRow(s) + "<div class='grid2'>" +
+      "<div class='card'><h2>" + ico("factories") + " " + t("factoryMaster") + "</h2><div class='pad'>" + blocks + "</div></div>" +
+      "<div class='card'><h2>" + ico("customers") + " " + t("customers") + "</h2><div class='pad'>" + custHtml + "</div></div></div>";
+  }
+
+  function quality(rows, s) {
+    var qaParts = [
+      { label: "Blank", n: s.qa.blank, color: "#64748b" },
+      { label: "Nothing", n: s.qa.nothing, color: "#f59e0b" },
+      { label: "Pass", n: s.qa.pass, color: "#22c55e" },
+      { label: "Other", n: s.qa.other, color: "#3b82f6" }
+    ];
+    var insParts = [
+      { label: "Blank", n: s.inspect.blank, color: "#64748b" },
+      { label: "Pending", n: s.inspect.pending, color: "#f59e0b" },
+      { label: "Passed", n: s.inspect.passed, color: "#22c55e" },
+      { label: "3rd party", n: s.inspect["3rd"], color: "#a855f7" },
+      { label: "Dated / other", n: s.inspect.dated, color: "#06b6d4" }
+    ];
+    var qRows = rows.filter(function (o) {
+      return inspectKind(o.inspect) !== "blank" || qaKind(o.qa) !== "blank";
+    });
+    var tableHtml = tableCard(qRows.length ? qRows : rows, s).replace(
+      ico("orders") + " " + t("orderBook"),
+      ico("quality") + " " + t("qualityLib")
+    );
+    return kpiRow(s) +
+      "<p class='sub' style='margin:-4px 0 12px'>" + t("qualityNote") + "</p>" +
+      "<div class='layout'>" + tableHtml +
+        "<div class='rail'>" +
+          "<div class='card'><h2>" + ico("check") + " " + t("qaTest") + "</h2><div class='pad'>" + donut(qaParts, String(s.qa.pass), t("passLines")) + "</div></div>" +
+          "<div class='card'><h2>" + ico("inspect") + " " + t("inspectPlan") + "</h2><div class='pad'>" + donut(insParts, String(s.inspect.pending), t("pending")) + "</div></div>" +
+        "</div></div>";
+  }
+
+  var COUNTRY_LL = {
+    VN: [16.0, 107.8], CN: [35.0, 104.0], IN: [22.0, 79.0], BD: [23.7, 90.4],
+    KH: [12.5, 105.0], TH: [15.5, 101.0], ID: [-2.2, 118.0], PK: [30.4, 69.3], LK: [7.6, 80.7]
+  };
+  var COUNTRY_EN = {
+    VN: "Vietnam", CN: "China", IN: "India", BD: "Bangladesh", KH: "Cambodia",
+    TH: "Thailand", ID: "Indonesia", PK: "Pakistan", LK: "Sri Lanka"
+  };
+  var asiaMap = null;
+  function asiaMapHtml() {
+    return "<div class='card'><h2>" + ico("factories") + " " + t("mapTitle") + "</h2>" +
+      "<div class='pad'><div id='asiaMap' class='asia-map'></div>" +
+      "<p class='sub' id='asiaMapLegend' style='margin-top:8px'></p></div></div>";
+  }
+  function paintAsiaMap(s) {
+    var el = document.getElementById("asiaMap");
+    if (!el) return;
+    if (asiaMap) { asiaMap.remove(); asiaMap = null; }
+    el.innerHTML = "";
+    if (!window.L) {
+      el.innerHTML = "<p class='empty'>Map zoom needs vendor/leaflet.js next to this page.</p>";
+      return;
+    }
+    var byC = {}, unknown = [];
+    Object.keys(s.ftyMap).forEach(function (k) {
+      var f = s.ftyMap[k];
+      if (!f.country || !COUNTRY_LL[f.country]) { unknown.push(f); return; }
+      if (!byC[f.country]) byC[f.country] = [];
+      byC[f.country].push(f);
+    });
+    asiaMap = L.map(el, {
+      zoomControl: true,
+      scrollWheelZoom: true,
+      attributionControl: false,
+      minZoom: 3,
+      maxZoom: 8
+    }).setView([20, 105], 4);
+    if (window.ASIA) {
+      L.geoJSON(window.ASIA, {
+        style: { color: "#c4bdae", weight: 0.8, fillColor: "#e8e4d8", fillOpacity: 1 }
+      }).addTo(asiaMap);
+    }
+    [
+      { n: "China", lat: 36, lon: 103 },
+      { n: "India", lat: 22, lon: 78 },
+      { n: "Vietnam", lat: 15.5, lon: 109.5 },
+      { n: "Thailand", lat: 16, lon: 101 },
+      { n: "Cambodia", lat: 12.2, lon: 105 },
+      { n: "Indonesia", lat: -2.5, lon: 113 },
+      { n: "Philippines", lat: 12.5, lon: 122 },
+      { n: "Malaysia", lat: 4, lon: 102 },
+      { n: "Japan", lat: 37, lon: 138 },
+      { n: "South Korea", lat: 36.5, lon: 128 },
+      { n: "Bangladesh", lat: 24.2, lon: 90.2 },
+      { n: "Myanmar", lat: 21, lon: 96 }
+    ].forEach(function (l) {
+      L.marker([l.lat, l.lon], {
+        icon: L.divIcon({ className: "map-label", html: l.n, iconSize: [80, 14], iconAnchor: [40, 7] }),
+        interactive: false
+      }).addTo(asiaMap);
+    });
+    Object.keys(byC).forEach(function (c) {
+      var list = byC[c];
+      var base = COUNTRY_LL[c];
+      list.forEach(function (f, i) {
+        var n = list.length;
+        var ang = (i / Math.max(n, 1)) * Math.PI * 2;
+        var rad = n > 1 ? 0.55 : 0;
+        var lat = base[0] + Math.sin(ang) * rad;
+        var lon = base[1] + Math.cos(ang) * rad;
+        var r = Math.max(7, Math.min(16, 6 + Math.sqrt(f.lines)));
+        L.circleMarker([lat, lon], {
+          radius: r, color: "#fff", weight: 2, fillColor: "#7C3AED", fillOpacity: 0.85
+        }).addTo(asiaMap).bindPopup(
+          "<b>" + esc(f.code || "") + " · " + esc(f.name || "") + "</b><br>" +
+          COUNTRY_EN[c] + "<br>" + f.lines + " lines · " + Object.keys(f.pos).length + " PO"
+        );
+      });
+    });
+    asiaMap.fitBounds([[-8, 70], [50, 145]], { padding: [12, 12] });
+    var bits = Object.keys(byC).map(function (c) { return COUNTRY_EN[c] + " · " + byC[c].length + " factory"; });
+    if (unknown.length) bits.push(unknown.length + " factory country not reported — not pinned");
+    var leg = document.getElementById("asiaMapLegend");
+    if (leg) leg.textContent = bits.join(" · ") + " · + / − to zoom";
+    setTimeout(function () { if (asiaMap) asiaMap.invalidateSize(); }, 80);
+  }
+
+  function factoriesView(rows, s) {
+    return kpiRow(s) + asiaMapHtml() + "<div class='card' style='margin-top:14px'><h2>" + ico("factories") + " " + t("factories") + "</h2><div class='pad'>" +
+      Object.keys(s.ftyMap).sort().map(function (k) {
+        var f = s.ftyMap[k];
+        var nPo = Object.keys(f.pos).length, nLate = Object.keys(f.late).length;
+        return "<div class='factory-row'><div><strong>" + esc(f.code || k) + " · " + esc(f.name || "") +
+          "</strong><div class='sub'>" + esc(f.country) + " · " + Object.keys(f.cats).join(" · ") +
+          "</div></div><div class='sub'>" + nLate + "/" + nPo + " late PO · " + f.lines + " lines · " +
+          fmt(f.qty) + " pcs · $ not reported</div></div>";
+      }).join("") + "</div></div>";
+  }
+
+  function customersView(rows, s) {
+    return merch(rows, s);
+  }
+
+  function setView(name) {
+    view = name;
+    page = 1;
+    if (name !== "quality") tableTab = "all";
+    document.querySelectorAll(".nav button").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-view") === name);
+    });
+    render();
+  }
+
+  function render() {
+    var rows = filtered();
+    var s = stats(rows);
+    var html = "";
+    if (view === "dash") html = dash(rows, s);
+    else if (view === "merch") html = merch(rows, s);
+    else if (view === "quality") html = quality(rows, s);
+    else if (view === "orders") html = kpiRow(s) + tableCard(rows, s);
+    else if (view === "factories") html = factoriesView(rows, s);
+    else html = customersView(rows, s);
+    document.getElementById("view").innerHTML = html;
+    if (document.getElementById("asiaMap")) paintAsiaMap(s);
+  }
+
+  var appEl = document.getElementById("app");
+  function closeNav() { appEl.classList.remove("nav-open"); }
+  document.getElementById("menuBtn").addEventListener("click", function () {
+    appEl.classList.toggle("nav-open");
+  });
+  document.getElementById("scrim").addEventListener("click", closeNav);
+  document.querySelectorAll(".nav button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      setView(b.getAttribute("data-view"));
+      closeNav();
+    });
+  });
+  document.querySelectorAll("[data-jump]").forEach(function (b) {
+    b.addEventListener("click", function () { setView(b.getAttribute("data-jump")); });
+  });
+  document.getElementById("btnLate").addEventListener("click", function () {
+    document.getElementById("fDue").value = "custLate";
+    tableTab = "late";
+    setView("orders");
+  });
+  document.getElementById("btnMap").addEventListener("click", function () {
+    setView("dash");
+    setTimeout(function () {
+      var m = document.getElementById("asiaMap");
+      if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+  });
+  ["fFty", "fCust", "fCat", "fDue", "fKind"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", function () { page = 1; render(); });
+  });
+  document.getElementById("q").addEventListener("input", function () { page = 1; render(); });
+  document.getElementById("view").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-tab]");
+    if (t) { tableTab = t.getAttribute("data-tab"); page = 1; render(); return; }
+    var p = e.target.closest("[data-page]");
+    if (p) { page = +p.getAttribute("data-page"); render(); }
+  });
+  document.getElementById("langBtn").addEventListener("click", function () {
+    setLang(lang === "zh" ? "en" : "zh");
+  });
+  document.getElementById("bellBtn").addEventListener("click", function (e) {
+    e.stopPropagation();
+    document.getElementById("bellPop").classList.toggle("on");
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("#bellPop") && !e.target.closest("#bellBtn")) {
+      document.getElementById("bellPop").classList.remove("on");
+    }
+  });
+  applyChrome();
+  document.getElementById("btnExport").addEventListener("click", function () {
+    var rows = filtered();
+    var cols = ["po", "factoryCode", "factoryName", "customer", "endCustomer", "category", "item", "qty", "amount", "orderDate", "customerDue", "factoryDue", "orderCategory", "qa", "inspect", "country"];
+    var lines = [cols.join(",")].concat(rows.map(function (o) {
+      return cols.map(function (k) {
+        var v = o[k];
+        if (v == null) v = "";
+        v = String(v).replace(/"/g, '""');
+        return /[",\n]/.test(v) ? '"' + v + '"' : v;
+      }).join(",");
+    }));
+    var blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "supplier-benchmark-9-24.csv";
+    a.click();
+  });
+
+  setView("dash");
+})();
+</script>
+</body>
+</html>
