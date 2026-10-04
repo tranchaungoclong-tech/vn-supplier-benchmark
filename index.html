@@ -249,10 +249,32 @@
   .legend li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; color: #334155; }
   .legend i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
   .hbar { display: grid; grid-template-columns: 92px 1fr 52px; gap: 6px 8px; align-items: center; margin: 5px 0; font-size: 12px; }
+  .hbar.click { cursor: pointer; border-radius: 8px; padding: 4px 4px; margin: 1px -4px; }
+  .hbar.click:hover { background: #f8fafc; }
   .hbar .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #334155; }
   .hbar .track { height: 10px; background: #eef2f7; border-radius: 99px; overflow: hidden; }
   .hbar .track i { display: block; height: 100%; border-radius: 99px; }
   .hbar .n { text-align: right; color: #64748b; font-variant-numeric: tabular-nums; }
+  .pop {
+    display: none; position: fixed; inset: 0; z-index: 70;
+    background: rgba(15,23,42,.45); place-items: center; padding: 18px;
+  }
+  .pop.on { display: grid; }
+  .pop-card {
+    width: min(720px, 96vw); max-height: 82vh; overflow: auto;
+    background: #fff; border-radius: 16px; box-shadow: var(--shadow); padding: 16px 18px 18px;
+  }
+  .pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .pop-head strong { font-size: 16px; }
+  .pop-x {
+    width: 32px; height: 32px; border: 0; background: #f1f5f9; border-radius: 8px; font-size: 18px; color: #334155;
+  }
+  .pop-row { display: grid; grid-template-columns: 72px 1fr 90px 88px 56px; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12.5px; }
+  .pop-row.head { color: #94a3b8; font-size: 11px; font-weight: 650; border-bottom: 1px solid var(--line); }
+  @media (max-width: 640px) {
+    .pop-row { grid-template-columns: 1fr 1fr; }
+    .pop-row.head { display: none; }
+  }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .topic {
     display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid var(--line);
@@ -437,6 +459,18 @@
 <div class="lightbox" id="lightbox" role="dialog" aria-label="HO photo">
   <img id="lightboxImg" alt="HO photo" />
 </div>
+<div class="pop" id="delayPop" role="dialog" aria-label="Delay list">
+  <div class="pop-card" id="delayPopCard">
+    <div class="pop-head">
+      <div>
+        <strong id="delayPopTitle">Delay</strong>
+        <p class="sub" id="delayPopSub" style="margin:4px 0 0"></p>
+      </div>
+      <button type="button" class="pop-x" id="delayPopX" aria-label="Close">×</button>
+    </div>
+    <div id="delayPopBody"></div>
+  </div>
+</div>
 
 <script src="vendor/leaflet.js"></script>
 <script src="asia.js"></script>
@@ -595,6 +629,42 @@
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
   };
+  var BAND_TITLE = {
+    easy: "On time",
+    med: "1–7d late",
+    hard: "8–21d late",
+    vhard: "22d+ late",
+    none: "No customer due"
+  };
+  function openDelayPop(key) {
+    var pop = document.getElementById("delayPop");
+    var title = document.getElementById("delayPopTitle");
+    var sub = document.getElementById("delayPopSub");
+    var body = document.getElementById("delayPopBody");
+    var list = filtered().filter(function (o) { return delayBand(o.customerDue).key === key; });
+    list.sort(function (a, b) {
+      var da = a.customerDue || "9999", db = b.customerDue || "9999";
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    var pos = {};
+    list.forEach(function (o) { if (o.po) pos[poKey(o)] = true; });
+    title.textContent = BAND_TITLE[key] || key;
+    sub.textContent = list.length + " lines · " + Object.keys(pos).length + " PO · customer due vs " + AS + " · tracking 9-24";
+    if (!list.length) {
+      body.innerHTML = "<p class='empty'>No lines in this band.</p>";
+    } else {
+      body.innerHTML = "<div class='pop-row head'><span>PO</span><span>Item / factory</span><span>Customer</span><span>Cust. due</span><span>Qty</span></div>" +
+        list.map(function (o) {
+          var band = delayBand(o.customerDue);
+          return "<div class='pop-row'><span class='po'>" + esc(o.po || "–") + "</span><span>" +
+            esc(o.item || o.productName || "") + "<div class='sub'>" + esc(shortFty(o)) +
+            (o.ho ? " · HO " + esc(o.ho) : "") + "</div></span><span>" + esc(o.customer || "–") +
+            "</span><span>" + esc(o.customerDue || "–") + "<div class='sub'>" + esc(band.label) +
+            "</div></span><span>" + fmt(o.qty) + "</span></div>";
+        }).join("");
+    }
+    pop.classList.add("on");
+  }
   function ico(name) {
     return '<span class="ico"><svg viewBox="0 0 24 24">' + (PATHS[name] || PATHS.dash) + '</svg></span>';
   }
@@ -808,7 +878,8 @@
     if (!parts.length) return "<p class='empty'>No rows in this filter.</p>";
     return parts.map(function (p) {
       var w = Math.max(4, Math.round(100 * p.n / max));
-      return "<div class='hbar' title='" + esc(p.label) + "'><span class='lab'>" + esc(p.label) +
+      var click = p.key ? " click' data-band='" + p.key + "'" : "'";
+      return "<div class='hbar" + click + " title='" + esc(p.label) + "'><span class='lab'>" + esc(p.label) +
         "</span><span class='track'><i style='width:" + w + "%;background:" + p.color + "'></i></span>" +
         "<span class='n'>" + fmt(p.n) + "</span></div>";
     }).join("");
@@ -978,11 +1049,11 @@
 
   function dash(rows, s) {
     var bandParts = [
-      { label: t("onTime"), n: s.bands.easy, color: "#22c55e" },
-      { label: t("late17"), n: s.bands.med, color: "#f59e0b" },
-      { label: t("late821"), n: s.bands.hard, color: "#f97316" },
-      { label: t("late22"), n: s.bands.vhard, color: "#ef4444" },
-      { label: t("noDue"), n: s.bands.none, color: "#6366f1" }
+      { key: "easy", label: t("onTime"), n: s.bands.easy, color: "#22c55e" },
+      { key: "med", label: t("late17"), n: s.bands.med, color: "#f59e0b" },
+      { key: "hard", label: t("late821"), n: s.bands.hard, color: "#f97316" },
+      { key: "vhard", label: t("late22"), n: s.bands.vhard, color: "#ef4444" },
+      { key: "none", label: t("noDue"), n: s.bands.none, color: "#6366f1" }
     ];
     var custCount = {};
     rows.forEach(function (o) {
@@ -1007,7 +1078,7 @@
       "<div class='rail'>" +
         "<div class='card'><h2>" + ico("clock") + " " + t("delayMix") + "</h2><div class='pad'>" +
           hbar(bandParts) +
-          "<p class='sub' style='margin:10px 0 0'>Customer due vs " + AS + ". Factory delivery time on the system is earlier on purpose — not used for late.</p>" +
+          "<p class='sub' style='margin:10px 0 0'>Lines vs customer due " + AS + " · tracking 9-24. Tap a bar for the PO list. Factory delivery time is not used.</p>" +
         "</div></div>" +
         "<div class='card'><h2>" + ico("customers") + " " + t("custMix") + "</h2><div class='pad'>" +
           hbar(custParts) +
@@ -1261,10 +1332,22 @@
       lightbox.classList.add("on");
       return;
     }
+    var bandEl = e.target.closest("[data-band]");
+    if (bandEl) { openDelayPop(bandEl.getAttribute("data-band")); return; }
     var t = e.target.closest("[data-tab]");
     if (t) { tableTab = t.getAttribute("data-tab"); page = 1; render(); return; }
     var p = e.target.closest("[data-page]");
     if (p) { page = +p.getAttribute("data-page"); render(); }
+  });
+  var delayPop = document.getElementById("delayPop");
+  function closeDelayPop() { delayPop.classList.remove("on"); }
+  document.getElementById("delayPopX").addEventListener("click", closeDelayPop);
+  delayPop.addEventListener("click", function (e) {
+    if (e.target === delayPop) closeDelayPop();
+  });
+  document.getElementById("delayPopCard").addEventListener("click", function (e) { e.stopPropagation(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeDelayPop();
   });
   document.getElementById("langBtn").addEventListener("click", function () {
     setLang(lang === "zh" ? "en" : "zh");
