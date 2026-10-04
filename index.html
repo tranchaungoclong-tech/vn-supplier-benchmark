@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="VN Benchmark" />
-<link rel="icon" type="image/png" href="alpha-a.png" />
-<link rel="apple-touch-icon" href="alpha-a.png" />
+<link rel="icon" type="image/png" href="rubik.png" />
+<link rel="apple-touch-icon" href="rubik.png" />
 <link rel="manifest" href="manifest.json" />
 <link rel="stylesheet" href="vendor/leaflet.css" />
 <style>
@@ -53,10 +53,10 @@
   }
   .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
   .mark {
-    width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex: 0 0 36px;
-    background: #C33D27;
+    width: 36px; height: 36px; border-radius: 10px; overflow: hidden; flex: 0 0 36px;
+    background: #fff;
   }
-  .mark img { width: 36px; height: 36px; display: block; }
+  .mark img { width: 36px; height: 36px; display: block; object-fit: contain; }
   .brand b { display: block; font-size: 13.5px; }
   .brand span { color: var(--muted); font-size: 11px; }
   .nav { display: flex; flex-direction: column; gap: 2px; }
@@ -389,7 +389,11 @@
     .act { min-width: 72px; padding: 6px 8px 7px; font-size: 11px; }
     .kpi { min-height: 0; padding: 10px 12px; }
     .kpi b { font-size: 20px; }
-    .filters select { max-width: none; flex: 1 1 46%; font-size: 16px; padding: 8px 10px; }
+    .filters { gap: 4px; margin: 0 0 10px; }
+    .filters select {
+      max-width: none; flex: 1 1 46%; font-size: 13px; padding: 4px 8px;
+      border-radius: 10px; min-height: 0;
+    }
     .chip-user { font-size: 0; gap: 6px; }
     .chip-user .dot { display: none; }
     table { font-size: 12px; }
@@ -401,6 +405,9 @@
     .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
     .pager { flex-wrap: wrap; gap: 8px; }
     .actions { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .filters select { flex: none; width: 100%; font-size: 12.5px; padding: 5px 8px; }
+    .filters select:last-child { grid-column: 1 / -1; }
   }
 </style>
 </head>
@@ -409,7 +416,7 @@
   <div class="scrim" id="scrim"></div>
   <aside class="side">
     <div class="brand">
-      <div class="mark"><img src="alpha-a.png" alt="Alpha" /></div>
+      <div class="mark"><img src="rubik.png" alt="VN Supplier Benchmark" /></div>
       <div>
         <b>VN Supplier Benchmark</b>
         <span>Alpha Fashion</span>
