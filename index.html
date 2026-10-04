@@ -382,7 +382,8 @@
   .empty { padding: 24px; color: var(--muted); }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .fty-dash { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
+  .fty-dash { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
+  .fty-dash .map-span { grid-column: span 2; }
   .fty-dash > .card { margin-top: 0 !important; min-width: 0; }
   .fty-dash .card h2 { font-size: 14px; }
   .fty-dash .card h2 span { font-size: 11px; }
@@ -431,6 +432,7 @@
   @media (max-width: 1180px) {
     .kpis, .layout, .grid2 { grid-template-columns: 1fr; }
     .fty-dash { grid-template-columns: 1fr 1fr; }
+    .fty-dash .map-span { grid-column: span 1; }
     .app { grid-template-columns: 1fr; }
     .side {
       display: flex; position: fixed; left: 0; top: 0; z-index: 40;
@@ -473,6 +475,7 @@
     .filters select, .period-btn { flex: none; width: 100%; font-size: 12.5px; padding: 5px 8px; max-width: none; }
     .period-sub { left: 0; top: 100%; }
     .fty-dash { grid-template-columns: 1fr; }
+    .fty-dash .map-span { grid-column: span 1; }
   }
 </style>
 </head>
@@ -1858,8 +1861,8 @@
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
         qualityPerfCard(rows) +
-      "</div>" +
-      "<div style='margin-top:14px'>" + asiaMapHtml() + "</div>";
+        asiaMapHtml().replace("class='card'", "class='card map-span'") +
+      "</div>";
   }
 
   function customersView(rows, s) {
