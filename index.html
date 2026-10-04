@@ -420,7 +420,6 @@
         <select id="fDue">
           <option value="all" data-i18n="allDates">All dates</option>
           <option value="custLate" data-i18n="custLate">Customer due passed</option>
-          <option value="ftyLate" data-i18n="ftyLate">Factory due passed</option>
           <option value="7d" data-i18n="due7">Due next 7 days</option>
           <option value="oct" data-i18n="dueOct">Customer due Oct 2026</option>
         </select>
@@ -479,7 +478,7 @@
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
       actOrders: "Order book", actExport: "Export CSV", actQuality: "Quality", actMerch: "Merchandiser",
       allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
-      allDates: "All dates", custLate: "Customer due passed", ftyLate: "Factory due passed",
+      allDates: "All dates", custLate: "Customer due passed",
       due7: "Due next 7 days", dueOct: "Customer due Oct 2026", newRepeat: "New + repeat",
       newOrder: "New order", repeatOrder: "Repeat order",
       bellTitle: "Merchandiser Alert",
@@ -517,7 +516,7 @@
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
       actOrders: "订单台账", actExport: "导出 CSV", actQuality: "质量", actMerch: "跟单",
       allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
-      allDates: "全部日期", custLate: "客户交期已过", ftyLate: "工厂交期已过",
+      allDates: "全部日期", custLate: "客户交期已过",
       due7: "未来 7 天到期", dueOct: "客户交期 2026-10", newRepeat: "新单 + 返单",
       newOrder: "新单", repeatOrder: "返单",
       bellTitle: "跟单提醒",
@@ -698,7 +697,6 @@
       if (blob.indexOf(q) < 0) return false;
     }
     if (due === "custLate") return !!(o.customerDue && o.customerDue < AS);
-    if (due === "ftyLate") return !!(o.factoryDue && o.factoryDue < AS);
     if (due === "7d") {
       var d = daysBetween(AS, o.customerDue);
       return d != null && d >= 0 && d <= 7;
@@ -709,7 +707,7 @@
   function filtered() { return ORDERS.filter(match); }
 
   function stats(rows) {
-    var pos = {}, latePo = {}, ftyLatePo = {}, fty = {}, cust = {}, qty = 0, newN = 0, repN = 0;
+    var pos = {}, latePo = {}, fty = {}, cust = {}, qty = 0, newN = 0, repN = 0;
     var bands = { easy: 0, med: 0, hard: 0, vhard: 0, none: 0 };
     var cats = {}, months = {}, hoMonth = {}, allHo = {}, inspect = { blank: 0, pending: 0, passed: 0, "3rd": 0, dated: 0 };
     var qa = { blank: 0, pass: 0, nothing: 0, other: 0 };
@@ -757,12 +755,11 @@
         pos[pk] = true;
         f.pos[o.po] = true;
         if (o.customerDue && o.customerDue < AS) { latePo[pk] = true; f.late[o.po] = true; }
-        if (o.factoryDue && o.factoryDue < AS) ftyLatePo[pk] = true;
       }
     });
     return {
       lines: rows.length, qty: qty, pos: Object.keys(pos).length,
-      late: Object.keys(latePo).length, ftyLate: Object.keys(ftyLatePo).length,
+      late: Object.keys(latePo).length,
       factories: Object.keys(fty).length, customers: Object.keys(cust).length,
       newN: newN, repN: repN, bands: bands, cats: cats, months: months, hoMonth: hoMonth,
       distinctHo: Object.keys(allHo).length,
@@ -1010,7 +1007,7 @@
       "<div class='rail'>" +
         "<div class='card'><h2>" + ico("clock") + " " + t("delayMix") + "</h2><div class='pad'>" +
           hbar(bandParts) +
-          "<p class='sub' style='margin:10px 0 0'>Customer due vs " + AS + ". Factory-due late POs: " + fmt(s.ftyLate) + ".</p>" +
+          "<p class='sub' style='margin:10px 0 0'>Customer due vs " + AS + ". Factory delivery time on the system is earlier on purpose — not used for late.</p>" +
         "</div></div>" +
         "<div class='card'><h2>" + ico("customers") + " " + t("custMix") + "</h2><div class='pad'>" +
           hbar(custParts) +
