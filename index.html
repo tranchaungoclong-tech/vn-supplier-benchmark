@@ -665,6 +665,51 @@
     }
     pop.classList.add("on");
   }
+  function openCustPop(cust) {
+    var pop = document.getElementById("delayPop");
+    var title = document.getElementById("delayPopTitle");
+    var sub = document.getElementById("delayPopSub");
+    var body = document.getElementById("delayPopBody");
+    var list = filtered().filter(function (o) { return (o.customer || "(blank)") === cust; });
+    var byHo = {};
+    list.forEach(function (o) {
+      var id = o.ho ? String(o.ho) : ("(no HO) " + (o.po || "") + " " + (o.item || o.productName || ""));
+      if (!byHo[id]) {
+        byHo[id] = {
+          ho: o.ho || "",
+          po: o.po || "",
+          item: o.item || o.productName || "",
+          fty: shortFty(o),
+          due: o.customerDue || "",
+          qty: 0,
+          lines: 0,
+          pic: (o.ho && HO_IMAGES[o.ho]) ? HO_IMAGES[o.ho] : ""
+        };
+      }
+      byHo[id].qty += o.qty || 0;
+      byHo[id].lines++;
+      if (!byHo[id].due && o.customerDue) byHo[id].due = o.customerDue;
+    });
+    var hos = Object.keys(byHo).sort();
+    title.textContent = cust;
+    sub.textContent = hos.length + " HO · " + list.length + " lines · tracking 9-24";
+    if (!hos.length) {
+      body.innerHTML = "<p class='empty'>No HO for this customer in the filter.</p>";
+    } else {
+      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>Item / factory</span><span>PO</span><span>Cust. due</span><span>Qty</span></div>" +
+        hos.map(function (id) {
+          var h = byHo[id];
+          var pic = h.pic
+            ? "<img class='thumb' src='" + esc(h.pic) + "' alt='' data-full='" + esc(h.pic) + "' loading='lazy' />"
+            : "<div class='thumb-empty'>—</div>";
+          return "<div class='pop-row'><span>" + pic + "<div class='po' style='margin-top:4px'>" +
+            esc(h.ho || "–") + "</div></span><span>" + esc(h.item) + "<div class='sub'>" + esc(h.fty) +
+            " · " + h.lines + " line</div></span><span>" + esc(h.po || "–") +
+            "</span><span>" + esc(h.due || "–") + "</span><span>" + fmt(h.qty) + "</span></div>";
+        }).join("");
+    }
+    pop.classList.add("on");
+  }
   function ico(name) {
     return '<span class="ico"><svg viewBox="0 0 24 24">' + (PATHS[name] || PATHS.dash) + '</svg></span>';
   }
@@ -878,8 +923,11 @@
     if (!parts.length) return "<p class='empty'>No rows in this filter.</p>";
     return parts.map(function (p) {
       var w = Math.max(4, Math.round(100 * p.n / max));
-      var click = p.key ? " click' data-band='" + p.key + "'" : "'";
-      return "<div class='hbar" + click + " title='" + esc(p.label) + "'><span class='lab'>" + esc(p.label) +
+      var extra = "";
+      if (p.band) extra = " click' data-band='" + p.band + "'";
+      else if (p.cust != null) extra = " click' data-cust='" + encodeURIComponent(p.cust) + "'";
+      else extra = "'";
+      return "<div class='hbar" + extra + " title='" + esc(p.label) + "'><span class='lab'>" + esc(p.label) +
         "</span><span class='track'><i style='width:" + w + "%;background:" + p.color + "'></i></span>" +
         "<span class='n'>" + fmt(p.n) + "</span></div>";
     }).join("");
@@ -1049,21 +1097,31 @@
 
   function dash(rows, s) {
     var bandParts = [
-      { key: "easy", label: t("onTime"), n: s.bands.easy, color: "#22c55e" },
-      { key: "med", label: t("late17"), n: s.bands.med, color: "#f59e0b" },
-      { key: "hard", label: t("late821"), n: s.bands.hard, color: "#f97316" },
-      { key: "vhard", label: t("late22"), n: s.bands.vhard, color: "#ef4444" },
-      { key: "none", label: t("noDue"), n: s.bands.none, color: "#6366f1" }
+      { band: "easy", label: t("onTime"), n: s.bands.easy, color: "#22c55e" },
+      { band: "med", label: t("late17"), n: s.bands.med, color: "#f59e0b" },
+      { band: "hard", label: t("late821"), n: s.bands.hard, color: "#f97316" },
+      { band: "vhard", label: t("late22"), n: s.bands.vhard, color: "#ef4444" },
+      { band: "none", label: t("noDue"), n: s.bands.none, color: "#6366f1" }
     ];
-    var custCount = {};
+    var custHo = {};
     rows.forEach(function (o) {
       var c = o.customer || "(blank)";
-      custCount[c] = (custCount[c] || 0) + 1;
+      if (!custHo[c]) custHo[c] = {};
+      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o) + "|" + (o.item || o.productName || ""));
+      custHo[c][id] = true;
     });
-    var custParts = Object.keys(custCount).sort(function (a, b) { return custCount[b] - custCount[a]; }).map(function (k, i) {
+    var custParts = Object.keys(custHo).sort(function (a, b) {
+      return Object.keys(custHo[b]).length - Object.keys(custHo[a]).length;
+    }).map(function (k, i) {
       var colors = ["#3b82f6", "#a855f7", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#f43f5e", "#6366f1", "#14b8a6", "#eab308", "#0ea5e9"];
-      return { label: k, n: custCount[k], color: colors[i % colors.length] };
+      return { cust: k, label: k, n: Object.keys(custHo[k]).length, color: colors[i % colors.length] };
     });
+    var delayNote = "Lines vs customer due " + AS + " · tracking 9-24. Tap a bar for the PO list. Factory delivery time is not used.";
+    var custNote = "Distinct HO per customer · tracking 9-24. Tap a bar for the HO list. Not lines, not PO.";
+    if (lang === "zh") {
+      delayNote = "行数对比客户交期 " + AS + " · tracking 9-24。点柱看 PO。工厂交期不计入逾期。";
+      custNote = "按客户去重 HO · tracking 9-24。点柱看 HO。不是行数，不是 PO。";
+    }
     var topics = Object.keys(s.ftyMap).sort(function (a, b) {
       return s.ftyMap[b].lines - s.ftyMap[a].lines;
     }).map(function (k, i) {
@@ -1078,10 +1136,11 @@
       "<div class='rail'>" +
         "<div class='card'><h2>" + ico("clock") + " " + t("delayMix") + "</h2><div class='pad'>" +
           hbar(bandParts) +
-          "<p class='sub' style='margin:10px 0 0'>Lines vs customer due " + AS + " · tracking 9-24. Tap a bar for the PO list. Factory delivery time is not used.</p>" +
+          "<p class='sub' style='margin:10px 0 0'>" + delayNote + "</p>" +
         "</div></div>" +
         "<div class='card'><h2>" + ico("customers") + " " + t("custMix") + "</h2><div class='pad'>" +
           hbar(custParts) +
+          "<p class='sub' style='margin:10px 0 0'>" + custNote + "</p>" +
         "</div></div>" +
         "<div class='card'><h2>" + ico("factories") + " " + t("ftyFilter") + "</h2><div class='pad'><div class='chips'>" +
           topics + "</div></div></div>" +
@@ -1334,6 +1393,12 @@
     }
     var bandEl = e.target.closest("[data-band]");
     if (bandEl) { openDelayPop(bandEl.getAttribute("data-band")); return; }
+    var custEl = e.target.closest("[data-cust]");
+    if (custEl) {
+      try { openCustPop(decodeURIComponent(custEl.getAttribute("data-cust"))); }
+      catch (err) { openCustPop(custEl.getAttribute("data-cust")); }
+      return;
+    }
     var t = e.target.closest("[data-tab]");
     if (t) { tableTab = t.getAttribute("data-tab"); page = 1; render(); return; }
     var p = e.target.closest("[data-page]");
@@ -1345,7 +1410,16 @@
   delayPop.addEventListener("click", function (e) {
     if (e.target === delayPop) closeDelayPop();
   });
-  document.getElementById("delayPopCard").addEventListener("click", function (e) { e.stopPropagation(); });
+  document.getElementById("delayPopCard").addEventListener("click", function (e) {
+    var img = e.target.closest && e.target.closest("img.thumb");
+    if (img && img.getAttribute("data-full")) {
+      lightboxImg.src = img.getAttribute("data-full");
+      lightbox.classList.add("on");
+      e.stopPropagation();
+      return;
+    }
+    e.stopPropagation();
+  });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") closeDelayPop();
   });
