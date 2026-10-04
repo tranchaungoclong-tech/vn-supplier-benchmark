@@ -446,7 +446,6 @@
     .actions { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
     .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     .filters select { flex: none; width: 100%; font-size: 12.5px; padding: 5px 8px; }
-    .filters select:last-child { grid-column: 1 / -1; }
     .fty-dash { grid-template-columns: 1fr; }
   }
 </style>
@@ -518,13 +517,14 @@
 
       <div class="filters">
         <select id="fFty"><option value="" data-i18n="allFactories">All factories</option></select>
+        <select id="fLoc"><option value="" data-i18n="allLocations">All locations</option></select>
         <select id="fCust"><option value="" data-i18n="allCustomers">All customers</option></select>
         <select id="fCat"><option value="" data-i18n="allCategories">All categories</option></select>
+        <select id="fPeriod"><option value="" data-i18n="allPeriods">All periods</option></select>
         <select id="fDue">
           <option value="all" data-i18n="allDates">All dates</option>
           <option value="custLate" data-i18n="custLate">Customer due passed</option>
           <option value="7d" data-i18n="due7">Due next 7 days</option>
-          <option value="oct" data-i18n="dueOct">Customer due Oct 2026</option>
         </select>
         <select id="fKind">
           <option value="" data-i18n="newRepeat">New + repeat</option>
@@ -595,8 +595,9 @@
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
       actOrders: "Order book", actExport: "Export CSV", actQuality: "Quality", actMerch: "Merchandiser",
       allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
+      allLocations: "All locations", allPeriods: "All periods",
       allDates: "All dates", custLate: "Customer due passed",
-      due7: "Due next 7 days", dueOct: "Customer due Oct 2026", newRepeat: "New + repeat",
+      due7: "Due next 7 days", newRepeat: "New + repeat",
       newOrder: "New order", repeatOrder: "Repeat order",
       bellTitle: "Merchandiser Alert",
       bellEmpty: "No alerts yet. This bell is for later merch chase — not the QA Board lock-screen.",
@@ -648,8 +649,9 @@
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
       actOrders: "订单台账", actExport: "导出 CSV", actQuality: "质量", actMerch: "跟单",
       allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
+      allLocations: "全部省份", allPeriods: "全部期间",
       allDates: "全部日期", custLate: "客户交期已过",
-      due7: "未来 7 天到期", dueOct: "客户交期 2026-10", newRepeat: "新单 + 返单",
+      due7: "未来 7 天到期", newRepeat: "新单 + 返单",
       newOrder: "新单", repeatOrder: "返单",
       bellTitle: "跟单提醒",
       bellEmpty: "暂无提醒。此铃铛留给之后的跟单催办 — 不是 QA Board 锁屏推送。",
@@ -930,9 +932,11 @@
   }
 
   var ftySel = document.getElementById("fFty");
+  var locSel = document.getElementById("fLoc");
   var custSel = document.getElementById("fCust");
   var catSel = document.getElementById("fCat");
-  var ftySeen = {}, custSeen = {}, catSeen = {};
+  var periodSel = document.getElementById("fPeriod");
+  var ftySeen = {}, custSeen = {}, catSeen = {}, locSeen = {};
   ORDERS.forEach(function (o) {
     var k = o.factoryCode || o.sheet;
     if (k && !ftySeen[k]) {
@@ -954,17 +958,73 @@
       a.value = o.category; a.textContent = o.category;
       catSel.appendChild(a);
     }
+    var loc = FTY_LOC[o.factoryCode] || FTY_LOC[o.sheet];
+    var prov = loc ? loc.province : "";
+    if (prov && !locSeen[prov]) {
+      locSeen[prov] = true;
+    }
   });
+  Object.keys(locSeen).sort().forEach(function (p) {
+    var lo = document.createElement("option");
+    lo.value = p; lo.textContent = p;
+    locSel.appendChild(lo);
+  });
+  (function fillPeriods() {
+    var years = {}, months = {};
+    ORDERS.forEach(function (o) {
+      if (!o.customerDue) return;
+      years[o.customerDue.slice(0, 4)] = true;
+      months[o.customerDue.slice(0, 7)] = true;
+    });
+    var yList = Object.keys(years).sort();
+    var mList = Object.keys(months).sort();
+    var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    function addOpt(val, lab) {
+      var o = document.createElement("option");
+      o.value = val; o.textContent = lab;
+      periodSel.appendChild(o);
+    }
+    yList.forEach(function (y) { addOpt("Y:" + y, "Year " + y); });
+    yList.forEach(function (y) {
+      addOpt("Q:" + y + "-1", y + " Q1 Jan–Mar");
+      addOpt("Q:" + y + "-2", y + " Q2 Apr–Jun");
+      addOpt("Q:" + y + "-3", y + " Q3 Jul–Sep");
+      addOpt("Q:" + y + "-4", y + " Q4 Oct–Dec");
+    });
+    mList.forEach(function (k) {
+      var y = k.slice(0, 4), mo = +k.slice(5, 7);
+      addOpt("M:" + k, y + " " + enM[mo - 1]);
+    });
+  })();
+
+  function matchPeriod(due, val) {
+    if (!val) return true;
+    if (!due) return false;
+    if (val.slice(0, 2) === "Y:") return due.slice(0, 4) === val.slice(2);
+    if (val.slice(0, 2) === "M:") return due.slice(0, 7) === val.slice(2);
+    if (val.slice(0, 2) === "Q:") {
+      var y = val.slice(2, 6), q = +val.slice(7);
+      var mo = +due.slice(5, 7);
+      return due.slice(0, 4) === y && Math.ceil(mo / 3) === q;
+    }
+    return true;
+  }
 
   function match(o) {
     var fty = ftySel.value, cust = custSel.value, cat = catSel.value;
+    var loc = locSel.value, period = periodSel.value;
     var due = document.getElementById("fDue").value;
     var kind = document.getElementById("fKind").value;
     var q = document.getElementById("q").value.trim().toLowerCase();
     if (fty && (o.factoryCode || o.sheet) !== fty) return false;
+    if (loc) {
+      var pin = FTY_LOC[o.factoryCode] || FTY_LOC[o.sheet];
+      if (!pin || pin.province !== loc) return false;
+    }
     if (cust && o.customer !== cust) return false;
     if (cat && o.category !== cat) return false;
     if (kind && o.orderCategory !== kind) return false;
+    if (!matchPeriod(o.customerDue, period)) return false;
     if (q) {
       var blob = [o.po, o.item, o.productName, o.customer, o.endCustomer, o.ho, o.productCode, o.factoryName, o.factoryCode].join(" ").toLowerCase();
       if (blob.indexOf(q) < 0) return false;
@@ -974,7 +1034,6 @@
       var d = daysBetween(AS, o.customerDue);
       return d != null && d >= 0 && d <= 7;
     }
-    if (due === "oct") return !!(o.customerDue && o.customerDue.slice(0, 7) === "2026-10");
     return true;
   }
   function filtered() { return ORDERS.filter(match); }
@@ -1727,7 +1786,7 @@
       if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
   });
-  ["fFty", "fCust", "fCat", "fDue", "fKind"].forEach(function (id) {
+  ["fFty", "fLoc", "fCust", "fCat", "fPeriod", "fDue", "fKind"].forEach(function (id) {
     document.getElementById(id).addEventListener("change", function () { page = 1; render(); });
   });
   document.getElementById("q").addEventListener("input", function () { page = 1; render(); });
