@@ -234,6 +234,7 @@
   .pager .pages { display: flex; gap: 4px; }
   .pager button { min-width: 28px; height: 28px; border: 1px solid var(--line); background: #fff; border-radius: 8px; }
   .pager button.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .pager button:disabled { opacity: .4; cursor: default; }
 
   .rail { display: flex; flex-direction: column; gap: 14px; }
   .donut-wrap { display: flex; align-items: center; gap: 14px; }
@@ -543,6 +544,7 @@
   var view = "dash";
   var page = 1;
   var pageSize = 10;
+  var keepBook = false;
   var tableTab = "all";
   var lang = "en";
   try { lang = localStorage.getItem("sb-lang") === "zh" ? "zh" : "en"; } catch (e) {}
@@ -1156,13 +1158,31 @@
         "</tr>";
     }).join("") || "<tr><td colspan='9' class='empty'>No rows in this filter.</td></tr>";
 
-    var btns = "";
-    for (var i = 1; i <= Math.min(pages, 8); i++) {
-      btns += "<button data-page='" + i + "' class='" + (i === page ? "on" : "") + "'>" + i + "</button>";
+    function pageBtn(n, label, extra) {
+      var cls = extra || "";
+      if (n === page) cls += (cls ? " " : "") + "on";
+      var out = n < 1 || n > pages;
+      if (out) {
+        return "<button type='button' disabled" + (cls ? " class='" + cls + "'" : "") + ">" + label + "</button>";
+      }
+      return "<button type='button' data-page='" + n + "'" + (cls ? " class='" + cls + "'" : "") + ">" + label + "</button>";
     }
-    if (pages > 8) btns += "<span style='padding:6px'>… " + pages + "</span>";
+    var shown = {};
+    var nums = [1, pages];
+    for (var d = -2; d <= 2; d++) nums.push(page + d);
+    nums = nums.filter(function (n) { return n >= 1 && n <= pages; }).sort(function (a, b) { return a - b; });
+    var btns = pageBtn(page - 1, "‹");
+    var lastN = 0;
+    nums.forEach(function (n) {
+      if (shown[n]) return;
+      shown[n] = 1;
+      if (lastN && n > lastN + 1) btns += "<span style='padding:6px'>…</span>";
+      btns += pageBtn(n, String(n));
+      lastN = n;
+    });
+    btns += pageBtn(page + 1, "›");
 
-    return "<div class='card'>" +
+    return "<div class='card' id='orderBook'>" +
       "<h2>" + ico("orders") + " " + t("orderBook") + " <span>" + fmt(list.length) + t("lines") + "</span></h2>" +
       "<div class='tabs'>" +
         "<button data-tab='all' class='" + (tableTab === "all" ? "on" : "") + "'>" + t("tabAll") + "</button>" +
@@ -1446,6 +1466,11 @@
     else html = customersView(rows, s);
     document.getElementById("view").innerHTML = html;
     if (document.getElementById("asiaMap")) paintAsiaMap(s);
+    if (keepBook) {
+      var book = document.getElementById("orderBook");
+      if (book && book.scrollIntoView) book.scrollIntoView({ block: "start" });
+      keepBook = false;
+    }
   }
 
   var appEl = document.getElementById("app");
@@ -1522,9 +1547,13 @@
       return;
     }
     var t = e.target.closest("[data-tab]");
-    if (t) { tableTab = t.getAttribute("data-tab"); page = 1; render(); return; }
+    if (t) { tableTab = t.getAttribute("data-tab"); page = 1; keepBook = true; render(); return; }
     var p = e.target.closest("[data-page]");
-    if (p) { page = +p.getAttribute("data-page"); render(); }
+    if (p) {
+      e.preventDefault();
+      var n = +p.getAttribute("data-page");
+      if (n && n !== page) { page = n; keepBook = true; render(); }
+    }
   });
   var delayPop = document.getElementById("delayPop");
   function closeDelayPop() { delayPop.classList.remove("on"); }
