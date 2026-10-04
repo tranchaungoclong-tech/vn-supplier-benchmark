@@ -261,16 +261,30 @@
   }
   .pop.on { display: grid; }
   .pop-card {
-    width: min(720px, 96vw); max-height: 82vh; overflow: auto;
-    background: #fff; border-radius: 16px; box-shadow: var(--shadow); padding: 16px 18px 18px;
+    width: min(720px, 96vw); max-height: 82vh;
+    background: #fff; border-radius: 16px; box-shadow: var(--shadow); padding: 16px 18px 12px;
+    display: flex; flex-direction: column;
   }
-  .pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
-  .pop-head strong { font-size: 16px; }
+  .pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex: 0 0 auto; }
+  .pop-head strong { font-size: 16px; font-weight: 800; }
   .pop-x {
     width: 32px; height: 32px; border: 0; background: #f1f5f9; border-radius: 8px; font-size: 18px; color: #334155;
   }
+  .pop-body { overflow: auto; flex: 1 1 auto; min-height: 0; }
   .pop-row { display: grid; grid-template-columns: 72px 1fr 90px 88px 56px; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12.5px; }
-  .pop-row.head { color: #94a3b8; font-size: 11px; font-weight: 650; border-bottom: 1px solid var(--line); }
+  .pop-row.head {
+    position: sticky; top: 0; z-index: 2; background: #fff;
+    color: var(--ink); font-size: 12px; font-weight: 800; border-bottom: 1px solid var(--line);
+    padding-top: 4px;
+  }
+  .stick-tools {
+    position: sticky; top: var(--top); z-index: 4;
+    background: var(--bg); padding: 0 0 8px; margin: 0 0 6px;
+  }
+  .tbl-wrap { overflow: auto; max-height: 520px; }
+  table thead th {
+    position: sticky; top: 0; z-index: 1; background: #fff; color: #0f172a; font-weight: 800;
+  }
   @media (max-width: 640px) {
     .pop-row { grid-template-columns: 1fr 1fr; }
     .pop-row.head { display: none; }
@@ -422,6 +436,7 @@
     </div>
 
     <div class="page">
+      <div class="stick-tools">
       <div class="head">
         <div class="actions">
           <button class="act" type="button" data-jump="orders"><span class="act-ico violet"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span> <span data-i18n="actOrders">Order book</span></button>
@@ -451,6 +466,7 @@
           <option value="Repeat order" data-i18n="repeatOrder">Repeat order</option>
         </select>
       </div>
+      </div>
 
       <div id="view"></div>
     </div>
@@ -468,7 +484,7 @@
       </div>
       <button type="button" class="pop-x" id="delayPopX" aria-label="Close">×</button>
     </div>
-    <div id="delayPopBody"></div>
+    <div class="pop-body" id="delayPopBody"></div>
   </div>
 </div>
 
@@ -1085,10 +1101,10 @@
         "<button data-tab='repeat' class='" + (tableTab === "repeat" ? "on" : "") + "'>" + t("tabRepeat") + "</button>" +
         "<button data-tab='inspect' class='" + (tableTab === "inspect" ? "on" : "") + "'>" + t("tabInspect") + "</button>" +
       "</div>" +
-      "<div style='overflow:auto'>" +
+      "<div class='tbl-wrap'>" +
       "<table><thead><tr>" +
-        "<th>HO</th><th>PO / item</th><th>Factory</th><th>Customer</th><th>Qty</th>" +
-        "<th>Delay</th><th>$</th><th>Trend</th><th>Status</th>" +
+      "<th>HO</th><th>PO / item</th><th>Factory</th><th>Customer</th><th>Qty</th>" +
+      "<th>Delay</th><th>$</th><th>Trend</th><th>Status</th>" +
       "</tr></thead><tbody>" + body + "</tbody></table></div>" +
       "<div class='pager'><span>Showing " + (list.length ? (start + 1) : 0) + "–" +
         Math.min(start + pageSize, list.length) + " of " + fmt(list.length) + "</span>" +
