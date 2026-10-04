@@ -277,6 +277,18 @@
     color: var(--ink); font-size: 12px; font-weight: 800; border-bottom: 1px solid var(--line);
     padding-top: 4px;
   }
+  .ho-block { border-bottom: 1px solid var(--line); padding: 10px 0 8px; }
+  .ho-block-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 6px; }
+  .ho-block-head .meta { min-width: 0; }
+  .ship-row { display: grid; grid-template-columns: 110px 1fr 88px 56px; gap: 8px; padding: 5px 0 5px 54px; font-size: 12.5px; }
+  .ship-row.head {
+    position: sticky; top: 0; z-index: 1; background: #fff;
+    color: var(--ink); font-weight: 800; font-size: 11.5px; border-bottom: 1px solid var(--line);
+    padding-left: 54px;
+  }
+  @media (max-width: 640px) {
+    .ship-row, .ship-row.head { grid-template-columns: 1fr 1fr; padding-left: 0; }
+  }
   .stick-tools {
     position: sticky; top: var(--top); z-index: 4;
     background: var(--bg); padding: 0 0 8px; margin: 0 0 6px;
@@ -669,14 +681,17 @@
     if (!list.length) {
       body.innerHTML = "<p class='empty'>No lines in this band.</p>";
     } else {
-      body.innerHTML = "<div class='pop-row head'><span>PO</span><span>Item / factory</span><span>Customer</span><span>Cust. due</span><span>Qty</span></div>" +
+      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>PO / item</span><span>Customer</span><span>Cust. due</span><span>Qty</span></div>" +
         list.map(function (o) {
           var band = delayBand(o.customerDue);
-          return "<div class='pop-row'><span class='po'>" + esc(o.po || "–") + "</span><span>" +
-            esc(o.item || o.productName || "") + "<div class='sub'>" + esc(shortFty(o)) +
-            (o.ho ? " · HO " + esc(o.ho) : "") + "</div></span><span>" + esc(o.customer || "–") +
-            "</span><span>" + esc(o.customerDue || "–") + "<div class='sub'>" + esc(band.label) +
-            "</div></span><span>" + fmt(o.qty) + "</span></div>";
+          var pic = (o.ho && HO_IMAGES[o.ho])
+            ? "<img class='thumb' src='" + esc(HO_IMAGES[o.ho]) + "' alt='' data-full='" + esc(HO_IMAGES[o.ho]) + "' loading='lazy' />"
+            : "<div class='thumb-empty'>—</div>";
+          return "<div class='pop-row'><span>" + pic + "<div class='po' style='margin-top:4px'>" +
+            esc(o.ho || "–") + "</div></span><span><span class='po'>" + esc(o.po || "–") + "</span><div class='sub'>" +
+            esc(o.item || o.productName || "") + " · " + esc(shortFty(o)) + "</div></span><span>" +
+            esc(o.customer || "–") + "</span><span>" + esc(o.customerDue || "–") +
+            "<div class='sub'>" + esc(band.label) + "</div></span><span>" + fmt(o.qty) + "</span></div>";
         }).join("");
     }
     pop.classList.add("on");
@@ -689,40 +704,64 @@
     var list = filtered().filter(function (o) { return (o.customer || "(blank)") === cust; });
     var byHo = {};
     list.forEach(function (o) {
-      var id = o.ho ? String(o.ho) : ("(no HO) " + (o.po || "") + " " + (o.item || o.productName || ""));
+      var id = o.ho ? String(o.ho) : "(no HO)";
       if (!byHo[id]) {
         byHo[id] = {
           ho: o.ho || "",
-          po: o.po || "",
           item: o.item || o.productName || "",
           fty: shortFty(o),
-          due: o.customerDue || "",
+          pic: (o.ho && HO_IMAGES[o.ho]) ? HO_IMAGES[o.ho] : "",
           qty: 0,
           lines: 0,
-          pic: (o.ho && HO_IMAGES[o.ho]) ? HO_IMAGES[o.ho] : ""
+          ships: []
         };
       }
-      byHo[id].qty += o.qty || 0;
-      byHo[id].lines++;
-      if (!byHo[id].due && o.customerDue) byHo[id].due = o.customerDue;
+      var h = byHo[id];
+      h.qty += o.qty || 0;
+      h.lines++;
+      if (!h.item && (o.item || o.productName)) h.item = o.item || o.productName;
+      h.ships.push({
+        po: o.po || "",
+        due: o.customerDue || "",
+        qty: o.qty,
+        item: o.item || o.productName || "",
+        code: o.productCode || ""
+      });
+    });
+    Object.keys(byHo).forEach(function (id) {
+      byHo[id].ships.sort(function (a, b) {
+        var da = a.due || "9999", db = b.due || "9999";
+        return da < db ? -1 : da > db ? 1 : String(a.po).localeCompare(String(b.po));
+      });
     });
     var hos = Object.keys(byHo).sort();
+    var nPo = 0;
+    hos.forEach(function (id) { nPo += byHo[id].ships.length; });
     title.textContent = cust;
-    sub.textContent = hos.length + " HO · " + list.length + " lines · tracking 9-24";
+    sub.textContent = hos.length + " HO · " + nPo + " PO / ship · " + list.length + " lines · tracking 9-24. One HO can have several PO and due dates.";
     if (!hos.length) {
       body.innerHTML = "<p class='empty'>No HO for this customer in the filter.</p>";
     } else {
-      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>Item / factory</span><span>PO</span><span>Cust. due</span><span>Qty</span></div>" +
-        hos.map(function (id) {
-          var h = byHo[id];
-          var pic = h.pic
-            ? "<img class='thumb' src='" + esc(h.pic) + "' alt='' data-full='" + esc(h.pic) + "' loading='lazy' />"
-            : "<div class='thumb-empty'>—</div>";
-          return "<div class='pop-row'><span>" + pic + "<div class='po' style='margin-top:4px'>" +
-            esc(h.ho || "–") + "</div></span><span>" + esc(h.item) + "<div class='sub'>" + esc(h.fty) +
-            " · " + h.lines + " line</div></span><span>" + esc(h.po || "–") +
-            "</span><span>" + esc(h.due || "–") + "</span><span>" + fmt(h.qty) + "</span></div>";
-        }).join("");
+      body.innerHTML = hos.map(function (id) {
+        var h = byHo[id];
+        var pic = h.pic
+          ? "<img class='thumb' src='" + esc(h.pic) + "' alt='' data-full='" + esc(h.pic) + "' loading='lazy' />"
+          : "<div class='thumb-empty'>—</div>";
+        var dues = [];
+        h.ships.forEach(function (s) { if (s.due && dues.indexOf(s.due) < 0) dues.push(s.due); });
+        var ships = "<div class='ship-row head'><span>PO</span><span>Item</span><span>Cust. due</span><span>Qty</span></div>" +
+          h.ships.map(function (s) {
+            var band = delayBand(s.due);
+            return "<div class='ship-row'><span class='po'>" + esc(s.po || "–") + "</span><span>" +
+              esc(s.item || h.item) + (s.code ? "<div class='sub'>" + esc(s.code) + "</div>" : "") +
+              "</span><span>" + esc(s.due || "–") + "<div class='sub'>" + esc(band.label) +
+              "</div></span><span>" + fmt(s.qty) + "</span></div>";
+          }).join("");
+        return "<div class='ho-block'><div class='ho-block-head'>" + pic +
+          "<div class='meta'><div class='po'>HO " + esc(h.ho || "–") + "</div><div class='sub'>" +
+          esc(h.item) + " · " + esc(h.fty) + "<br>" + h.ships.length + " PO · " +
+          dues.length + " ship date · " + fmt(h.qty) + " pcs</div></div></div>" + ships + "</div>";
+      }).join("");
     }
     pop.classList.add("on");
   }
