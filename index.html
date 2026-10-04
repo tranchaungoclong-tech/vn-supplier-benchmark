@@ -218,6 +218,8 @@
   .kpi .delta { font-size: 12px; color: var(--muted); }
   .kpi .delta.up { color: var(--green); }
   .kpi .delta.down { color: var(--rose); }
+  .kpi.click { cursor: pointer; }
+  .kpi.click:hover { box-shadow: 0 4px 16px rgba(15,23,42,.08); }
 
   .layout { display: grid; grid-template-columns: 1.7fr .9fr; gap: 14px; }
   .card {
@@ -1543,15 +1545,56 @@
       if (s.ftyMap[k].country === "VN") vn++; else unknown++;
     });
     return "<div class='kpis'>" +
-      "<div class='kpi'><div class='kpi-top'><div class='lab'>" + t("kpiPo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.pos) + "</b>" +
+      "<div class='kpi click' data-kpi='po'><div class='kpi-top'><div class='lab'>" + t("kpiPo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.pos) + "</b>" +
         "<div class='delta'>" + fmt(s.lines) + t("linesIn") + "</div></div>" +
-      "<div class='kpi green'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
+      "<div class='kpi green click' data-kpi='spend'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
         "<div class='delta'>" + t("spendNote") + "</div></div>" +
-      "<div class='kpi rose'><div class='kpi-top'><div class='lab'>" + t("kpiLate") + "</div>" + tile("clock", "rose") + "</div><b>" + fmt(s.late) + "</b>" +
+      "<div class='kpi rose click' data-kpi='late'><div class='kpi-top'><div class='lab'>" + t("kpiLate") + "</div>" + tile("clock", "rose") + "</div><b>" + fmt(s.late) + "</b>" +
         "<div class='delta down'>" + latePct + t("lateOf") + AS + "</div></div>" +
-      "<div class='kpi violet'><div class='kpi-top'><div class='lab'>" + t("kpiFty") + "</div>" + tile("factories", "violet") + "</div><b>" + fmt(s.factories) + "</b>" +
+      "<div class='kpi violet click' data-kpi='fty'><div class='kpi-top'><div class='lab'>" + t("kpiFty") + "</div>" + tile("factories", "violet") + "</div><b>" + fmt(s.factories) + "</b>" +
         "<div class='delta'>" + t("vnNote")(vn, unknown) + "</div></div>" +
       "</div>";
+  }
+
+  function openKpiPop(kind) {
+    var rows = filtered();
+    if (kind === "spend") {
+      var pop = document.getElementById("delayPop");
+      document.getElementById("delayPopTitle").textContent = t("kpiSpend");
+      document.getElementById("delayPopSub").textContent = "Total / Total qty empty in ORDER TRACKING LIST 9-24. $ not reported — not 0.";
+      document.getElementById("delayPopBody").innerHTML = "<p class='empty'>No amount in this tracking file. Send a file with $ if this card should list spend.</p>";
+      pop.classList.add("on");
+      return;
+    }
+    if (kind === "late") {
+      renderHoPop("Late customer POs", rows.filter(function (o) {
+        return o.customerDue && o.customerDue < AS;
+      }), "Customer due before " + AS + " · tracking 9-24.");
+      return;
+    }
+    if (kind === "fty") {
+      var sm = stats(rows);
+      var blocks = Object.keys(sm.ftyMap).sort().map(function (k) {
+        var f = sm.ftyMap[k];
+        var nHo = {};
+        rows.forEach(function (o) {
+          if ((o.factoryCode || o.sheet) !== k) return;
+          nHo[o.ho ? String(o.ho) : ("NOHO|" + poKey(o))] = true;
+        });
+        return "<div class='factory-row' data-kpi-fty='" + encodeURIComponent(k) + "' style='cursor:pointer'><div><strong>" +
+          esc(ftyNick(k, f.name)) + "</strong><div class='sub'>" + esc(f.province ? f.province + ", Vietnam" : (f.country || "")) +
+          "</div></div><div class='sub'>" + Object.keys(nHo).length + " HO · " + Object.keys(f.pos).length + " PO · " +
+          f.lines + " lines</div></div>";
+      }).join("");
+      var pop = document.getElementById("delayPop");
+      document.getElementById("delayPopTitle").textContent = t("kpiFty");
+      document.getElementById("delayPopSub").textContent = Object.keys(sm.ftyMap).length + " factories · tracking 9-24. Tap a row for HO.";
+      document.getElementById("delayPopBody").innerHTML = blocks || "<p class='empty'>No factories in this filter.</p>";
+      pop.classList.add("on");
+      return;
+    }
+    renderHoPop("Distinct POs", rows, "Current filter · tracking 9-24. One HO can have several PO.");
+  }
   }
 
   function tableCard(rows, s) {
@@ -1940,6 +1983,8 @@
       lightbox.classList.add("on");
       return;
     }
+    var kpiEl = e.target.closest("[data-kpi]");
+    if (kpiEl) { openKpiPop(kpiEl.getAttribute("data-kpi")); return; }
     var bandEl = e.target.closest("[data-band]");
     if (bandEl) { openDelayPop(bandEl.getAttribute("data-band")); return; }
     var custEl = e.target.closest("[data-cust]");
@@ -2026,6 +2071,15 @@
     if (img && img.getAttribute("data-full")) {
       lightboxImg.src = img.getAttribute("data-full");
       lightbox.classList.add("on");
+      e.stopPropagation();
+      return;
+    }
+    var kf = e.target.closest("[data-kpi-fty]");
+    if (kf) {
+      var code;
+      try { code = decodeURIComponent(kf.getAttribute("data-kpi-fty")); }
+      catch (err) { code = kf.getAttribute("data-kpi-fty"); }
+      openFtyPop(code);
       e.stopPropagation();
       return;
     }
