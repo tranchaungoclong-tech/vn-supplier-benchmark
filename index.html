@@ -178,10 +178,31 @@
   .btn.primary:hover { background: var(--blue-deep); }
 
   .filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
-  .filters select {
+  .filters select, .period-btn {
     border: 1px solid var(--line); background: #fff; border-radius: 999px;
     padding: 5px 10px; color: #334155; font-size: 12px; max-width: 168px;
   }
+  .period-wrap { position: relative; }
+  .period-btn { min-width: 120px; text-align: left; }
+  .period-menu {
+    display: none; position: absolute; left: 0; top: calc(100% + 4px); z-index: 12;
+    background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); min-width: 128px; padding: 6px 0;
+  }
+  .period-wrap.open .period-menu, .period-wrap:hover .period-menu { display: block; }
+  .period-menu button, .period-sub button {
+    display: block; width: 100%; text-align: left; border: 0; background: transparent;
+    padding: 6px 12px; font-size: 12.5px; color: #0f172a;
+  }
+  .period-menu button:hover, .period-sub button:hover { background: #eff6ff; }
+  .period-year { position: relative; }
+  .period-sub {
+    display: none; position: absolute; left: 100%; top: 0; z-index: 13;
+    background: #fff; border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); min-width: 112px; padding: 6px 0; max-height: 320px; overflow: auto;
+  }
+  .period-year:hover .period-sub { display: block; }
+  .period-sub .q { font-weight: 800; color: var(--blue-deep); border-top: 1px solid #f1f5f9; }
 
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
   .kpi {
@@ -445,7 +466,8 @@
     .pager { flex-wrap: wrap; gap: 8px; }
     .actions { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
     .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .filters select { flex: none; width: 100%; font-size: 12.5px; padding: 5px 8px; }
+    .filters select, .period-btn { flex: none; width: 100%; font-size: 12.5px; padding: 5px 8px; max-width: none; }
+    .period-sub { left: 0; top: 100%; }
     .fty-dash { grid-template-columns: 1fr; }
   }
 </style>
@@ -520,7 +542,10 @@
         <select id="fLoc"><option value="" data-i18n="allLocations">All locations</option></select>
         <select id="fCust"><option value="" data-i18n="allCustomers">All customers</option></select>
         <select id="fCat"><option value="" data-i18n="allCategories">All categories</option></select>
-        <select id="fPeriod"><option value="" data-i18n="allPeriods">All periods</option></select>
+        <div class="period-wrap" id="periodWrap">
+          <button type="button" class="period-btn" id="periodBtn">All periods</button>
+          <div class="period-menu" id="periodMenu"></div>
+        </div>
         <select id="fDue">
           <option value="all" data-i18n="allDates">All dates</option>
           <option value="custLate" data-i18n="custLate">Customer due passed</option>
@@ -711,6 +736,8 @@
       if (typeof v === "string") el.textContent = v;
     });
     try { localStorage.setItem("sb-lang", lang); } catch (e) {}
+    if (!periodVal) periodBtn.textContent = t("allPeriods");
+    fillPeriods();
   }
   function setLang(next) {
     lang = next === "zh" ? "zh" : "en";
@@ -935,7 +962,10 @@
   var locSel = document.getElementById("fLoc");
   var custSel = document.getElementById("fCust");
   var catSel = document.getElementById("fCat");
-  var periodSel = document.getElementById("fPeriod");
+  var periodBtn = document.getElementById("periodBtn");
+  var periodMenu = document.getElementById("periodMenu");
+  var periodWrap = document.getElementById("periodWrap");
+  var periodVal = "";
   var ftySeen = {}, custSeen = {}, catSeen = {}, locSeen = {};
   ORDERS.forEach(function (o) {
     var k = o.factoryCode || o.sheet;
@@ -969,33 +999,58 @@
     lo.value = p; lo.textContent = p;
     locSel.appendChild(lo);
   });
-  (function fillPeriods() {
-    var years = {}, months = {};
+  function fillPeriods() {
+    var years = {};
     ORDERS.forEach(function (o) {
       if (!o.customerDue) return;
       years[o.customerDue.slice(0, 4)] = true;
-      months[o.customerDue.slice(0, 7)] = true;
     });
     var yList = Object.keys(years).sort();
-    var mList = Object.keys(months).sort();
-    var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    function addOpt(val, lab) {
-      var o = document.createElement("option");
-      o.value = val; o.textContent = lab;
-      periodSel.appendChild(o);
+    var enM = lang === "zh"
+      ? ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]
+      : ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var qAfter = { 3: "Q1", 6: "Q2", 9: "Q3", 12: "Q4" };
+    function item(val, lab, extra) {
+      return "<button type='button' data-period='" + val + "'" + (extra || "") + ">" + lab + "</button>";
     }
-    yList.forEach(function (y) { addOpt("Y:" + y, "Year " + y); });
+    var html = item("", t("allPeriods"));
     yList.forEach(function (y) {
-      addOpt("Q:" + y + "-1", y + " Q1 Jan–Mar");
-      addOpt("Q:" + y + "-2", y + " Q2 Apr–Jun");
-      addOpt("Q:" + y + "-3", y + " Q3 Jul–Sep");
-      addOpt("Q:" + y + "-4", y + " Q4 Oct–Dec");
+      var sub = "";
+      for (var mo = 1; mo <= 12; mo++) {
+        var mk = y + "-" + String(mo).padStart(2, "0");
+        sub += item("M:" + mk, enM[mo - 1]);
+        if (qAfter[mo]) sub += item("Q:" + y + "-" + (mo / 3), qAfter[mo], " class='q'");
+      }
+      html += "<div class='period-year'>" + item("Y:" + y, y) + "<div class='period-sub'>" + sub + "</div></div>";
     });
-    mList.forEach(function (k) {
-      var y = k.slice(0, 4), mo = +k.slice(5, 7);
-      addOpt("M:" + k, y + " " + enM[mo - 1]);
-    });
-  })();
+    periodMenu.innerHTML = html;
+  }
+  fillPeriods();
+  function setPeriod(val, lab) {
+    periodVal = val || "";
+    periodBtn.textContent = lab || t("allPeriods");
+    periodWrap.classList.remove("open");
+    page = 1;
+    render();
+  }
+  periodBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    periodWrap.classList.toggle("open");
+  });
+  periodMenu.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-period]");
+    if (!b) return;
+    e.preventDefault();
+    var val = b.getAttribute("data-period");
+    var lab = b.textContent;
+    if (val.indexOf("Y:") === 0) lab = val.slice(2);
+    else if (val.indexOf("M:") === 0) lab = val.slice(2, 6) + " " + b.textContent;
+    else if (val.indexOf("Q:") === 0) lab = val.slice(2, 6) + " " + b.textContent;
+    setPeriod(val, lab);
+  });
+  document.addEventListener("click", function (e) {
+    if (!periodWrap.contains(e.target)) periodWrap.classList.remove("open");
+  });
 
   function matchPeriod(due, val) {
     if (!val) return true;
@@ -1012,7 +1067,7 @@
 
   function match(o) {
     var fty = ftySel.value, cust = custSel.value, cat = catSel.value;
-    var loc = locSel.value, period = periodSel.value;
+    var loc = locSel.value, period = periodVal;
     var due = document.getElementById("fDue").value;
     var kind = document.getElementById("fKind").value;
     var q = document.getElementById("q").value.trim().toLowerCase();
@@ -1784,7 +1839,7 @@
       if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
   });
-  ["fFty", "fLoc", "fCust", "fCat", "fPeriod", "fDue", "fKind"].forEach(function (id) {
+  ["fFty", "fLoc", "fCust", "fCat", "fDue", "fKind"].forEach(function (id) {
     document.getElementById(id).addEventListener("change", function () { page = 1; render(); });
   });
   document.getElementById("q").addEventListener("input", function () { page = 1; render(); });
