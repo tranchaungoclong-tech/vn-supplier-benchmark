@@ -313,8 +313,9 @@
 
   .trend { height: 168px; }
   .trend svg { width: 100%; height: 168px; display: block; }
-  .purchase-chart { height: 280px; }
-  .purchase-chart svg { width: 100%; height: 280px; display: block; }
+  .purchase-chart { height: 360px; }
+  .purchase-chart svg { width: 100%; height: 360px; display: block; }
+  .purchase-chart .ho-seg:hover rect { filter: brightness(1.08); }
   .ho-chart { height: 360px; }
   .ho-chart svg { width: 100%; height: 360px; display: block; }
   .ho-seg:hover rect { filter: brightness(1.08); }
@@ -574,7 +575,7 @@
       qtyMonth: "Order qty by month", pcsNot: "pcs — not $",
       hoMonth: "Total HO per month", hoNote: "Distinct HO · Order date · tracking 9-24. Not $.",
       purchaseValue: "Monthly Purchase Value",
-      purchaseNote: "$ not in tracking 9-24. This line is distinct HO by order month — not amount. Empty month = 0.",
+      purchaseNote: "$ not in tracking 9-24. One chart: stacked HO by factory × order month. Label = factory — HO. Empty month = 0. Tap a slice for that factory that month.",
       purchaseUnit: "HO",
       purchaseY: "HO",
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
@@ -616,7 +617,7 @@
       qtyMonth: "月订货数量", pcsNot: "件数 — 不是金额",
       hoMonth: "每月 HO 总数", hoNote: "按下单日去重 HO · tracking 9-24。不是金额。",
       purchaseValue: "Monthly Purchase Value",
-      purchaseNote: "跟踪表无金额。此折线按开单月去重 HO — 不是 $。空月 = 0。",
+      purchaseNote: "跟踪表无金额。一张图：按工厂叠 HO × 开单月。标签 = 工厂 — HO。空月 = 0。点色块看该厂该月 HO。",
       purchaseUnit: "HO",
       purchaseY: "HO",
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
@@ -1027,52 +1028,61 @@
     var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     var zhM = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
     var names = lang === "zh" ? zhM : enM;
+    var palette = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#f43f5e","#0ea5e9","#ec4899","#14b8a6","#eab308","#6366f1"];
     var year = "2026";
-    var pts = [];
+    var ftyKeys = {};
+    var months = [];
     var max = 1;
     for (var i = 0; i < 12; i++) {
       var key = year + "-" + String(i + 1).padStart(2, "0");
       var rec = hoMonth[key];
-      var n = rec ? Object.keys(rec.hos).length : 0;
-      pts.push({ key: key, label: names[i], n: n });
-      if (n > max) max = n;
+      var ho = rec ? Object.keys(rec.hos).length : 0;
+      months.push({ key: key, label: names[i], ho: ho, fty: rec ? (rec.fty || {}) : {} });
+      if (ho > max) max = ho;
+      if (rec && rec.fty) {
+        Object.keys(rec.fty).forEach(function (k) { ftyKeys[k] = rec.fty[k].name || k; });
+      }
     }
-    var w = 640, h = 280, padL = 36, padR = 18, padT = 28, padB = 36;
+    var ftyList = Object.keys(ftyKeys).sort();
+    var colorOf = {};
+    ftyList.forEach(function (k, i) { colorOf[k] = palette[i % palette.length]; });
+    var w = 720, h = 360, padL = 36, padR = 12, padT = 28, padB = 36;
     var innerW = w - padL - padR, innerH = h - padT - padB;
-    var slot = innerW / 11;
-    function xy(i, n) {
-      return {
-        x: padL + i * slot,
-        y: padT + innerH - (n / max) * innerH
-      };
-    }
-    var coords = pts.map(function (p, i) { return xy(i, p.n); });
-    var d = coords.map(function (p, i) { return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" ");
-    var axis = "";
-    for (var g = 0; g <= 4; g++) {
-      var gy = padT + innerH * g / 4;
-      var gv = Math.round(max * (1 - g / 4));
-      axis += "<line x1='" + padL + "' y1='" + gy.toFixed(1) + "' x2='" + (w - padR) + "' y2='" + gy.toFixed(1) +
-        "' stroke='#e8eef6' stroke-width='1'/>" +
-        "<text x='" + (padL - 6) + "' y='" + (gy + 3).toFixed(1) + "' text-anchor='end' font-size='10' fill='#94a3b8'>" + gv + "</text>";
-    }
-    var dots = coords.map(function (p, i) {
-      var tip = pts[i].label + " · " + pts[i].n + " HO";
-      var lab = pts[i].n ? ("<text x='" + p.x.toFixed(1) + "' y='" + (p.y - 10).toFixed(1) +
-        "' text-anchor='middle' font-size='11' font-weight='800' fill='#1d4ed8'>" + pts[i].n + "</text>") : "";
-      return "<g style='cursor:pointer' data-purchase-month='" + pts[i].key + "'>" +
-        "<circle cx='" + p.x.toFixed(1) + "' cy='" + p.y.toFixed(1) + "' r='4.2' fill='#fff' stroke='#2563eb' stroke-width='2'/>" +
-        lab + "<title>" + esc(tip) + "</title></g>";
+    var slot = innerW / 12;
+    var barW = Math.min(42, slot * 0.7);
+    var bars = months.map(function (m, i) {
+      var x = padL + i * slot + (slot - barW) / 2;
+      var y = padT + innerH;
+      var stack = "";
+      ftyList.forEach(function (k) {
+        var f = m.fty[k];
+        var n = f ? Object.keys(f.hos).length : 0;
+        if (!n) return;
+        var bh = (n / max) * innerH;
+        y -= bh;
+        var show = bh >= 14;
+        var midY = y + bh / 2 + 4;
+        stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
+          "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
+          "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] + "'></rect>" +
+          (show ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + midY.toFixed(1) +
+            "' text-anchor='middle' font-size='9' font-weight='800' fill='#fff'>" +
+            esc(k) + " — " + n + "</text>" : "") +
+          "<title>" + esc(m.label + " · " + k + " — " + n + " HO") + "</title></g>";
+      });
+      var cx = x + barW / 2;
+      var topY = padT + innerH - (m.ho / max) * innerH;
+      return stack +
+        (m.ho ? "<text x='" + cx + "' y='" + (topY - 8) + "' text-anchor='middle' font-size='11' font-weight='800' fill='#0f172a'>" + m.ho + "</text>" : "") +
+        "<text x='" + cx + "' y='" + (h - 12) + "' text-anchor='middle' font-size='11' font-weight='700' fill='#334155'>" + m.label + "</text>";
     }).join("");
-    var xlabs = pts.map(function (p, i) {
-      return "<text x='" + coords[i].x.toFixed(1) + "' y='" + (h - 12) +
-        "' text-anchor='middle' font-size='11' font-weight='700' fill='#334155'>" + p.label + "</text>";
-    }).join("");
+    var legend = "<div class='fty-legend'>" + ftyList.map(function (k) {
+      return "<span><i style='background:" + colorOf[k] + "'></i>" + esc(k) + "</span>";
+    }).join("") + "</div>";
     return "<div class='card'><h2>" + ico("trend") + " " + t("purchaseValue") +
       " <span>" + t("purchaseUnit") + " · $ not reported</span></h2>" +
-      "<div class='pad'><div class='purchase-chart'><svg viewBox='0 0 " + w + " " + h + "'>" +
-      axis + "<path d='" + d + "' fill='none' stroke='#2563eb' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>" +
-      dots + xlabs + "</svg></div>" +
+      "<div class='pad'><div class='purchase-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + bars +
+      "</svg></div>" + legend +
       "<p class='sub' style='margin:8px 0 0'>" + t("purchaseNote") + "</p></div></div>";
   }
 
@@ -1493,8 +1503,9 @@
 
   function factoriesView(rows, s) {
     return kpiRow(s) +
-      "<div class='grid2'>" + purchaseLine(s.hoMonth) + asiaMapHtml() + "</div>" +
-      "<div class='card' style='margin-top:14px'><h2>" + ico("factories") + " " + t("factories") + "</h2><div class='pad'>" +
+      purchaseLine(s.hoMonth) +
+      "<div class='grid2' style='margin-top:14px'>" + asiaMapHtml() +
+      "<div class='card'><h2>" + ico("factories") + " " + t("factories") + "</h2><div class='pad'>" +
       Object.keys(s.ftyMap).sort().map(function (k) {
         var f = s.ftyMap[k];
         var nPo = Object.keys(f.pos).length, nLate = Object.keys(f.late).length;
@@ -1502,7 +1513,7 @@
           "</strong><div class='sub'>" + esc(f.province ? f.province + ", Vietnam" : f.country) + " · " + Object.keys(f.cats).join(" · ") +
           "</div></div><div class='sub'>" + nLate + "/" + nPo + " late PO · " + f.lines + " lines · " +
           fmt(f.qty) + " pcs · $ not reported</div></div>";
-      }).join("") + "</div></div>";
+      }).join("") + "</div></div></div>";
   }
 
   function customersView(rows, s) {
