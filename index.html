@@ -313,6 +313,8 @@
 
   .trend { height: 168px; }
   .trend svg { width: 100%; height: 168px; display: block; }
+  .purchase-chart { height: 280px; }
+  .purchase-chart svg { width: 100%; height: 280px; display: block; }
   .ho-chart { height: 360px; }
   .ho-chart svg { width: 100%; height: 360px; display: block; }
   .ho-seg:hover rect { filter: brightness(1.08); }
@@ -571,6 +573,10 @@
       delayMix: "Delay mix", catMix: "Category mix", custMix: "Customer mix", ftyFilter: "Factories in filter",
       qtyMonth: "Order qty by month", pcsNot: "pcs — not $",
       hoMonth: "Total HO per month", hoNote: "Distinct HO · Order date · tracking 9-24. Not $.",
+      purchaseValue: "Monthly Purchase Value",
+      purchaseNote: "$ not in tracking 9-24. This line is distinct HO by order month — not amount. Empty month = 0.",
+      purchaseUnit: "HO",
+      purchaseY: "HO",
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
       factoryMaster: "Factory master", customers: "Customers", factories: "Factories",
       qaTest: "QA test", inspectPlan: "Inspection plan",
@@ -584,7 +590,7 @@
         merch: ["Merchandiser", "Factory master by category and customer book. Same 9-24 file."],
         quality: ["Quality library", "QA test + inspection plan cells from tracking — not the live QA Board sheet."],
         orders: ["Order book", "Every SKU / port split in the current filter."],
-        factories: ["Factories", "10 factories in this extract. A474 country not reported."],
+        factories: ["Factories", "Factory dashboard from tracking 9-24. $ empty — Monthly Purchase Value counts HO, not amount."],
         customers: ["Customers", "Customer / end-customer split from the tracking list."]
       }
     },
@@ -609,6 +615,10 @@
       delayMix: "逾期构成", catMix: "品类构成", custMix: "客户构成", ftyFilter: "筛选内工厂",
       qtyMonth: "月订货数量", pcsNot: "件数 — 不是金额",
       hoMonth: "每月 HO 总数", hoNote: "按下单日去重 HO · tracking 9-24。不是金额。",
+      purchaseValue: "Monthly Purchase Value",
+      purchaseNote: "跟踪表无金额。此折线按开单月去重 HO — 不是 $。空月 = 0。",
+      purchaseUnit: "HO",
+      purchaseY: "HO",
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
       factoryMaster: "工厂主档", customers: "客户", factories: "工厂",
       qaTest: "QA 测试", inspectPlan: "验货计划",
@@ -622,7 +632,7 @@
         merch: ["跟单", "按品类的工厂主档和客户台账。同一份 9-24 文件。"],
         quality: ["质量库", "跟踪表里的 QA / 验货单元格 — 不是线上 QA Board。"],
         orders: ["订单台账", "当前筛选下的每一行 SKU / 港口。"],
-        factories: ["工厂", "本表 10 家工厂。A474 国家未报。"],
+        factories: ["工厂", "工厂看板来自 tracking 9-24。金额为空 — Monthly Purchase Value 按 HO 计，不是 $。"],
         customers: ["客户", "跟踪表里的客户 / 终端客户。"]
       }
     }
@@ -1011,6 +1021,59 @@
         "</span><span class='track'><i style='width:" + w + "%;background:" + p.color + "'></i></span>" +
         "<span class='n'>" + fmt(p.n) + "</span></div>";
     }).join("");
+  }
+
+  function purchaseLine(hoMonth) {
+    var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var zhM = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+    var names = lang === "zh" ? zhM : enM;
+    var year = "2026";
+    var pts = [];
+    var max = 1;
+    for (var i = 0; i < 12; i++) {
+      var key = year + "-" + String(i + 1).padStart(2, "0");
+      var rec = hoMonth[key];
+      var n = rec ? Object.keys(rec.hos).length : 0;
+      pts.push({ key: key, label: names[i], n: n });
+      if (n > max) max = n;
+    }
+    var w = 640, h = 280, padL = 36, padR = 18, padT = 28, padB = 36;
+    var innerW = w - padL - padR, innerH = h - padT - padB;
+    var slot = innerW / 11;
+    function xy(i, n) {
+      return {
+        x: padL + i * slot,
+        y: padT + innerH - (n / max) * innerH
+      };
+    }
+    var coords = pts.map(function (p, i) { return xy(i, p.n); });
+    var d = coords.map(function (p, i) { return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1); }).join(" ");
+    var axis = "";
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + innerH * g / 4;
+      var gv = Math.round(max * (1 - g / 4));
+      axis += "<line x1='" + padL + "' y1='" + gy.toFixed(1) + "' x2='" + (w - padR) + "' y2='" + gy.toFixed(1) +
+        "' stroke='#e8eef6' stroke-width='1'/>" +
+        "<text x='" + (padL - 6) + "' y='" + (gy + 3).toFixed(1) + "' text-anchor='end' font-size='10' fill='#94a3b8'>" + gv + "</text>";
+    }
+    var dots = coords.map(function (p, i) {
+      var tip = pts[i].label + " · " + pts[i].n + " HO";
+      var lab = pts[i].n ? ("<text x='" + p.x.toFixed(1) + "' y='" + (p.y - 10).toFixed(1) +
+        "' text-anchor='middle' font-size='11' font-weight='800' fill='#1d4ed8'>" + pts[i].n + "</text>") : "";
+      return "<g style='cursor:pointer' data-purchase-month='" + pts[i].key + "'>" +
+        "<circle cx='" + p.x.toFixed(1) + "' cy='" + p.y.toFixed(1) + "' r='4.2' fill='#fff' stroke='#2563eb' stroke-width='2'/>" +
+        lab + "<title>" + esc(tip) + "</title></g>";
+    }).join("");
+    var xlabs = pts.map(function (p, i) {
+      return "<text x='" + coords[i].x.toFixed(1) + "' y='" + (h - 12) +
+        "' text-anchor='middle' font-size='11' font-weight='700' fill='#334155'>" + p.label + "</text>";
+    }).join("");
+    return "<div class='card'><h2>" + ico("trend") + " " + t("purchaseValue") +
+      " <span>" + t("purchaseUnit") + " · $ not reported</span></h2>" +
+      "<div class='pad'><div class='purchase-chart'><svg viewBox='0 0 " + w + " " + h + "'>" +
+      axis + "<path d='" + d + "' fill='none' stroke='#2563eb' stroke-width='2.4' stroke-linejoin='round' stroke-linecap='round'/>" +
+      dots + xlabs + "</svg></div>" +
+      "<p class='sub' style='margin:8px 0 0'>" + t("purchaseNote") + "</p></div></div>";
   }
 
   function hoMonthBlock(hoMonth, distinctHo) {
@@ -1429,7 +1492,9 @@
   }
 
   function factoriesView(rows, s) {
-    return kpiRow(s) + asiaMapHtml() + "<div class='card' style='margin-top:14px'><h2>" + ico("factories") + " " + t("factories") + "</h2><div class='pad'>" +
+    return kpiRow(s) +
+      "<div class='grid2'>" + purchaseLine(s.hoMonth) + asiaMapHtml() + "</div>" +
+      "<div class='card' style='margin-top:14px'><h2>" + ico("factories") + " " + t("factories") + "</h2><div class='pad'>" +
       Object.keys(s.ftyMap).sort().map(function (k) {
         var f = s.ftyMap[k];
         var nPo = Object.keys(f.pos).length, nLate = Object.keys(f.late).length;
@@ -1544,6 +1609,22 @@
     if (ftyEl) {
       try { openFtyPop(decodeURIComponent(ftyEl.getAttribute("data-fty"))); }
       catch (err) { openFtyPop(ftyEl.getAttribute("data-fty")); }
+      return;
+    }
+    var pm = e.target.closest ? e.target.closest("[data-purchase-month]") : null;
+    if (!pm) {
+      var n2 = e.target;
+      while (n2 && n2 !== e.currentTarget) {
+        if (n2.getAttribute && n2.getAttribute("data-purchase-month")) { pm = n2; break; }
+        n2 = n2.parentNode;
+      }
+    }
+    if (pm) {
+      var mk2 = pm.getAttribute("data-purchase-month");
+      var list2 = filtered().filter(function (o) {
+        return o.orderDate && o.orderDate.slice(0, 7) === mk2;
+      });
+      renderHoPop("Monthly Purchase Value · " + mk2, list2, "$ not reported — HO count for this order month.");
       return;
     }
     var t = e.target.closest("[data-tab]");
