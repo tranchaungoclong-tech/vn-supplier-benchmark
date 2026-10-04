@@ -306,6 +306,8 @@
     display: flex; align-items: center; gap: 8px; background: #f8fafc; border: 1px solid var(--line);
     border-radius: 10px; padding: 7px 10px; font-size: 12.5px;
   }
+  .topic.click { cursor: pointer; }
+  .topic.click:hover { border-color: #93c5fd; background: #eff6ff; }
   .sw { width: 10px; height: 10px; border-radius: 3px; }
 
   .trend { height: 168px; }
@@ -696,12 +698,11 @@
     }
     pop.classList.add("on");
   }
-  function openCustPop(cust) {
+  function renderHoPop(heading, list, extraNote) {
     var pop = document.getElementById("delayPop");
     var title = document.getElementById("delayPopTitle");
     var sub = document.getElementById("delayPopSub");
     var body = document.getElementById("delayPopBody");
-    var list = filtered().filter(function (o) { return (o.customer || "(blank)") === cust; });
     var byHo = {};
     list.forEach(function (o) {
       var id = o.ho ? String(o.ho) : "(no HO)";
@@ -725,7 +726,8 @@
         due: o.customerDue || "",
         qty: o.qty,
         item: o.item || o.productName || "",
-        code: o.productCode || ""
+        code: o.productCode || "",
+        cust: o.customer || ""
       });
     });
     Object.keys(byHo).forEach(function (id) {
@@ -737,10 +739,10 @@
     var hos = Object.keys(byHo).sort();
     var nPo = 0;
     hos.forEach(function (id) { nPo += byHo[id].ships.length; });
-    title.textContent = cust;
-    sub.textContent = hos.length + " HO · " + nPo + " PO / ship · " + list.length + " lines · tracking 9-24. One HO can have several PO and due dates.";
+    title.textContent = heading;
+    sub.textContent = hos.length + " HO · " + nPo + " PO / ship · " + list.length + " lines · tracking 9-24. One HO can have several PO and due dates." + (extraNote ? " " + extraNote : "");
     if (!hos.length) {
-      body.innerHTML = "<p class='empty'>No HO for this customer in the filter.</p>";
+      body.innerHTML = "<p class='empty'>No HO in this filter.</p>";
     } else {
       body.innerHTML = hos.map(function (id) {
         var h = byHo[id];
@@ -753,7 +755,7 @@
           h.ships.map(function (s) {
             var band = delayBand(s.due);
             return "<div class='ship-row'><span class='po'>" + esc(s.po || "–") + "</span><span>" +
-              esc(s.item || h.item) + (s.code ? "<div class='sub'>" + esc(s.code) + "</div>" : "") +
+              esc(s.item || h.item) + (s.code ? "<div class='sub'>" + esc(s.code) + (s.cust ? " · " + esc(s.cust) : "") + "</div>" : (s.cust ? "<div class='sub'>" + esc(s.cust) + "</div>" : "")) +
               "</span><span>" + esc(s.due || "–") + "<div class='sub'>" + esc(band.label) +
               "</div></span><span>" + fmt(s.qty) + "</span></div>";
           }).join("");
@@ -764,6 +766,14 @@
       }).join("");
     }
     pop.classList.add("on");
+  }
+  function openCustPop(cust) {
+    renderHoPop(cust, filtered().filter(function (o) { return (o.customer || "(blank)") === cust; }));
+  }
+  function openFtyPop(code) {
+    var list = filtered().filter(function (o) { return (o.factoryCode || o.sheet) === code; });
+    var name = list[0] ? shortFty(list[0]) : code;
+    renderHoPop(name, list);
   }
   function ico(name) {
     return '<span class="ico"><svg viewBox="0 0 24 24">' + (PATHS[name] || PATHS.dash) + '</svg></span>';
@@ -1178,14 +1188,25 @@
       delayNote = "行数对比客户交期 " + AS + " · tracking 9-24。点柱看 PO。工厂交期不计入逾期。";
       custNote = "按客户去重 HO · tracking 9-24。点柱看 HO。不是行数，不是 PO。";
     }
+    var ftyHo = {};
+    rows.forEach(function (o) {
+      var fk = o.factoryCode || o.sheet || "?";
+      if (!ftyHo[fk]) ftyHo[fk] = {};
+      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o));
+      ftyHo[fk][id] = true;
+    });
     var topics = Object.keys(s.ftyMap).sort(function (a, b) {
-      return s.ftyMap[b].lines - s.ftyMap[a].lines;
+      var na = Object.keys(ftyHo[a] || {}).length, nb = Object.keys(ftyHo[b] || {}).length;
+      return nb - na;
     }).map(function (k, i) {
       var colors = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#0ea5e9", "#f43f5e", "#6366f1", "#14b8a6", "#eab308", "#64748b"];
       var f = s.ftyMap[k];
-      return "<span class='topic'><i class='sw' style='background:" + colors[i % colors.length] + "'></i>" +
-        esc(f.code || k) + " · " + f.lines + "</span>";
+      var nHo = Object.keys(ftyHo[k] || {}).length;
+      return "<span class='topic click' data-fty='" + encodeURIComponent(k) + "'><i class='sw' style='background:" + colors[i % colors.length] + "'></i>" +
+        esc(f.code || k) + " · " + nHo + " HO</span>";
     }).join("");
+    var ftyNote = "Distinct HO per factory · tracking 9-24. Tap a chip for HO / PO / ship dates. Not lines.";
+    if (lang === "zh") ftyNote = "按工厂去重 HO · tracking 9-24。点标签看 HO / PO / 交期。不是行数。";
     var score = s.pos ? Math.round(100 * s.late / s.pos) : 0;
     return kpiRow(s) +
       "<div class='layout'>" + tableCard(rows, s) +
@@ -1199,7 +1220,7 @@
           "<p class='sub' style='margin:10px 0 0'>" + custNote + "</p>" +
         "</div></div>" +
         "<div class='card'><h2>" + ico("factories") + " " + t("ftyFilter") + "</h2><div class='pad'><div class='chips'>" +
-          topics + "</div></div></div>" +
+          topics + "</div><p class='sub' style='margin:10px 0 0'>" + ftyNote + "</p></div></div>" +
       "</div></div>" +
       "<div class='grid2' style='margin-top:14px'>" +
         hoMonthBlock(s.hoMonth, s.distinctHo) +
@@ -1453,6 +1474,12 @@
     if (custEl) {
       try { openCustPop(decodeURIComponent(custEl.getAttribute("data-cust"))); }
       catch (err) { openCustPop(custEl.getAttribute("data-cust")); }
+      return;
+    }
+    var ftyEl = e.target.closest("[data-fty]");
+    if (ftyEl) {
+      try { openFtyPop(decodeURIComponent(ftyEl.getAttribute("data-fty"))); }
+      catch (err) { openFtyPop(ftyEl.getAttribute("data-fty")); }
       return;
     }
     var t = e.target.closest("[data-tab]");
