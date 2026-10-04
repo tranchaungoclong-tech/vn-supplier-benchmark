@@ -1050,7 +1050,7 @@
           "'></rect>" +
           (show ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + midY.toFixed(1) +
             "' text-anchor='middle' font-size='10' font-weight='800' fill='#fff'>" +
-            esc(k) + " " + n + "</text>" : "") +
+            esc(k) + " — " + n + "</text>" : "") +
           "<title>" + esc(tip) + "</title></g>";
       });
       var cx = x + barW / 2;
@@ -1085,7 +1085,7 @@
       " <span>" + fmt(distinctHo) + " HO</span></h2>" +
       "<div class='pad'><div class='ho-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + bars + line +
       "</svg></div>" + legend +
-      "<p class='sub' style='margin:8px 0 0'>Each colour = factory HO that month. Label = code + HO count (Jul · G191 · 3). Tap a slice for the HO list.</p></div></div>";
+      "<p class='sub' style='margin:8px 0 0'>Each colour = factory HO that month. Label = factory — HO (Jul · G191 — 3). Tap a slice for the HO list.</p></div></div>";
   }
 
   function spark(o) {
