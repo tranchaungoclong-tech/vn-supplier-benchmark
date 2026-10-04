@@ -609,9 +609,9 @@
       tabInspect: "Has inspection note",
       delayMix: "Delay mix", catMix: "Category mix", custMix: "Customer mix", ftyFilter: "Factories in filter",
       qtyMonth: "Order qty by month", pcsNot: "pcs — not $",
-      hoMonth: "Total HO per month", hoNote: "Distinct HO · Order date · tracking 9-24. Not $. Jan–Dec always shown. Empty month = 0.",
+      hoMonth: "Total HO per month", hoNote: "Distinct HO · Customer delivery time · tracking 9-24. Not $. Jan–Dec always shown. Empty month = 0.",
       purchaseValue: "Monthly Purchase Value",
-      purchaseNote: "$ not in tracking 9-24. One chart: stacked HO by factory × order month. Label = factory — HO. Empty month = 0. Tap a slice for that factory that month.",
+      purchaseNote: "$ not in tracking 9-24. One chart: stacked HO by factory × customer due month. Empty month = 0. Tap a slice for that factory that month.",
       purchaseUnit: "HO",
       purchaseY: "HO",
       deliveryTime: "Delivery Time",
@@ -662,9 +662,9 @@
       tabInspect: "有验货备注",
       delayMix: "逾期构成", catMix: "品类构成", custMix: "客户构成", ftyFilter: "筛选内工厂",
       qtyMonth: "月订货数量", pcsNot: "件数 — 不是金额",
-      hoMonth: "每月 HO 总数", hoNote: "按下单日去重 HO · tracking 9-24。不是金额。1–12 月都显示。空月 = 0。",
+      hoMonth: "每月 HO 总数", hoNote: "按客户交期去重 HO · tracking 9-24。不是金额。1–12 月都显示。空月 = 0。",
       purchaseValue: "Monthly Purchase Value",
-      purchaseNote: "跟踪表无金额。一张图：按工厂叠 HO × 开单月。标签 = 工厂 — HO。空月 = 0。点色块看该厂该月 HO。",
+      purchaseNote: "跟踪表无金额。一张图：按工厂叠 HO × 客户交期月。空月 = 0。点色块看该厂该月 HO。",
       purchaseUnit: "HO",
       purchaseY: "HO",
       deliveryTime: "Delivery Time",
@@ -980,8 +980,8 @@
       qty += o.qty || 0;
       if (o.orderCategory === "Repeat order") repN++; else newN++;
       if (o.category) cats[o.category] = (cats[o.category] || 0) + 1;
-      if (o.orderDate) {
-        var m = o.orderDate.slice(0, 7);
+      if (o.customerDue) {
+        var m = o.customerDue.slice(0, 7);
         months[m] = (months[m] || 0) + (o.qty || 0);
         if (!hoMonth[m]) hoMonth[m] = { hos: {}, lines: 0, qty: 0, fty: {} };
         hoMonth[m].lines++;
@@ -1765,7 +1765,7 @@
       try { fk = decodeURIComponent(ftyEl.getAttribute("data-fty")); }
       catch (err) { fk = ftyEl.getAttribute("data-fty"); }
       var list = filtered().filter(function (o) {
-        return (o.factoryCode || o.sheet) === fk && o.orderDate && o.orderDate.slice(0, 7) === mk;
+        return (o.factoryCode || o.sheet) === fk && o.customerDue && o.customerDue.slice(0, 7) === mk;
       });
       var lab = mk.slice(5) + " · " + fk;
       renderHoPop(lab, list);
@@ -1787,7 +1787,7 @@
     if (pm) {
       var mk2 = pm.getAttribute("data-purchase-month");
       var list2 = filtered().filter(function (o) {
-        return o.orderDate && o.orderDate.slice(0, 7) === mk2;
+        return o.customerDue && o.customerDue.slice(0, 7) === mk2;
       });
       renderHoPop("Monthly Purchase Value · " + mk2, list2, "$ not reported — HO count for this order month.");
       return;
