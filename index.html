@@ -399,6 +399,10 @@
   .fty-dash .fty-legend { gap: 8px; margin-top: 8px; }
   .fty-dash .fty-legend span { font-size: 12px; }
   .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 280px; }
+  .qp-chart { height: 280px; }
+  .qp-chart svg { width: 100%; height: 280px; display: block; }
+  .fty-dash .qp-chart { height: 280px; }
+  .fty-dash .qp-chart svg { height: 280px; }
   .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .factory-row strong { display: block; }
   .bar { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; min-width: 90px; }
@@ -651,6 +655,11 @@
       dImpact: "Impact",
       dNoImpact: "No impact",
       defectRate: "Defect rate",
+      qualityPerf: "Quality Performance",
+      qpComplaints: "Complaints (sample)",
+      qpLate: "Late deliveries",
+      qpAvg: "Average of defects (sample)",
+      qpNote: "Late = distinct late HO by customer due month. Complaints + average defects = SAMPLE until the monthly/quarterly/yearly Excel.",
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
       factoryMaster: "Factory master", customers: "Customers", factories: "Factories",
       qaTest: "QA test", inspectPlan: "Inspection plan",
@@ -705,6 +714,11 @@
       dImpact: "Impact",
       dNoImpact: "No impact",
       defectRate: "不良率",
+      qualityPerf: "Quality Performance",
+      qpComplaints: "投诉 (示意)",
+      qpLate: "逾期交期",
+      qpAvg: "平均不良 (示意)",
+      qpNote: "逾期 = 按客户交期月去重逾期 HO。投诉 + 平均不良 = 示意，等月/季/年 Excel。",
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
       factoryMaster: "工厂主档", customers: "客户", factories: "工厂",
       qaTest: "QA 测试", inspectPlan: "验货计划",
@@ -1306,6 +1320,74 @@
       "<span><b style='background:" + C_NONE + "'></b>" + t("dNoDue") + "</span></div></div></div>";
   }
 
+  function qualityPerfCard(rows) {
+    var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var zhM = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+    var names = lang === "zh" ? zhM : enM;
+    var year = "2026";
+    var lateBy = {};
+    rows.forEach(function (o) {
+      if (!o.customerDue) return;
+      var band = delayBand(o.customerDue);
+      if (band.key === "easy" || band.key === "none") return;
+      var mk = o.customerDue.slice(0, 7);
+      if (!lateBy[mk]) lateBy[mk] = {};
+      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o));
+      lateBy[mk][id] = true;
+    });
+    var seedC = [4, 3, 6, 2, 3, 4, 5, 7, 6, 2, 3, 5];
+    var seedA = [1.2, 0.8, 1.6, 0.7, 0.9, 1.1, 1.4, 1.8, 1.5, 0.6, 0.9, 1.3];
+    var pts = [];
+    var max = 1;
+    for (var i = 0; i < 12; i++) {
+      var key = year + "-" + String(i + 1).padStart(2, "0");
+      var late = lateBy[key] ? Object.keys(lateBy[key]).length : 0;
+      var rec = { key: key, label: names[i], late: late, c: seedC[i], a: seedA[i] };
+      pts.push(rec);
+      if (late > max) max = late;
+      if (rec.c > max) max = rec.c;
+    }
+    var w = 720, h = 280, padL = 32, padR = 16, padT = 24, padB = 36;
+    var innerW = w - padL - padR, innerH = h - padT - padB;
+    var slot = innerW / 12;
+    var barW = Math.min(28, slot * 0.42);
+    var axis = "";
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + innerH * g / 4;
+      var gv = Math.round(max * (1 - g / 4));
+      axis += "<line x1='" + padL + "' y1='" + gy.toFixed(1) + "' x2='" + (w - padR) + "' y2='" + gy.toFixed(1) +
+        "' stroke='#e8eef6'/><text x='" + (padL - 6) + "' y='" + (gy + 3).toFixed(1) +
+        "' text-anchor='end' font-size='10' fill='#94a3b8'>" + gv + "</text>";
+    }
+    var bars = pts.map(function (p, i) {
+      var x = padL + i * slot + (slot - barW) / 2;
+      var bh = (p.c / max) * innerH;
+      var y = padT + innerH - bh;
+      var cx = x + barW / 2;
+      return "<rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
+        "' height='" + Math.max(1, bh).toFixed(1) + "' rx='3' fill='#3b82f6' opacity='.85'></rect>" +
+        (p.c ? "<text x='" + cx + "' y='" + (y - 4) + "' text-anchor='middle' font-size='10' font-weight='800' fill='#1d4ed8'>" + p.c + "</text>" : "") +
+        "<text x='" + cx + "' y='" + (h - 12) + "' text-anchor='middle' font-size='11' font-weight='700' fill='#334155'>" + p.label + "</text>";
+    }).join("");
+    function lineOf(key, color) {
+      var coords = pts.map(function (p, i) {
+        return { x: padL + i * slot + slot / 2, y: padT + innerH - (p[key] / max) * innerH };
+      });
+      var d = coords.map(function (c, i) { return (i ? "L" : "M") + c.x.toFixed(1) + " " + c.y.toFixed(1); }).join(" ");
+      var dots = coords.map(function (c, i) {
+        return "<circle cx='" + c.x.toFixed(1) + "' cy='" + c.y.toFixed(1) + "' r='3.4' fill='#fff' stroke='" + color + "' stroke-width='2'><title>" +
+          esc(pts[i].label + " · " + pts[i][key]) + "</title></circle>";
+      }).join("");
+      return "<path d='" + d + "' fill='none' stroke='" + color + "' stroke-width='2.2' stroke-linejoin='round'/>" + dots;
+    }
+    return "<div class='card'><h2>" + ico("quality") + " " + t("qualityPerf") + "</h2><div class='pad'>" +
+      "<div class='qp-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + axis + bars +
+      lineOf("late", "#f43f5e") + lineOf("a", "#10b981") + "</svg></div>" +
+      "<div class='dtime-leg'><span><b style='background:#3b82f6'></b>" + t("qpComplaints") + "</span>" +
+      "<span><b style='background:#f43f5e'></b>" + t("qpLate") + "</span>" +
+      "<span><b style='background:#10b981'></b>" + t("qpAvg") + "</span></div></div></div>";
+  }
+
   function defectSampleCard(ftyMap) {
     var codes = Object.keys(ftyMap).sort();
     if (!codes.length) return "";
@@ -1775,8 +1857,9 @@
         purchaseLine(s.hoMonth) +
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
-        asiaMapHtml() +
-      "</div>";
+        qualityPerfCard(rows) +
+      "</div>" +
+      "<div style='margin-top:14px'>" + asiaMapHtml() + "</div>";
   }
 
   function customersView(rows, s) {
