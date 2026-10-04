@@ -401,11 +401,10 @@
   .fty-dash .fty-legend { gap: 8px; margin-top: 8px; }
   .fty-dash .fty-legend span { font-size: 12px; }
   .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 280px; }
-  .qp-chart { height: 320px; }
-  .qp-chart svg { width: 100%; height: 320px; display: block; }
-  .fty-dash .qp-wide { grid-column: 1 / -1; }
-  .fty-dash .qp-wide .qp-chart { height: 320px; }
-  .fty-dash .qp-wide .qp-chart svg { height: 320px; }
+  .qp-chart { height: 280px; }
+  .qp-chart svg { width: 100%; height: 280px; display: block; }
+  .fty-dash .qp-chart { height: 280px; }
+  .fty-dash .qp-chart svg { height: 280px; }
   .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .factory-row strong { display: block; }
   .bar { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; min-width: 90px; }
@@ -1385,7 +1384,7 @@
       }).join("");
       return "<path d='" + d + "' fill='none' stroke='" + color + "' stroke-width='2.4' stroke-linejoin='round'/>" + dots;
     }
-    return "<div class='card qp-wide'><h2>" + ico("quality") + " " + t("qualityPerf") +
+    return "<div class='card'><h2>" + ico("quality") + " " + t("qualityPerf") +
       " <span>SAMPLE + late HO</span></h2><div class='pad'>" +
       "<p class='sub' style='margin:0 0 8px'>" + t("qpNote") + "</p>" +
       "<div class='qp-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + axis + bars +
@@ -1906,8 +1905,8 @@
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
         qualityPerfCard(rows) +
-      "</div>" +
-      "<div style='margin-top:14px'>" + asiaMapHtml() + "</div>";
+        asiaMapHtml() +
+      "</div>";
   }
 
   function customersView(rows, s) {
