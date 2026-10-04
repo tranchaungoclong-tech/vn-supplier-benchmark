@@ -361,23 +361,23 @@
   .empty { padding: 24px; color: var(--muted); }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .fty-dash { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; align-items: stretch; }
+  .fty-dash { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
   .fty-dash > .card { margin-top: 0 !important; min-width: 0; }
-  .fty-dash .card h2 { font-size: 12px; }
-  .fty-dash .card h2 span { font-size: 10px; }
-  .fty-dash .pad { padding: 8px 10px 10px; }
-  .fty-dash .sub { font-size: 10px; }
-  .fty-dash .purchase-chart { height: 120px; }
-  .fty-dash .purchase-chart svg { height: 120px; }
-  .fty-dash .defect-chart { height: 120px; }
-  .fty-dash .defect-chart svg { height: 120px; }
-  .fty-dash .dtime-row { grid-template-columns: 44px 1fr 28px; gap: 4px; font-size: 10px; }
-  .fty-dash .dtime-track { height: 14px; }
-  .fty-dash .dtime-track i { font-size: 8px; }
-  .fty-dash .dtime-leg { gap: 6px; font-size: 10px; margin-top: 6px; }
-  .fty-dash .fty-legend { gap: 4px; margin-top: 4px; }
-  .fty-dash .fty-legend span { font-size: 10px; }
-  .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 140px; }
+  .fty-dash .card h2 { font-size: 14px; }
+  .fty-dash .card h2 span { font-size: 11px; }
+  .fty-dash .pad { padding: 10px 12px 12px; }
+  .fty-dash .sub { font-size: 11px; }
+  .fty-dash .purchase-chart { height: 280px; }
+  .fty-dash .purchase-chart svg { height: 280px; }
+  .fty-dash .defect-chart { height: 280px; }
+  .fty-dash .defect-chart svg { height: 280px; }
+  .fty-dash .dtime-row { grid-template-columns: 110px 1fr 36px; gap: 8px; font-size: 12px; }
+  .fty-dash .dtime-track { height: 22px; }
+  .fty-dash .dtime-track i { font-size: 11px; }
+  .fty-dash .dtime-leg { gap: 10px; font-size: 12px; margin-top: 8px; }
+  .fty-dash .fty-legend { gap: 8px; margin-top: 8px; }
+  .fty-dash .fty-legend span { font-size: 12px; }
+  .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 280px; }
   .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .factory-row strong { display: block; }
   .bar { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; min-width: 90px; }
@@ -885,7 +885,7 @@
       .replace(/\(.*?\)/g, "")
       .replace(/\s+/g, " ")
       .trim();
-    if (n.length > 18) n = n.slice(0, 16) + "…";
+    if (n.length > 22) n = n.slice(0, 20) + "…";
     return n || code;
   }
   function poKey(o) { return (o.factoryCode || o.sheet) + "|" + o.po; }
@@ -1116,7 +1116,7 @@
     var w = 720, h = 360, padL = 36, padR = 12, padT = 28, padB = 36;
     var innerW = w - padL - padR, innerH = h - padT - padB;
     var slot = innerW / 12;
-    var barW = Math.min(42, slot * 0.7);
+    var barW = Math.min(52, slot * 0.78);
     var bars = months.map(function (m, i) {
       var x = padL + i * slot + (slot - barW) / 2;
       var y = padT + innerH;
@@ -1127,10 +1127,15 @@
         if (!n) return;
         var bh = (n / max) * innerH;
         y -= bh;
+        var nickP = ftyNick(k, ftyKeys[k]);
+        var showP = bh >= 16;
         stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
           "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] + "'></rect>" +
-          "<title>" + esc(m.label + " · " + ftyNick(k, ftyKeys[k]) + " " + n + " HO") + "</title></g>";
+          (showP ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + (y + bh / 2 + 4).toFixed(1) +
+            "' text-anchor='middle' font-size='11' font-weight='800' fill='#fff'>" +
+            esc(nickP) + " " + n + "</text>" : "") +
+          "<title>" + esc(m.label + " · " + nickP + " " + n + " HO") + "</title></g>";
       });
       var cx = x + barW / 2;
       var topY = padT + innerH - (m.ho / max) * innerH;
@@ -1262,7 +1267,7 @@
     var w = 760, h = 420, padL = 28, padR = 12, padT = 28, padB = 36;
     var innerW = w - padL - padR, innerH = h - padT - padB;
     var slot = innerW / nM;
-    var barW = Math.min(42, slot * 0.7);
+    var barW = Math.min(56, slot * 0.78);
     var tops = [];
     var bars = months.map(function (m, i) {
       var x = padL + i * slot + (slot - barW) / 2;
@@ -1276,14 +1281,14 @@
         y -= bh;
         var nick = ftyNick(k, ftyKeys[k]);
         var tip = m.label + " · " + nick + " · " + n + " HO";
-        var show = bh >= 18;
+        var show = bh >= 22;
         var midY = y + bh / 2 + 4;
         stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
           "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] +
           "'></rect>" +
           (show ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + midY.toFixed(1) +
-            "' text-anchor='middle' font-size='9' font-weight='800' fill='#fff'>" +
+            "' text-anchor='middle' font-size='12' font-weight='800' fill='#fff'>" +
             esc(nick) + " " + n + "</text>" : "") +
           "<title>" + esc(tip) + "</title></g>";
       });
