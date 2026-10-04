@@ -361,6 +361,23 @@
   .empty { padding: 24px; color: var(--muted); }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fty-dash { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; align-items: stretch; }
+  .fty-dash > .card { margin-top: 0 !important; min-width: 0; }
+  .fty-dash .card h2 { font-size: 12px; }
+  .fty-dash .card h2 span { font-size: 10px; }
+  .fty-dash .pad { padding: 8px 10px 10px; }
+  .fty-dash .sub { font-size: 10px; }
+  .fty-dash .purchase-chart { height: 120px; }
+  .fty-dash .purchase-chart svg { height: 120px; }
+  .fty-dash .defect-chart { height: 120px; }
+  .fty-dash .defect-chart svg { height: 120px; }
+  .fty-dash .dtime-row { grid-template-columns: 44px 1fr 28px; gap: 4px; font-size: 10px; }
+  .fty-dash .dtime-track { height: 14px; }
+  .fty-dash .dtime-track i { font-size: 8px; }
+  .fty-dash .dtime-leg { gap: 6px; font-size: 10px; margin-top: 6px; }
+  .fty-dash .fty-legend { gap: 4px; margin-top: 4px; }
+  .fty-dash .fty-legend span { font-size: 10px; }
+  .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 140px; }
   .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .factory-row strong { display: block; }
   .bar { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; min-width: 90px; }
@@ -388,6 +405,7 @@
 
   @media (max-width: 1180px) {
     .kpis, .layout, .grid2 { grid-template-columns: 1fr; }
+    .fty-dash { grid-template-columns: 1fr 1fr; }
     .app { grid-template-columns: 1fr; }
     .side {
       display: flex; position: fixed; left: 0; top: 0; z-index: 40;
@@ -429,6 +447,7 @@
     .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     .filters select { flex: none; width: 100%; font-size: 12.5px; padding: 5px 8px; }
     .filters select:last-child { grid-column: 1 / -1; }
+    .fty-dash { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1099,14 +1118,9 @@
         if (!n) return;
         var bh = (n / max) * innerH;
         y -= bh;
-        var show = bh >= 14;
-        var midY = y + bh / 2 + 4;
         stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
           "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] + "'></rect>" +
-          (show ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + midY.toFixed(1) +
-            "' text-anchor='middle' font-size='9' font-weight='800' fill='#fff'>" +
-            esc(k) + " — " + n + "</text>" : "") +
           "<title>" + esc(m.label + " · " + k + " — " + n + " HO") + "</title></g>";
       });
       var cx = x + barW / 2;
@@ -1119,10 +1133,9 @@
       return "<span><i style='background:" + colorOf[k] + "'></i>" + esc(k) + "</span>";
     }).join("") + "</div>";
     return "<div class='card'><h2>" + ico("trend") + " " + t("purchaseValue") +
-      " <span>" + t("purchaseUnit") + " · $ not reported</span></h2>" +
+      " <span>" + t("purchaseUnit") + "</span></h2>" +
       "<div class='pad'><div class='purchase-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + bars +
-      "</svg></div>" + legend +
-      "<p class='sub' style='margin:8px 0 0'>" + t("purchaseNote") + "</p></div></div>";
+      "</svg></div>" + legend + "</div></div>";
   }
 
   function deliveryTimeCard(rows) {
@@ -1159,12 +1172,11 @@
           seg(none, C_NONE, "none", t("dNoDue")) +
         "</div><div class='dtime-n'>" + tot + "</div></div>";
     }).join("");
-    return "<div class='card' style='margin-top:14px'><h2>" + ico("clock") + " " + t("deliveryTime") +
-      " <span>HO · customer due</span></h2><div class='pad'><div class='dtime'>" + rowsHtml + "</div>" +
+    return "<div class='card'><h2>" + ico("clock") + " " + t("deliveryTime") +
+      " <span>HO</span></h2><div class='pad'><div class='dtime'>" + rowsHtml + "</div>" +
       "<div class='dtime-leg'><span><b style='background:" + C_ON + "'></b>" + t("dOnTime") + "</span>" +
       "<span><b style='background:" + C_LATE + "'></b>" + t("dLate") + "</span>" +
-      "<span><b style='background:" + C_NONE + "'></b>" + t("dNoDue") + "</span></div>" +
-      "<p class='sub' style='margin:8px 0 0'>" + t("deliveryNote") + "</p></div></div>";
+      "<span><b style='background:" + C_NONE + "'></b>" + t("dNoDue") + "</span></div></div></div>";
   }
 
   function defectSampleCard(ftyMap) {
@@ -1207,14 +1219,12 @@
         "<text x='" + cx + "' y='" + (padT - 10) + "' text-anchor='middle' font-size='11' font-weight='800' fill='#0f172a'>" + s.rate.toFixed(1) + "%</text>" +
         "<text x='" + cx + "' y='" + (h - 14) + "' text-anchor='middle' font-size='11' font-weight='700' fill='#334155'>" + esc(k) + "</text>";
     }).join("");
-    return "<div class='card' style='margin-top:14px'><h2>" + ico("quality") + " " + t("defectTitle") +
+    return "<div class='card'><h2>" + ico("quality") + " " + t("defectTitle") +
       " <span>SAMPLE</span></h2><div class='pad'>" +
-      "<div class='sub' style='margin:0 0 6px'>" + t("defectRate") + " (sample)</div>" +
       "<div class='defect-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + bars + "</svg></div>" +
       "<div class='dtime-leg'><span><b style='background:" + C_REJ + "'></b>" + t("dRejected") + "</span>" +
       "<span><b style='background:" + C_IMP + "'></b>" + t("dImpact") + "</span>" +
-      "<span><b style='background:" + C_NONE + "'></b>" + t("dNoImpact") + "</span></div>" +
-      "<p class='sub' style='margin:8px 0 0'>" + t("defectNote") + "</p></div></div>";
+      "<span><b style='background:" + C_NONE + "'></b>" + t("dNoImpact") + "</span></div></div></div>";
   }
 
   function hoMonthBlock(hoMonth, distinctHo) {
@@ -1635,10 +1645,12 @@
 
   function factoriesView(rows, s) {
     return kpiRow(s) +
-      purchaseLine(s.hoMonth) +
-      deliveryTimeCard(rows) +
-      defectSampleCard(s.ftyMap) +
-      "<div style='margin-top:14px'>" + asiaMapHtml() + "</div>";
+      "<div class='fty-dash'>" +
+        purchaseLine(s.hoMonth) +
+        deliveryTimeCard(rows) +
+        defectSampleCard(s.ftyMap) +
+        asiaMapHtml() +
+      "</div>";
   }
 
   function customersView(rows, s) {
