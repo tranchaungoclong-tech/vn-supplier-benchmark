@@ -399,10 +399,11 @@
   .fty-dash .fty-legend { gap: 8px; margin-top: 8px; }
   .fty-dash .fty-legend span { font-size: 12px; }
   .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 280px; }
-  .qp-chart { height: 280px; }
-  .qp-chart svg { width: 100%; height: 280px; display: block; }
-  .fty-dash .qp-chart { height: 280px; }
-  .fty-dash .qp-chart svg { height: 280px; }
+  .qp-chart { height: 320px; }
+  .qp-chart svg { width: 100%; height: 320px; display: block; }
+  .fty-dash .qp-wide { grid-column: 1 / -1; }
+  .fty-dash .qp-wide .qp-chart { height: 320px; }
+  .fty-dash .qp-wide .qp-chart svg { height: 320px; }
   .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .factory-row strong { display: block; }
   .bar { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; min-width: 90px; }
@@ -1347,7 +1348,7 @@
       if (late > max) max = late;
       if (rec.c > max) max = rec.c;
     }
-    var w = 720, h = 280, padL = 32, padR = 16, padT = 24, padB = 36;
+    var w = 960, h = 320, padL = 36, padR = 18, padT = 28, padB = 40;
     var innerW = w - padL - padR, innerH = h - padT - padB;
     var slot = innerW / 12;
     var barW = Math.min(28, slot * 0.42);
@@ -1369,20 +1370,24 @@
         (p.c ? "<text x='" + cx + "' y='" + (y - 4) + "' text-anchor='middle' font-size='10' font-weight='800' fill='#1d4ed8'>" + p.c + "</text>" : "") +
         "<text x='" + cx + "' y='" + (h - 12) + "' text-anchor='middle' font-size='11' font-weight='700' fill='#334155'>" + p.label + "</text>";
     }).join("");
-    function lineOf(key, color) {
+    function lineOf(key, color, labelNums) {
       var coords = pts.map(function (p, i) {
-        return { x: padL + i * slot + slot / 2, y: padT + innerH - (p[key] / max) * innerH };
+        return { x: padL + i * slot + slot / 2, y: padT + innerH - (p[key] / max) * innerH, n: p[key] };
       });
       var d = coords.map(function (c, i) { return (i ? "L" : "M") + c.x.toFixed(1) + " " + c.y.toFixed(1); }).join(" ");
       var dots = coords.map(function (c, i) {
-        return "<circle cx='" + c.x.toFixed(1) + "' cy='" + c.y.toFixed(1) + "' r='3.4' fill='#fff' stroke='" + color + "' stroke-width='2'><title>" +
+        var lab = labelNums && c.n ? ("<text x='" + c.x.toFixed(1) + "' y='" + (c.y - 10).toFixed(1) +
+          "' text-anchor='middle' font-size='11' font-weight='800' fill='" + color + "'>" + c.n + "</text>") : "";
+        return lab + "<circle cx='" + c.x.toFixed(1) + "' cy='" + c.y.toFixed(1) + "' r='4' fill='#fff' stroke='" + color + "' stroke-width='2'><title>" +
           esc(pts[i].label + " · " + pts[i][key]) + "</title></circle>";
       }).join("");
-      return "<path d='" + d + "' fill='none' stroke='" + color + "' stroke-width='2.2' stroke-linejoin='round'/>" + dots;
+      return "<path d='" + d + "' fill='none' stroke='" + color + "' stroke-width='2.4' stroke-linejoin='round'/>" + dots;
     }
-    return "<div class='card'><h2>" + ico("quality") + " " + t("qualityPerf") + "</h2><div class='pad'>" +
+    return "<div class='card qp-wide'><h2>" + ico("quality") + " " + t("qualityPerf") +
+      " <span>SAMPLE + late HO</span></h2><div class='pad'>" +
+      "<p class='sub' style='margin:0 0 8px'>" + t("qpNote") + "</p>" +
       "<div class='qp-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + axis + bars +
-      lineOf("late", "#f43f5e") + lineOf("a", "#10b981") + "</svg></div>" +
+      lineOf("late", "#f43f5e", true) + lineOf("a", "#10b981", false) + "</svg></div>" +
       "<div class='dtime-leg'><span><b style='background:#3b82f6'></b>" + t("qpComplaints") + "</span>" +
       "<span><b style='background:#f43f5e'></b>" + t("qpLate") + "</span>" +
       "<span><b style='background:#10b981'></b>" + t("qpAvg") + "</span></div></div></div>";
@@ -1858,8 +1863,8 @@
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
         qualityPerfCard(rows) +
-        asiaMapHtml() +
-      "</div>";
+      "</div>" +
+      "<div style='margin-top:14px'>" + asiaMapHtml() + "</div>";
   }
 
   function customersView(rows, s) {
