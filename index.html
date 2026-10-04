@@ -206,20 +206,20 @@
 
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
   .kpi {
-    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
-    padding: 14px 16px 14px 18px; border-left: 4px solid var(--blue); min-height: 92px;
+    border-radius: 16px; padding: 14px 16px; min-height: 92px; color: #fff;
+    box-shadow: 0 8px 20px rgba(15,23,42,.12);
   }
-  .kpi.green { border-left-color: var(--green); }
-  .kpi.amber { border-left-color: var(--amber); }
-  .kpi.violet { border-left-color: var(--violet); }
-  .kpi.rose { border-left-color: var(--rose); }
-  .kpi .lab { color: var(--muted); font-size: 12px; }
-  .kpi b { display: block; font-size: 26px; letter-spacing: -.03em; margin: 4px 0 2px; }
-  .kpi .delta { font-size: 12px; color: var(--muted); }
-  .kpi .delta.up { color: var(--green); }
-  .kpi .delta.down { color: var(--rose); }
+  .kpi.po { background: linear-gradient(160deg, #fb923c, #f97316); }
+  .kpi.spend { background: linear-gradient(160deg, #2dd4bf, #0d9488); }
+  .kpi.late { background: linear-gradient(160deg, #fb7185, #e11d48); }
+  .kpi.fty { background: linear-gradient(160deg, #34d399, #059669); }
+  .kpi .lab { color: rgba(255,255,255,.82); font-size: 12px; }
+  .kpi b { display: block; font-size: 26px; letter-spacing: -.03em; margin: 4px 0 2px; color: #fff; }
+  .kpi .delta { font-size: 12px; color: rgba(255,255,255,.78); }
+  .kpi .delta.up, .kpi .delta.down { color: #fff; }
   .kpi.click { cursor: pointer; }
-  .kpi.click:hover { box-shadow: 0 4px 16px rgba(15,23,42,.08); }
+  .kpi.click:hover { filter: brightness(1.06); }
+  .kpi .ico-tile { background: rgba(255,255,255,.18); color: #fff; }
 
   .layout { display: grid; grid-template-columns: 1.7fr .9fr; gap: 14px; }
   .card {
@@ -1544,13 +1544,13 @@
       if (s.ftyMap[k].country === "VN") vn++; else unknown++;
     });
     return "<div class='kpis'>" +
-      "<div class='kpi click' data-kpi='po'><div class='kpi-top'><div class='lab'>" + t("kpiPo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.pos) + "</b>" +
+      "<div class='kpi po click' data-kpi='po'><div class='kpi-top'><div class='lab'>" + t("kpiPo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.pos) + "</b>" +
         "<div class='delta'>" + fmt(s.lines) + t("linesIn") + "</div></div>" +
-      "<div class='kpi green click' data-kpi='spend'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
+      "<div class='kpi spend click' data-kpi='spend'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
         "<div class='delta'>" + t("spendNote") + "</div></div>" +
-      "<div class='kpi rose click' data-kpi='late'><div class='kpi-top'><div class='lab'>" + t("kpiLate") + "</div>" + tile("clock", "rose") + "</div><b>" + fmt(s.late) + "</b>" +
+      "<div class='kpi late click' data-kpi='late'><div class='kpi-top'><div class='lab'>" + t("kpiLate") + "</div>" + tile("clock", "rose") + "</div><b>" + fmt(s.late) + "</b>" +
         "<div class='delta down'>" + latePct + t("lateOf") + AS + "</div></div>" +
-      "<div class='kpi violet click' data-kpi='fty'><div class='kpi-top'><div class='lab'>" + t("kpiFty") + "</div>" + tile("factories", "violet") + "</div><b>" + fmt(s.factories) + "</b>" +
+      "<div class='kpi fty click' data-kpi='fty'><div class='kpi-top'><div class='lab'>" + t("kpiFty") + "</div>" + tile("factories", "violet") + "</div><b>" + fmt(s.factories) + "</b>" +
         "<div class='delta'>" + t("vnNote")(vn, unknown) + "</div></div>" +
       "</div>";
   }
