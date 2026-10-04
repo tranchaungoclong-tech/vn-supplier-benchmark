@@ -312,8 +312,9 @@
 
   .trend { height: 168px; }
   .trend svg { width: 100%; height: 168px; display: block; }
-  .ho-chart { height: 240px; }
-  .ho-chart svg { width: 100%; height: 240px; display: block; }
+  .ho-chart { height: 360px; }
+  .ho-chart svg { width: 100%; height: 360px; display: block; }
+  .ho-seg:hover rect { filter: brightness(1.08); }
   .fty-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .fty-legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #334155; }
   .fty-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
@@ -1025,10 +1026,10 @@
     var colorOf = {};
     ftyList.forEach(function (k, i) { colorOf[k] = palette[i % palette.length]; });
     var nM = Math.max(months.length, 1);
-    var w = 520, h = 240, padL = 24, padR = 10, padT = 22, padB = 32;
+    var w = 640, h = 360, padL = 28, padR = 12, padT = 28, padB = 36;
     var innerW = w - padL - padR, innerH = h - padT - padB;
     var slot = innerW / nM;
-    var barW = Math.min(48, slot * 0.58);
+    var barW = Math.min(78, slot * 0.72);
     var tops = [];
     var bars = months.map(function (m, i) {
       var x = padL + i * slot + (slot - barW) / 2;
@@ -1040,17 +1041,24 @@
         if (!n) return;
         var bh = (n / max) * innerH;
         y -= bh;
-        var tip = (f.name || k) + " · " + n + " HO · " + fmt(f.qty) + " pcs";
-        stack += "<rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
+        var tip = m.label + " · " + k + " · " + n + " HO";
+        var show = bh >= 14;
+        var midY = y + bh / 2 + 4;
+        stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
+          "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] +
-          "'><title>" + esc(tip) + "</title></rect>";
+          "'></rect>" +
+          (show ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + midY.toFixed(1) +
+            "' text-anchor='middle' font-size='10' font-weight='800' fill='#fff'>" +
+            esc(k) + " " + n + "</text>" : "") +
+          "<title>" + esc(tip) + "</title></g>";
       });
       var cx = x + barW / 2;
       var topY = padT + innerH - (m.ho / max) * innerH;
       tops.push({ x: cx, y: topY });
       return stack +
-        (m.ho ? "<text x='" + cx + "' y='" + (topY - 8) + "' text-anchor='middle' font-size='11' font-weight='700' fill='#0f172a'>" + m.ho + "</text>" : "") +
-        "<text x='" + cx + "' y='" + (h - 12) + "' text-anchor='middle' font-size='11' fill='#64748b'>" + m.label + "</text>";
+        (m.ho ? "<text x='" + cx + "' y='" + (topY - 8) + "' text-anchor='middle' font-size='12' font-weight='800' fill='#0f172a'>" + m.ho + "</text>" : "") +
+        "<text x='" + cx + "' y='" + (h - 12) + "' text-anchor='middle' font-size='12' font-weight='700' fill='#334155'>" + m.label + "</text>";
     }).join("");
     var line = "";
     if (tops.length > 1) {
@@ -1076,7 +1084,8 @@
     return "<div class='card'><h2>" + ico("trend") + " " + t("hoMonth") +
       " <span>" + fmt(distinctHo) + " HO</span></h2>" +
       "<div class='pad'><div class='ho-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + bars + line +
-      "</svg></div>" + legend + "</div></div>";
+      "</svg></div>" + legend +
+      "<p class='sub' style='margin:8px 0 0'>Each colour = factory HO that month. Label = code + HO count (Jul · G191 · 3). Tap a slice for the HO list.</p></div></div>";
   }
 
   function spark(o) {
@@ -1480,7 +1489,26 @@
       catch (err) { openCustPop(custEl.getAttribute("data-cust")); }
       return;
     }
-    var ftyEl = e.target.closest("[data-fty]");
+    var ftyEl = e.target.closest ? e.target.closest("[data-fty]") : null;
+    if (!ftyEl) {
+      var n = e.target;
+      while (n && n !== e.currentTarget) {
+        if (n.getAttribute && n.getAttribute("data-fty")) { ftyEl = n; break; }
+        n = n.parentNode;
+      }
+    }
+    if (ftyEl && ftyEl.getAttribute("data-month")) {
+      var mk = ftyEl.getAttribute("data-month");
+      var fk;
+      try { fk = decodeURIComponent(ftyEl.getAttribute("data-fty")); }
+      catch (err) { fk = ftyEl.getAttribute("data-fty"); }
+      var list = filtered().filter(function (o) {
+        return (o.factoryCode || o.sheet) === fk && o.orderDate && o.orderDate.slice(0, 7) === mk;
+      });
+      var lab = mk.slice(5) + " · " + fk;
+      renderHoPop(lab, list);
+      return;
+    }
     if (ftyEl) {
       try { openFtyPop(decodeURIComponent(ftyEl.getAttribute("data-fty"))); }
       catch (err) { openFtyPop(ftyEl.getAttribute("data-fty")); }
