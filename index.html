@@ -256,6 +256,21 @@
   .hbar .track { height: 10px; background: #eef2f7; border-radius: 99px; overflow: hidden; }
   .hbar .track i { display: block; height: 100%; border-radius: 99px; }
   .hbar .n { text-align: right; color: #64748b; font-variant-numeric: tabular-nums; }
+  .dtime { display: flex; flex-direction: column; gap: 8px; }
+  .dtime-row {
+    display: grid; grid-template-columns: 92px 1fr 48px; gap: 8px; align-items: center; font-size: 12px;
+  }
+  .dtime-lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: #0f172a; }
+  .dtime-track { display: flex; height: 22px; border-radius: 8px; overflow: hidden; background: #eef2f7; }
+  .dtime-track i {
+    display: flex; align-items: center; justify-content: center; height: 100%;
+    color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; min-width: 0;
+  }
+  .dtime-track i:hover { filter: brightness(1.08); }
+  .dtime-n { text-align: right; color: #64748b; font-variant-numeric: tabular-nums; }
+  .dtime-leg { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 12px; color: #334155; }
+  .dtime-leg span { display: inline-flex; align-items: center; gap: 6px; }
+  .dtime-leg b { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
   .pop {
     display: none; position: fixed; inset: 0; z-index: 2000;
     background: rgba(15,23,42,.55); place-items: center; padding: 18px;
@@ -578,6 +593,11 @@
       purchaseNote: "$ not in tracking 9-24. One chart: stacked HO by factory × order month. Label = factory — HO. Empty month = 0. Tap a slice for that factory that month.",
       purchaseUnit: "HO",
       purchaseY: "HO",
+      deliveryTime: "Delivery Time",
+      deliveryNote: "Customer due vs tracking as-of. On time = not due yet. Late = past customer due. No actual ship date in this file — no Early. Distinct HO. Tap a colour for that factory.",
+      dOnTime: "On time",
+      dLate: "Late",
+      dNoDue: "No due",
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
       factoryMaster: "Factory master", customers: "Customers", factories: "Factories",
       qaTest: "QA test", inspectPlan: "Inspection plan",
@@ -620,6 +640,11 @@
       purchaseNote: "跟踪表无金额。一张图：按工厂叠 HO × 开单月。标签 = 工厂 — HO。空月 = 0。点色块看该厂该月 HO。",
       purchaseUnit: "HO",
       purchaseY: "HO",
+      deliveryTime: "Delivery Time",
+      deliveryNote: "对比客户交期。On time = 未到期。Late = 已过客户交期。本表无实际出货日 — 没有 Early。按 HO 去重。点色块看该厂。",
+      dOnTime: "未到期",
+      dLate: "逾期",
+      dNoDue: "无交期",
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
       factoryMaster: "工厂主档", customers: "客户", factories: "工厂",
       qaTest: "QA 测试", inspectPlan: "验货计划",
@@ -1086,6 +1111,48 @@
       "<p class='sub' style='margin:8px 0 0'>" + t("purchaseNote") + "</p></div></div>";
   }
 
+  function deliveryTimeCard(rows) {
+    var by = {};
+    rows.forEach(function (o) {
+      var k = o.factoryCode || o.sheet || "?";
+      if (!by[k]) by[k] = { code: k, name: o.factoryName || k, on: {}, late: {}, none: {} };
+      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o));
+      var band = delayBand(o.customerDue);
+      if (band.key === "easy") by[k].on[id] = true;
+      else if (band.key === "none") by[k].none[id] = true;
+      else by[k].late[id] = true;
+    });
+    var keys = Object.keys(by).sort();
+    if (!keys.length) return "";
+    var C_ON = "#10b981", C_LATE = "#f43f5e", C_NONE = "#8b5cf6";
+    var rowsHtml = keys.map(function (k) {
+      var f = by[k];
+      var on = Object.keys(f.on).length, late = Object.keys(f.late).length, none = Object.keys(f.none).length;
+      var tot = on + late + none;
+      if (!tot) return "";
+      function seg(n, color, kind, label) {
+        if (!n) return "";
+        var w = (100 * n / tot);
+        var show = w >= 12;
+        return "<i data-dtime='" + kind + "' data-fty='" + encodeURIComponent(k) + "' style='width:" + w.toFixed(1) +
+          "%;background:" + color + "' title='" + esc(k + " · " + label + " — " + n + " HO") + "'>" +
+          (show ? (Math.round(w) + "%") : "") + "</i>";
+      }
+      return "<div class='dtime-row'><div class='dtime-lab' title='" + esc(f.name) + "'>" + esc(k) + "</div>" +
+        "<div class='dtime-track'>" +
+          seg(on, C_ON, "on", t("dOnTime")) +
+          seg(late, C_LATE, "late", t("dLate")) +
+          seg(none, C_NONE, "none", t("dNoDue")) +
+        "</div><div class='dtime-n'>" + tot + "</div></div>";
+    }).join("");
+    return "<div class='card' style='margin-top:14px'><h2>" + ico("clock") + " " + t("deliveryTime") +
+      " <span>HO · customer due</span></h2><div class='pad'><div class='dtime'>" + rowsHtml + "</div>" +
+      "<div class='dtime-leg'><span><b style='background:" + C_ON + "'></b>" + t("dOnTime") + "</span>" +
+      "<span><b style='background:" + C_LATE + "'></b>" + t("dLate") + "</span>" +
+      "<span><b style='background:" + C_NONE + "'></b>" + t("dNoDue") + "</span></div>" +
+      "<p class='sub' style='margin:8px 0 0'>" + t("deliveryNote") + "</p></div></div>";
+  }
+
   function hoMonthBlock(hoMonth, distinctHo) {
     var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     var zhM = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
@@ -1504,6 +1571,7 @@
   function factoriesView(rows, s) {
     return kpiRow(s) +
       purchaseLine(s.hoMonth) +
+      deliveryTimeCard(rows) +
       "<div class='grid2' style='margin-top:14px'>" + asiaMapHtml() +
       "<div class='card'><h2>" + ico("factories") + " " + t("factories") + "</h2><div class='pad'>" +
       Object.keys(s.ftyMap).sort().map(function (k) {
@@ -1604,6 +1672,23 @@
         if (n.getAttribute && n.getAttribute("data-fty")) { ftyEl = n; break; }
         n = n.parentNode;
       }
+    }
+    var dt = e.target.closest ? e.target.closest("[data-dtime]") : null;
+    if (dt && dt.getAttribute("data-fty")) {
+      var fkDt;
+      try { fkDt = decodeURIComponent(dt.getAttribute("data-fty")); }
+      catch (err) { fkDt = dt.getAttribute("data-fty"); }
+      var kind = dt.getAttribute("data-dtime");
+      var listDt = filtered().filter(function (o) {
+        if ((o.factoryCode || o.sheet) !== fkDt) return false;
+        var b = delayBand(o.customerDue).key;
+        if (kind === "on") return b === "easy";
+        if (kind === "none") return b === "none";
+        return b !== "easy" && b !== "none";
+      });
+      var labDt = fkDt + " · " + (kind === "on" ? t("dOnTime") : kind === "none" ? t("dNoDue") : t("dLate"));
+      renderHoPop(labDt, listDt, "Customer due vs " + AS + ". No ship-early date in tracking.");
+      return;
     }
     if (ftyEl && ftyEl.getAttribute("data-month")) {
       var mk = ftyEl.getAttribute("data-month");
