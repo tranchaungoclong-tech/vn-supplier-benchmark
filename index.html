@@ -455,11 +455,12 @@
     .act { min-width: 72px; padding: 6px 8px 7px; font-size: 11px; }
     .kpi { min-height: 0; padding: 10px 12px; }
     .kpi b { font-size: 20px; }
-    .filters { gap: 4px; margin: 0 0 10px; }
-    .filters select {
-      max-width: none; flex: 1 1 46%; font-size: 13px; padding: 4px 8px;
-      border-radius: 10px; min-height: 0;
+    .filters { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 4px; margin: 0 0 8px; }
+    .filters select, .period-btn {
+      max-width: none; width: 100%; font-size: 11px; padding: 3px 6px;
+      border-radius: 8px; min-height: 0;
     }
+    .period-wrap { min-width: 0; }
     .chip-user { font-size: 0; gap: 6px; }
     .chip-user .dot { display: none; }
     table { font-size: 12px; }
@@ -471,8 +472,8 @@
     .kpis { grid-template-columns: 1fr 1fr; gap: 8px; }
     .pager { flex-wrap: wrap; gap: 8px; }
     .actions { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
-    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .filters select, .period-btn { flex: none; width: 100%; font-size: 12.5px; padding: 5px 8px; max-width: none; }
+    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .filters select, .period-btn { flex: none; width: 100%; font-size: 11px; padding: 3px 6px; max-width: none; }
     .period-sub { left: 0; top: 100%; }
     .fty-dash { grid-template-columns: 1fr; }
   }
