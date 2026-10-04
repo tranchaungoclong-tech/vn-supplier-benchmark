@@ -943,7 +943,7 @@
       ftySeen[k] = true;
       var opt = document.createElement("option");
       opt.value = k;
-      opt.textContent = (o.factoryCode || k) + " · " + (o.factoryName || "");
+      opt.textContent = ftyNick(k, o.factoryName) || o.factoryName || k;
       ftySel.appendChild(opt);
     }
     if (o.customer && !custSeen[o.customer]) {
@@ -1187,13 +1187,12 @@
         var bh = (n / max) * innerH;
         y -= bh;
         var nickP = ftyNick(k, ftyKeys[k]);
-        var showP = bh >= 16;
+        var showP = bh >= 14;
         stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
           "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] + "'></rect>" +
           (showP ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + (y + bh / 2 + 4).toFixed(1) +
-            "' text-anchor='middle' font-size='11' font-weight='800' fill='#fff'>" +
-            esc(nickP) + " " + n + "</text>" : "") +
+            "' text-anchor='middle' font-size='11' font-weight='800' fill='#fff'>" + n + "</text>" : "") +
           "<title>" + esc(m.label + " · " + nickP + " " + n + " HO") + "</title></g>";
       });
       var cx = x + barW / 2;
@@ -1347,8 +1346,7 @@
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] +
           "'></rect>" +
           (show ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + midY.toFixed(1) +
-            "' text-anchor='middle' font-size='12' font-weight='800' fill='#fff'>" +
-            esc(nick) + " " + n + "</text>" : "") +
+            "' text-anchor='middle' font-size='12' font-weight='800' fill='#fff'>" + n + "</text>" : "") +
           "<title>" + esc(tip) + "</title></g>";
       });
       var cx = x + barW / 2;
