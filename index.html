@@ -276,7 +276,11 @@
   .asia-map .leaflet-control-zoom a { color: #0f172a; }
   .map-label {
     background: transparent; border: 0; box-shadow: none; font: 700 11px/1 "Segoe UI", sans-serif;
-    color: #4b5563; letter-spacing: .03em; white-space: nowrap;
+    color: #4b5563; letter-spacing: .03em; white-space: nowrap; pointer-events: none;
+  }
+  .map-pin {
+    background: transparent; border: 0; box-shadow: none; font: 800 10px/1 "Segoe UI", sans-serif;
+    color: #5b21b6; white-space: nowrap; pointer-events: none;
   }
   .empty { padding: 24px; color: var(--muted); }
 
@@ -449,6 +453,18 @@
   }
   var AS = DATA.asOf || "2026-10-03";
   var ORDERS = DATA.orders;
+  var FTY_LOC = {
+    A474: { province: "Binh Duong", lat: 11.17, lon: 106.67 },
+    A353: { province: "Tay Ninh", lat: 11.31, lon: 106.10 },
+    G191: { province: "Binh Phuoc", lat: 11.65, lon: 106.91 },
+    A447: { province: "Ninh Binh", lat: 20.25, lon: 105.97 },
+    A533: { province: "Long An", lat: 10.60, lon: 106.38 },
+    A514: { province: "Binh Duong", lat: 11.05, lon: 106.67 },
+    A536: { province: "Vinh Phuc", lat: 21.31, lon: 105.60 },
+    A240: { province: "Ha Noi", lat: 21.03, lon: 105.85 },
+    A351: { province: "Binh Duong", lat: 11.11, lon: 106.78 },
+    A412: { province: "Dong Nai", lat: 10.95, lon: 106.92 }
+  };
   var view = "dash";
   var page = 1;
   var pageSize = 10;
@@ -471,7 +487,7 @@
       kpiPo: "Distinct POs", kpiSpend: "Spend $", kpiLate: "Late customer POs", kpiFty: "Factories",
       notReported: "not reported", spendNote: "Total / Total qty column empty",
       linesIn: " lines in filter", lateOf: "% of PO · vs ",
-      vnNote: function (vn, unk) { return vn + " VN · " + unk + " country not reported"; },
+      vnNote: function (vn, unk) { return unk ? (vn + " VN · " + unk + " country not reported") : (vn + " Vietnam · province pinned"); },
       orderBook: "Order book", qualityLib: "Quality library", lines: " lines",
       tabAll: "All lines", tabLate: "Customer late", tabNew: "New order", tabRepeat: "Repeat",
       tabInspect: "Has inspection note",
@@ -485,7 +501,7 @@
       onTime: "On time", late17: "1–7d late", late821: "8–21d late", late22: "22d+ late", noDue: "No customer due",
       latePoPct: "late PO %", passLines: "Pass lines", pending: "pending",
       mapTitle: "Factory location · Asia",
-      mapNote: "Real map. Country names in English. Pins = country from the factory name in tracking 9-24. China is on the map. City GPS is not in the Excel — country pin only.",
+      mapNote: "Pins = province he named 4 Oct. All 10 factories Vietnam. Same province (Binh Duong ×3) are offset so they do not sit on one dot.",
       titles: {
         dash: ["VN Supplier Benchmark", "VN-handled orders, customers, factories — numbers from ORDER TRACKING LIST 9-24."],
         merch: ["Merchandiser", "Factory master by category and customer book. Same 9-24 file."],
@@ -509,7 +525,7 @@
       kpiPo: "PO 数", kpiSpend: "金额 $", kpiLate: "客户逾期 PO", kpiFty: "工厂",
       notReported: "未填写", spendNote: "Total / Total qty 列为空",
       linesIn: " 行（当前筛选）", lateOf: "% PO · 对比 ",
-      vnNote: function (vn, unk) { return vn + " 家越南 · " + unk + " 家国家未报"; },
+      vnNote: function (vn, unk) { return unk ? (vn + " 家越南 · " + unk + " 家国家未报") : (vn + " 家越南 · 已钉省份"); },
       orderBook: "订单台账", qualityLib: "质量库", lines: " 行",
       tabAll: "全部", tabLate: "客户逾期", tabNew: "新单", tabRepeat: "返单",
       tabInspect: "有验货备注",
@@ -523,7 +539,7 @@
       onTime: "准时", late17: "逾期 1–7 天", late821: "逾期 8–21 天", late22: "逾期 22 天+", noDue: "无客户交期",
       latePoPct: "逾期 PO %", passLines: "Pass 行", pending: "待定",
       mapTitle: "工厂位置 · 亚洲",
-      mapNote: "真实地图。国名英文。针脚 = tracking 9-24 厂名里的国家。中国在图上。本文件无城市坐标 — 只钉国家。",
+      mapNote: "针脚 = 4 Oct 他给的省份。10 家工厂都在越南。同省（平阳 ×3）错开，避免叠点。",
       titles: {
         dash: ["VN Supplier Benchmark", "越南跟进的订单 / 客户 / 工厂 — 数字仅来自 ORDER TRACKING LIST 9-24。"],
         merch: ["跟单", "按品类的工厂主档和客户台账。同一份 9-24 文件。"],
@@ -589,6 +605,11 @@
   function daysBetween(a, b) {
     if (!a || !b) return null;
     return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+  }
+  function ftyPlace(o) {
+    var loc = FTY_LOC[o.factoryCode] || FTY_LOC[o.sheet];
+    if (loc) return loc.province + ", Vietnam";
+    return o.country ? COUNTRY_EN[o.country] || o.country : "country not reported";
   }
   function shortFty(o) {
     var n = (o.factoryName || o.supplierRaw || "")
@@ -718,8 +739,12 @@
       fty[fk] = true;
       if (o.customer) cust[o.customer] = true;
       if (!ftyMap[fk]) {
+        var loc = FTY_LOC[o.factoryCode] || FTY_LOC[fk];
         ftyMap[fk] = {
-          code: o.factoryCode, name: o.factoryName, country: o.country || "not reported",
+          code: o.factoryCode, name: o.factoryName, country: loc ? "VN" : (o.country || "not reported"),
+          province: loc ? loc.province : "",
+          lat: loc ? loc.lat : null,
+          lon: loc ? loc.lon : null,
           lines: 0, qty: 0, pos: {}, late: {}, cats: {}, customers: {}
         };
       }
@@ -919,7 +944,7 @@
       return "<tr>" +
         "<td>" + pic + "</td>" +
         "<td><div class='po'>" + esc(o.po || "–") + "</div><div class='sub'>" + esc(o.item || o.productName || "") + "</div></td>" +
-        "<td>" + esc(shortFty(o)) + "<div class='sub'>" + esc(o.country || "country not reported") + "</div></td>" +
+        "<td>" + esc(shortFty(o)) + "<div class='sub'>" + esc(ftyPlace(o)) + "</div></td>" +
         "<td>" + esc(o.customer || "–") + "<div class='sub'>" + esc(o.endCustomer || "") + "</div></td>" +
         "<td>" + fmt(o.qty) + "</td>" +
         "<td><span class='" + band.cls + "'>" + esc(band.label) + "</span></td>" +
@@ -1008,7 +1033,7 @@
       var cats = Object.keys(f.cats).join(" · ") || "–";
       var custs = Object.keys(f.customers).join(", ") || "–";
       return "<div class='factory-row'><div><strong>" + esc(f.code || k) + " · " + esc(f.name || "") +
-        "</strong><div class='sub'>" + esc(f.country) + " · " + esc(cats) +
+        "</strong><div class='sub'>" + esc(f.province ? f.province + ", Vietnam" : f.country) + " · " + esc(cats) +
         "<br>Customers: " + esc(custs) + "</div></div>" +
         "<div style='text-align:right;min-width:160px'><div class='sub'>" + nLate + " / " + nPo +
         " late PO · " + fmt(f.qty) + " pcs</div><div class='bar'><i style='width:" + rate +
@@ -1088,20 +1113,19 @@
       el.innerHTML = "<p class='empty'>Map zoom needs vendor/leaflet.js next to this page.</p>";
       return;
     }
-    var byC = {}, unknown = [];
+    var pins = [], unknown = [];
     Object.keys(s.ftyMap).forEach(function (k) {
       var f = s.ftyMap[k];
-      if (!f.country || !COUNTRY_LL[f.country]) { unknown.push(f); return; }
-      if (!byC[f.country]) byC[f.country] = [];
-      byC[f.country].push(f);
+      if (f.lat != null && f.lon != null) pins.push(f);
+      else unknown.push(f);
     });
     asiaMap = L.map(el, {
       zoomControl: true,
       scrollWheelZoom: true,
       attributionControl: false,
-      minZoom: 3,
-      maxZoom: 8
-    }).setView([20, 105], 4);
+      minZoom: 4,
+      maxZoom: 10
+    }).setView([16.5, 106.5], 5.4);
     if (window.ASIA) {
       L.geoJSON(window.ASIA, {
         style: { color: "#c4bdae", weight: 0.8, fillColor: "#e8e4d8", fillOpacity: 1 }
@@ -1126,27 +1150,35 @@
         interactive: false
       }).addTo(asiaMap);
     });
-    Object.keys(byC).forEach(function (c) {
-      var list = byC[c];
-      var base = COUNTRY_LL[c];
-      list.forEach(function (f, i) {
-        var n = list.length;
-        var ang = (i / Math.max(n, 1)) * Math.PI * 2;
-        var rad = n > 1 ? 0.55 : 0;
-        var lat = base[0] + Math.sin(ang) * rad;
-        var lon = base[1] + Math.cos(ang) * rad;
-        var r = Math.max(7, Math.min(16, 6 + Math.sqrt(f.lines)));
-        L.circleMarker([lat, lon], {
-          radius: r, color: "#fff", weight: 2, fillColor: "#7C3AED", fillOpacity: 0.85
-        }).addTo(asiaMap).bindPopup(
-          "<b>" + esc(f.code || "") + " · " + esc(f.name || "") + "</b><br>" +
-          COUNTRY_EN[c] + "<br>" + f.lines + " lines · " + Object.keys(f.pos).length + " PO"
-        );
-      });
+    pins.forEach(function (f) {
+      var r = Math.max(7, Math.min(16, 6 + Math.sqrt(f.lines)));
+      L.circleMarker([f.lat, f.lon], {
+        radius: r, color: "#fff", weight: 2, fillColor: "#7C3AED", fillOpacity: 0.88
+      }).addTo(asiaMap).bindPopup(
+        "<b>" + esc(f.code || "") + " · " + esc(f.name || "") + "</b><br>" +
+        esc(f.province) + ", Vietnam<br>" + f.lines + " lines · " + Object.keys(f.pos).length + " PO"
+      );
+      L.marker([f.lat, f.lon], {
+        icon: L.divIcon({
+          className: "map-pin",
+          html: esc(f.code || ""),
+          iconSize: [48, 14],
+          iconAnchor: [24, -10]
+        }),
+        interactive: false
+      }).addTo(asiaMap);
     });
-    asiaMap.fitBounds([[-8, 70], [50, 145]], { padding: [12, 12] });
-    var bits = Object.keys(byC).map(function (c) { return COUNTRY_EN[c] + " · " + byC[c].length + " factory"; });
-    if (unknown.length) bits.push(unknown.length + " factory country not reported — not pinned");
+    if (pins.length) {
+      var b = L.latLngBounds(pins.map(function (f) { return [f.lat, f.lon]; }));
+      asiaMap.fitBounds(b.pad(0.35));
+    } else {
+      asiaMap.fitBounds([[-8, 70], [50, 145]], { padding: [12, 12] });
+    }
+    var bits = ["Vietnam · " + pins.length + " factory"];
+    var prov = {};
+    pins.forEach(function (f) { if (f.province) prov[f.province] = (prov[f.province] || 0) + 1; });
+    bits.push(Object.keys(prov).length + " provinces");
+    if (unknown.length) bits.push(unknown.length + " factory not pinned");
     var leg = document.getElementById("asiaMapLegend");
     if (leg) leg.textContent = bits.join(" · ") + " · + / − to zoom";
     setTimeout(function () { if (asiaMap) asiaMap.invalidateSize(); }, 80);
@@ -1158,7 +1190,7 @@
         var f = s.ftyMap[k];
         var nPo = Object.keys(f.pos).length, nLate = Object.keys(f.late).length;
         return "<div class='factory-row'><div><strong>" + esc(f.code || k) + " · " + esc(f.name || "") +
-          "</strong><div class='sub'>" + esc(f.country) + " · " + Object.keys(f.cats).join(" · ") +
+          "</strong><div class='sub'>" + esc(f.province ? f.province + ", Vietnam" : f.country) + " · " + Object.keys(f.cats).join(" · ") +
           "</div></div><div class='sub'>" + nLate + "/" + nPo + " late PO · " + f.lines + " lines · " +
           fmt(f.qty) + " pcs · $ not reported</div></div>";
       }).join("") + "</div></div>";
