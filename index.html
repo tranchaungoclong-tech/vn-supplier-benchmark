@@ -256,8 +256,8 @@
   .hbar .track i { display: block; height: 100%; border-radius: 99px; }
   .hbar .n { text-align: right; color: #64748b; font-variant-numeric: tabular-nums; }
   .pop {
-    display: none; position: fixed; inset: 0; z-index: 70;
-    background: rgba(15,23,42,.45); place-items: center; padding: 18px;
+    display: none; position: fixed; inset: 0; z-index: 2000;
+    background: rgba(15,23,42,.55); place-items: center; padding: 18px;
   }
   .pop.on { display: grid; }
   .pop-card {
@@ -321,8 +321,12 @@
   .ho-table th:first-child, .ho-table td:first-child { text-align: left; }
   .ho-table td { text-align: right; font-variant-numeric: tabular-nums; }
   .ho-table tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
-  .asia-map { height: 360px; border-radius: 12px; overflow: hidden; background: #c5d4e0; }
-  .asia-map .leaflet-container { height: 360px; width: 100%; background: #c5d4e0; font: inherit; }
+  .asia-map {
+    height: 360px; border-radius: 12px; overflow: hidden; background: #c5d4e0;
+    isolation: isolate; position: relative; z-index: 0;
+  }
+  .asia-map .leaflet-container { height: 360px; width: 100%; background: #c5d4e0; font: inherit; z-index: 0; }
+  .asia-map .leaflet-pane, .asia-map .leaflet-top, .asia-map .leaflet-bottom { z-index: 1; }
   .asia-map .leaflet-control-zoom a { color: #0f172a; }
   .map-label {
     background: transparent; border: 0; box-shadow: none; font: 700 11px/1 "Segoe UI", sans-serif;
@@ -351,7 +355,7 @@
     color: #94a3b8; font-size: 10px;
   }
   .lightbox {
-    display: none; position: fixed; inset: 0; z-index: 80;
+    display: none; position: fixed; inset: 0; z-index: 2100;
     background: rgba(15,23,42,.62); place-items: center; padding: 24px;
   }
   .lightbox.on { display: grid; }
