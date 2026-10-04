@@ -333,8 +333,8 @@
   .purchase-chart .ho-seg:hover rect { filter: brightness(1.08); }
   .defect-chart { height: 320px; }
   .defect-chart svg { width: 100%; height: 320px; display: block; }
-  .ho-chart { height: 360px; }
-  .ho-chart svg { width: 100%; height: 360px; display: block; }
+  .ho-chart { height: 420px; }
+  .ho-chart svg { width: 100%; height: 420px; display: block; }
   .ho-seg:hover rect { filter: brightness(1.08); }
   .fty-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   .fty-legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #334155; }
@@ -879,6 +879,15 @@
       .trim();
     return (o.factoryCode ? o.factoryCode + " " : "") + n;
   }
+  function ftyNick(code, name) {
+    var n = String(name || "")
+      .replace(/COMPANY LIMITED|CO\.,?\s*LTD\.?|CORPORATION|TRADING AND SERVICES|INDUSTRIAL /ig, "")
+      .replace(/\(.*?\)/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (n.length > 18) n = n.slice(0, 16) + "…";
+    return n || code;
+  }
   function poKey(o) { return (o.factoryCode || o.sheet) + "|" + o.po; }
   function delayBand(due) {
     if (!due) return { key: "none", label: "No date", cls: "tag", days: null };
@@ -1121,7 +1130,7 @@
         stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
           "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] + "'></rect>" +
-          "<title>" + esc(m.label + " · " + k + " — " + n + " HO") + "</title></g>";
+          "<title>" + esc(m.label + " · " + ftyNick(k, ftyKeys[k]) + " " + n + " HO") + "</title></g>";
       });
       var cx = x + barW / 2;
       var topY = padT + innerH - (m.ho / max) * innerH;
@@ -1130,7 +1139,7 @@
         "<text x='" + cx + "' y='" + (h - 12) + "' text-anchor='middle' font-size='11' font-weight='700' fill='#334155'>" + m.label + "</text>";
     }).join("");
     var legend = "<div class='fty-legend'>" + ftyList.map(function (k) {
-      return "<span><i style='background:" + colorOf[k] + "'></i>" + esc(k) + "</span>";
+      return "<span><i style='background:" + colorOf[k] + "'></i>" + esc(ftyNick(k, ftyKeys[k])) + "</span>";
     }).join("") + "</div>";
     return "<div class='card'><h2>" + ico("trend") + " " + t("purchaseValue") +
       " <span>" + t("purchaseUnit") + "</span></h2>" +
@@ -1165,7 +1174,7 @@
           "%;background:" + color + "' title='" + esc(k + " · " + label + " — " + n + " HO") + "'>" +
           (show ? (Math.round(w) + "%") : "") + "</i>";
       }
-      return "<div class='dtime-row'><div class='dtime-lab' title='" + esc(f.name) + "'>" + esc(k) + "</div>" +
+      return "<div class='dtime-row'><div class='dtime-lab' title='" + esc(f.name) + "'>" + esc(ftyNick(k, f.name)) + "</div>" +
         "<div class='dtime-track'>" +
           seg(on, C_ON, "on", t("dOnTime")) +
           seg(late, C_LATE, "late", t("dLate")) +
@@ -1250,7 +1259,7 @@
     var colorOf = {};
     ftyList.forEach(function (k, i) { colorOf[k] = palette[i % palette.length]; });
     var nM = 12;
-    var w = 720, h = 360, padL = 28, padR = 12, padT = 28, padB = 36;
+    var w = 760, h = 420, padL = 28, padR = 12, padT = 28, padB = 36;
     var innerW = w - padL - padR, innerH = h - padT - padB;
     var slot = innerW / nM;
     var barW = Math.min(42, slot * 0.7);
@@ -1265,16 +1274,17 @@
         if (!n) return;
         var bh = (n / max) * innerH;
         y -= bh;
-        var tip = m.label + " · " + k + " · " + n + " HO";
-        var show = bh >= 14;
+        var nick = ftyNick(k, ftyKeys[k]);
+        var tip = m.label + " · " + nick + " · " + n + " HO";
+        var show = bh >= 18;
         var midY = y + bh / 2 + 4;
         stack += "<g class='ho-seg' data-month='" + m.key + "' data-fty='" + encodeURIComponent(k) +
           "' style='cursor:pointer'><rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
           "' height='" + Math.max(1.4, bh).toFixed(1) + "' rx='3' fill='" + colorOf[k] +
           "'></rect>" +
           (show ? "<text x='" + (x + barW / 2).toFixed(1) + "' y='" + midY.toFixed(1) +
-            "' text-anchor='middle' font-size='10' font-weight='800' fill='#fff'>" +
-            esc(k) + " — " + n + "</text>" : "") +
+            "' text-anchor='middle' font-size='9' font-weight='800' fill='#fff'>" +
+            esc(nick) + " " + n + "</text>" : "") +
           "<title>" + esc(tip) + "</title></g>";
       });
       var cx = x + barW / 2;
@@ -1303,13 +1313,13 @@
         " L" + a2x.toFixed(1) + " " + a2y.toFixed(1) + " Z' fill='#0f172a'/>";
     }
     var legend = "<div class='fty-legend'>" + ftyList.map(function (k) {
-      return "<span><i style='background:" + colorOf[k] + "'></i>" + esc(k) + "</span>";
+      return "<span><i style='background:" + colorOf[k] + "'></i>" + esc(ftyNick(k, ftyKeys[k])) + "</span>";
     }).join("") + "</div>";
     return "<div class='card'><h2>" + ico("trend") + " " + t("hoMonth") +
       " <span>" + fmt(distinctHo) + " HO</span></h2>" +
       "<div class='pad'><div class='ho-chart'><svg viewBox='0 0 " + w + " " + h + "'>" + bars + line +
       "</svg></div>" + legend +
-      "<p class='sub' style='margin:8px 0 0'>Each colour = factory HO that month. Label = factory — HO (Jul · G191 — 3). Tap a slice for the HO list.</p></div></div>";
+      "<p class='sub' style='margin:8px 0 0'>Each colour = factory. Label = name + HO. Tap a slice for the HO list.</p></div></div>";
   }
 
   function spark(o) {
