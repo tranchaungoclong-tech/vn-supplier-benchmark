@@ -1,4 +1,5 @@
 _parse-orders.js
+_extract-ho-images.js
 _clip-asia.js
 orders.json
 vendor/countries.geojson

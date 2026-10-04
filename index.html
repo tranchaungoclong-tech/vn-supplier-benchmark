@@ -287,6 +287,24 @@
   .bar > i { display: block; height: 100%; background: var(--blue); }
   .spark { display: flex; gap: 2px; align-items: flex-end; height: 22px; }
   .spark i { width: 4px; background: #93c5fd; border-radius: 1px; display: block; }
+  .thumb {
+    width: 44px; height: 44px; border-radius: 8px; object-fit: cover; display: block;
+    background: #f1f5f9; border: 1px solid var(--line); cursor: zoom-in;
+  }
+  .thumb-empty {
+    width: 44px; height: 44px; border-radius: 8px; background: #f8fafc;
+    border: 1px dashed #dbe3ee; display: grid; place-items: center;
+    color: #94a3b8; font-size: 10px;
+  }
+  .lightbox {
+    display: none; position: fixed; inset: 0; z-index: 80;
+    background: rgba(15,23,42,.62); place-items: center; padding: 24px;
+  }
+  .lightbox.on { display: grid; }
+  .lightbox img {
+    max-width: min(92vw, 720px); max-height: 86vh; border-radius: 12px;
+    background: #fff; box-shadow: 0 12px 40px rgba(15,23,42,.28);
+  }
 
   @media (max-width: 1180px) {
     .kpis, .layout, .grid2 { grid-template-columns: 1fr; }
@@ -413,13 +431,18 @@
     </div>
   </div>
 </div>
+<div class="lightbox" id="lightbox" role="dialog" aria-label="HO photo">
+  <img id="lightboxImg" alt="HO photo" />
+</div>
 
 <script src="vendor/leaflet.js"></script>
 <script src="asia.js"></script>
 <script src="orders.js"></script>
+<script src="ho-map.js"></script>
 <script>
 (function () {
   var DATA = window.ORDERS;
+  var HO_IMAGES = window.HO_IMAGES || {};
   if (!DATA || !DATA.orders) {
     document.getElementById("view").innerHTML = "<div class='empty'>orders.js missing. Parse the tracking Excel first.</div>";
     return;
@@ -889,8 +912,12 @@
     var slice = list.slice(start, start + pageSize);
     var body = slice.map(function (o) {
       var band = delayBand(o.customerDue);
+      var src = o.ho && HO_IMAGES[o.ho] ? HO_IMAGES[o.ho] : "";
+      var pic = src
+        ? "<img class='thumb' src='" + esc(src) + "' alt='" + esc(o.ho) + "' data-full='" + esc(src) + "' loading='lazy' />"
+        : "<div class='thumb-empty'>—</div>";
       return "<tr>" +
-        "<td><input type='checkbox' disabled /></td>" +
+        "<td>" + pic + "</td>" +
         "<td><div class='po'>" + esc(o.po || "–") + "</div><div class='sub'>" + esc(o.item || o.productName || "") + "</div></td>" +
         "<td>" + esc(shortFty(o)) + "<div class='sub'>" + esc(o.country || "country not reported") + "</div></td>" +
         "<td>" + esc(o.customer || "–") + "<div class='sub'>" + esc(o.endCustomer || "") + "</div></td>" +
@@ -919,7 +946,7 @@
       "</div>" +
       "<div style='overflow:auto'>" +
       "<table><thead><tr>" +
-        "<th></th><th>PO / item</th><th>Factory</th><th>Customer</th><th>Qty</th>" +
+        "<th>HO</th><th>PO / item</th><th>Factory</th><th>Customer</th><th>Qty</th>" +
         "<th>Delay</th><th>$</th><th>Trend</th><th>Status</th>" +
       "</tr></thead><tbody>" + body + "</tbody></table></div>" +
       "<div class='pager'><span>Showing " + (list.length ? (start + 1) : 0) + "–" +
@@ -1196,7 +1223,15 @@
     document.getElementById(id).addEventListener("change", function () { page = 1; render(); });
   });
   document.getElementById("q").addEventListener("input", function () { page = 1; render(); });
+  var lightbox = document.getElementById("lightbox");
+  var lightboxImg = document.getElementById("lightboxImg");
   document.getElementById("view").addEventListener("click", function (e) {
+    var img = e.target.closest && e.target.closest("img.thumb");
+    if (img && img.getAttribute("data-full")) {
+      lightboxImg.src = img.getAttribute("data-full");
+      lightbox.classList.add("on");
+      return;
+    }
     var t = e.target.closest("[data-tab]");
     if (t) { tableTab = t.getAttribute("data-tab"); page = 1; render(); return; }
     var p = e.target.closest("[data-page]");
@@ -1212,6 +1247,16 @@
   document.addEventListener("click", function (e) {
     if (!e.target.closest("#bellPop") && !e.target.closest("#bellBtn")) {
       document.getElementById("bellPop").classList.remove("on");
+    }
+  });
+  lightbox.addEventListener("click", function () {
+    lightbox.classList.remove("on");
+    lightboxImg.src = "";
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      lightbox.classList.remove("on");
+      lightboxImg.src = "";
     }
   });
   applyChrome();
