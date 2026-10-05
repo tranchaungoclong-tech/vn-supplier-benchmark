@@ -648,7 +648,7 @@
       newOrder: "New order", repeatOrder: "Repeat order",
       bellTitle: "Merchandiser Alert",
       bellEmpty: "No alerts yet. This bell is for later merch chase — not the QA Board lock-screen.",
-      kpiHo: "Distinct HO", kpiSpend: "Spend $", kpiCat: "Top category", kpiFty: "Factories",
+      kpiHo: "HO", kpiSpend: "Spend $", kpiCat: "Top category", kpiFty: "Factories",
       notReported: "not reported", spendNote: "Total / Total qty column empty",
       hoSub: function (po, lines) { return po + " PO · " + lines + " lines"; },
       catSub: function (n) { return n + " categories"; },
@@ -1650,7 +1650,7 @@
     else setPopBack(false);
     var rows = filtered();
     if (kind === "ho") {
-      renderHoPop("Distinct HO", rows, "Current filter · tracking 9-24. One HO can have several PO. Big number is HO, not PO.");
+      renderHoPop("HO", rows, "Current filter · tracking 9-24. One HO can have several PO. Big number is HO, not PO.");
       return;
     }
     if (kind === "spend") {
