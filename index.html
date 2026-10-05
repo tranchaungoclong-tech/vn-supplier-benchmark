@@ -546,7 +546,10 @@
 
       <div class="filters">
         <select id="fFty"><option value="" data-i18n="allFactories">All factories</option></select>
-        <select id="fLoc"><option value="" data-i18n="allLocations">All locations</option></select>
+        <div class="period-wrap" id="locWrap">
+          <button type="button" class="period-btn" id="locBtn">All locations</button>
+          <div class="period-menu" id="locMenu"></div>
+        </div>
         <select id="fCust"><option value="" data-i18n="allCustomers">All customers</option></select>
         <select id="fCat"><option value="" data-i18n="allCategories">All categories</option></select>
         <div class="period-wrap" id="periodWrap">
@@ -601,17 +604,22 @@
   var AS = DATA.asOf || "2026-10-03";
   var ORDERS = DATA.orders;
   var FTY_LOC = {
-    A474: { province: "Binh Duong", lat: 11.17, lon: 106.67 },
-    A353: { province: "Tay Ninh", lat: 11.31, lon: 106.10 },
-    G191: { province: "Binh Phuoc", lat: 11.65, lon: 106.91 },
-    A447: { province: "Ninh Binh", lat: 20.25, lon: 105.97 },
-    A533: { province: "Long An", lat: 10.60, lon: 106.38 },
-    A514: { province: "Binh Duong", lat: 11.05, lon: 106.67 },
-    A536: { province: "Vinh Phuc", lat: 21.31, lon: 105.60 },
-    A240: { province: "Ha Noi", lat: 21.03, lon: 105.85 },
-    A351: { province: "Binh Duong", lat: 11.11, lon: 106.78 },
-    A412: { province: "Dong Nai", lat: 10.95, lon: 106.92 }
+    A474: { country: "VN", province: "Binh Duong", lat: 11.17, lon: 106.67 },
+    A353: { country: "VN", province: "Tay Ninh", lat: 11.31, lon: 106.10 },
+    G191: { country: "VN", province: "Binh Phuoc", lat: 11.65, lon: 106.91 },
+    A447: { country: "VN", province: "Ninh Binh", lat: 20.25, lon: 105.97 },
+    A533: { country: "VN", province: "Long An", lat: 10.60, lon: 106.38 },
+    A514: { country: "VN", province: "Binh Duong", lat: 11.05, lon: 106.67 },
+    A536: { country: "VN", province: "Vinh Phuc", lat: 21.31, lon: 105.60 },
+    A240: { country: "VN", province: "Ha Noi", lat: 21.03, lon: 105.85 },
+    A351: { country: "VN", province: "Binh Duong", lat: 11.11, lon: 106.78 },
+    A412: { country: "VN", province: "Dong Nai", lat: 10.95, lon: 106.92 }
   };
+  var LOC_COUNTRIES = [
+    { code: "VN", key: "locVN" },
+    { code: "KH", key: "locKH" },
+    { code: "TH", key: "locTH" }
+  ];
   var view = "dash";
   var page = 1;
   var pageSize = 10;
@@ -627,7 +635,8 @@
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
       actOrders: "Order book", actExport: "Export CSV", actQuality: "Quality", actMerch: "Merchandiser",
       allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
-      allLocations: "All locations", allPeriods: "All periods",
+      allLocations: "All locations", locVN: "Vietnam", locKH: "Cambodia", locTH: "Thailand",
+      allPeriods: "All periods",
       allDates: "All dates", custLate: "Customer due passed",
       due7: "Due next 7 days", newRepeat: "New + repeat",
       newOrder: "New order", repeatOrder: "Repeat order",
@@ -687,7 +696,8 @@
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
       actOrders: "订单台账", actExport: "导出 CSV", actQuality: "质量", actMerch: "跟单",
       allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
-      allLocations: "全部省份", allPeriods: "全部期间",
+      allLocations: "全部地点", locVN: "越南", locKH: "柬埔寨", locTH: "泰国",
+      allPeriods: "全部期间",
       allDates: "全部日期", custLate: "客户交期已过",
       due7: "未来 7 天到期", newRepeat: "新单 + 返单",
       newOrder: "新单", repeatOrder: "返单",
@@ -756,7 +766,9 @@
     });
     try { localStorage.setItem("sb-lang", lang); } catch (e) {}
     if (!periodVal) periodBtn.textContent = t("allPeriods");
+    if (!locVal) locBtn.textContent = t("allLocations");
     fillPeriods();
+    fillLocs();
   }
   function setLang(next) {
     lang = next === "zh" ? "zh" : "en";
@@ -978,14 +990,17 @@
   }
 
   var ftySel = document.getElementById("fFty");
-  var locSel = document.getElementById("fLoc");
+  var locBtn = document.getElementById("locBtn");
+  var locMenu = document.getElementById("locMenu");
+  var locWrap = document.getElementById("locWrap");
+  var locVal = "";
   var custSel = document.getElementById("fCust");
   var catSel = document.getElementById("fCat");
   var periodBtn = document.getElementById("periodBtn");
   var periodMenu = document.getElementById("periodMenu");
   var periodWrap = document.getElementById("periodWrap");
   var periodVal = "";
-  var ftySeen = {}, custSeen = {}, catSeen = {}, locSeen = {};
+  var ftySeen = {}, custSeen = {}, catSeen = {}, locProv = { VN: {}, KH: {}, TH: {} };
   ORDERS.forEach(function (o) {
     var k = o.factoryCode || o.sheet;
     if (k && !ftySeen[k]) {
@@ -1008,15 +1023,44 @@
       catSel.appendChild(a);
     }
     var loc = FTY_LOC[o.factoryCode] || FTY_LOC[o.sheet];
-    var prov = loc ? loc.province : "";
-    if (prov && !locSeen[prov]) {
-      locSeen[prov] = true;
-    }
+    if (loc && loc.province && locProv[loc.country || "VN"]) locProv[loc.country || "VN"][loc.province] = true;
   });
-  Object.keys(locSeen).sort().forEach(function (p) {
-    var lo = document.createElement("option");
-    lo.value = p; lo.textContent = p;
-    locSel.appendChild(lo);
+  function fillLocs() {
+    function item(val, lab) {
+      return "<button type='button' data-loc='" + val + "'>" + lab + "</button>";
+    }
+    var html = item("", t("allLocations"));
+    LOC_COUNTRIES.forEach(function (c) {
+      var sub = "";
+      Object.keys(locProv[c.code] || {}).sort().forEach(function (p) {
+        sub += item("P:" + c.code + ":" + p, p);
+      });
+      html += "<div class='period-year'>" + item("C:" + c.code, t(c.key)) +
+        (sub ? "<div class='period-sub'>" + sub + "</div>" : "") + "</div>";
+    });
+    locMenu.innerHTML = html;
+  }
+  fillLocs();
+  function setLoc(val, lab) {
+    locVal = val || "";
+    locBtn.textContent = lab || t("allLocations");
+    locWrap.classList.remove("open");
+    page = 1;
+    render();
+  }
+  locBtn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    locWrap.classList.toggle("open");
+  });
+  locMenu.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-loc]");
+    if (!b) return;
+    e.preventDefault();
+    var val = b.getAttribute("data-loc");
+    var lab = b.textContent;
+    if (val.indexOf("C:") === 0) lab = t(LOC_COUNTRIES.filter(function (c) { return c.code === val.slice(2); })[0].key);
+    else if (val.indexOf("P:") === 0) lab = val.slice(5);
+    setLoc(val, lab);
   });
   function fillPeriods() {
     var years = {};
@@ -1069,6 +1113,7 @@
   });
   document.addEventListener("click", function (e) {
     if (!periodWrap.contains(e.target)) periodWrap.classList.remove("open");
+    if (!locWrap.contains(e.target)) locWrap.classList.remove("open");
   });
 
   function matchPeriod(due, val) {
@@ -1086,14 +1131,20 @@
 
   function match(o) {
     var fty = ftySel.value, cust = custSel.value, cat = catSel.value;
-    var loc = locSel.value, period = periodVal;
+    var loc = locVal, period = periodVal;
     var due = document.getElementById("fDue").value;
     var kind = document.getElementById("fKind").value;
     var q = document.getElementById("q").value.trim().toLowerCase();
     if (fty && (o.factoryCode || o.sheet) !== fty) return false;
     if (loc) {
       var pin = FTY_LOC[o.factoryCode] || FTY_LOC[o.sheet];
-      if (!pin || pin.province !== loc) return false;
+      if (loc.indexOf("C:") === 0) {
+        var cc = loc.slice(2);
+        if (!pin || (pin.country || "VN") !== cc) return false;
+      } else if (loc.indexOf("P:") === 0) {
+        var parts = loc.split(":");
+        if (!pin || (pin.country || "VN") !== parts[1] || pin.province !== parts[2]) return false;
+      }
     }
     if (cust && o.customer !== cust) return false;
     if (cat && o.category !== cat) return false;
@@ -1973,7 +2024,7 @@
       if (m) m.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 80);
   });
-  ["fFty", "fLoc", "fCust", "fCat", "fDue", "fKind"].forEach(function (id) {
+  ["fFty", "fCust", "fCat", "fDue", "fKind"].forEach(function (id) {
     document.getElementById(id).addEventListener("change", function () { page = 1; render(); });
   });
   document.getElementById("q").addEventListener("input", function () { page = 1; render(); });
