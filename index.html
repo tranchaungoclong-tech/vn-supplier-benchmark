@@ -1612,15 +1612,15 @@
       if (s.ftyMap[k].country === "VN") vn++; else unknown++;
     });
     var top = s.catList[0];
-    var catLab = top ? shortCat(top.name) : t("kpiCat");
     var catN = top ? fmt(top.ho) : "—";
+    var catName = top ? shortCat(top.name) : "—";
     return "<div class='kpis'>" +
       "<div class='kpi po click' data-kpi='ho'><div class='kpi-top'><div class='lab'>" + t("kpiHo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.hos) + "</b>" +
         "<div class='delta'>" + t("hoSub")(fmt(s.pos), fmt(s.lines)) + "</div></div>" +
       "<div class='kpi spend click' data-kpi='spend'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
         "<div class='delta'>" + t("spendNote") + "</div></div>" +
-      "<div class='kpi late click' data-kpi='cat'><div class='kpi-top'><div class='lab'>" + esc(catLab) + "</div>" + tile("clock", "rose") + "</div><b>" + catN + "</b>" +
-        "<div class='delta'>" + t("catSub")(s.catList.length) + "</div></div>" +
+      "<div class='kpi late click' data-kpi='cat'><div class='kpi-top'><div class='lab'>" + t("kpiCat") + "</div>" + tile("clock", "rose") + "</div><b>" + catN + "</b>" +
+        "<div class='delta'>" + esc(catName) + " · " + t("catSub")(s.catList.length) + "</div></div>" +
       "<div class='kpi fty click' data-kpi='fty'><div class='kpi-top'><div class='lab'>" + t("kpiFty") + "</div>" + tile("factories", "violet") + "</div><b>" + fmt(s.factories) + "</b>" +
         "<div class='delta'>" + t("vnNote")(vn, unknown) + "</div></div>" +
       "</div>";
