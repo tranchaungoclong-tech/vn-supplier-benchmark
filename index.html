@@ -633,9 +633,10 @@
       newOrder: "New order", repeatOrder: "Repeat order",
       bellTitle: "Merchandiser Alert",
       bellEmpty: "No alerts yet. This bell is for later merch chase — not the QA Board lock-screen.",
-      kpiPo: "Distinct POs", kpiSpend: "Spend $", kpiLate: "Late customer POs", kpiFty: "Factories",
+      kpiHo: "Distinct HO", kpiSpend: "Spend $", kpiLate: "Late customer POs", kpiFty: "Factories",
       notReported: "not reported", spendNote: "Total / Total qty column empty",
-      linesIn: " lines in filter", lateOf: "% of PO · vs ",
+      hoSub: function (po, lines) { return po + " PO · " + lines + " lines"; },
+      lateOf: "% of PO · vs ",
       vnNote: function (vn, unk) { return unk ? (vn + " VN · " + unk + " country not reported") : (vn + " Vietnam · province pinned"); },
       orderBook: "Order book", qualityLib: "Quality library", lines: " lines",
       tabAll: "All lines", tabLate: "Customer late", tabNew: "New order", tabRepeat: "Repeat",
@@ -692,9 +693,10 @@
       newOrder: "新单", repeatOrder: "返单",
       bellTitle: "跟单提醒",
       bellEmpty: "暂无提醒。此铃铛留给之后的跟单催办 — 不是 QA Board 锁屏推送。",
-      kpiPo: "PO 数", kpiSpend: "金额 $", kpiLate: "客户逾期 PO", kpiFty: "工厂",
+      kpiHo: "HO 数", kpiSpend: "金额 $", kpiLate: "客户逾期 PO", kpiFty: "工厂",
       notReported: "未填写", spendNote: "Total / Total qty 列为空",
-      linesIn: " 行（当前筛选）", lateOf: "% PO · 对比 ",
+      hoSub: function (po, lines) { return po + " 个 PO · " + lines + " 行"; },
+      lateOf: "% PO · 对比 ",
       vnNote: function (vn, unk) { return unk ? (vn + " 家越南 · " + unk + " 家国家未报") : (vn + " 家越南 · 已钉省份"); },
       orderBook: "订单台账", qualityLib: "质量库", lines: " 行",
       tabAll: "全部", tabLate: "客户逾期", tabNew: "新单", tabRepeat: "返单",
@@ -1113,20 +1115,21 @@
   function stats(rows) {
     var pos = {}, latePo = {}, fty = {}, cust = {}, qty = 0, newN = 0, repN = 0;
     var bands = { easy: 0, med: 0, hard: 0, vhard: 0, none: 0 };
-    var cats = {}, months = {}, hoMonth = {}, allHo = {}, inspect = { blank: 0, pending: 0, passed: 0, "3rd": 0, dated: 0 };
+    var cats = {}, months = {}, hoMonth = {}, allHo = {}, dueHo = {}, inspect = { blank: 0, pending: 0, passed: 0, "3rd": 0, dated: 0 };
     var qa = { blank: 0, pass: 0, nothing: 0, other: 0 };
     var ftyMap = {};
     rows.forEach(function (o) {
       qty += o.qty || 0;
       if (o.orderCategory === "Repeat order") repN++; else newN++;
       if (o.category) cats[o.category] = (cats[o.category] || 0) + 1;
+      if (o.ho) allHo[String(o.ho)] = true;
       if (o.customerDue) {
         var m = o.customerDue.slice(0, 7);
         months[m] = (months[m] || 0) + (o.qty || 0);
         if (!hoMonth[m]) hoMonth[m] = { hos: {}, lines: 0, qty: 0, fty: {} };
         hoMonth[m].lines++;
         hoMonth[m].qty += o.qty || 0;
-        if (o.ho) { hoMonth[m].hos[o.ho] = true; allHo[o.ho] = true; }
+        if (o.ho) { hoMonth[m].hos[o.ho] = true; dueHo[o.ho] = true; }
         var fmk = o.factoryCode || o.sheet || "?";
         if (!hoMonth[m].fty[fmk]) hoMonth[m].fty[fmk] = { hos: {}, qty: 0, lines: 0, name: o.factoryName || fmk };
         hoMonth[m].fty[fmk].lines++;
@@ -1166,7 +1169,8 @@
       late: Object.keys(latePo).length,
       factories: Object.keys(fty).length, customers: Object.keys(cust).length,
       newN: newN, repN: repN, bands: bands, cats: cats, months: months, hoMonth: hoMonth,
-      distinctHo: Object.keys(allHo).length,
+      hos: Object.keys(allHo).length,
+      distinctHo: Object.keys(dueHo).length,
       inspect: inspect, qa: qa, ftyMap: ftyMap
     };
   }
@@ -1545,8 +1549,8 @@
       if (s.ftyMap[k].country === "VN") vn++; else unknown++;
     });
     return "<div class='kpis'>" +
-      "<div class='kpi po click' data-kpi='po'><div class='kpi-top'><div class='lab'>" + t("kpiPo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.pos) + "</b>" +
-        "<div class='delta'>" + fmt(s.lines) + t("linesIn") + "</div></div>" +
+      "<div class='kpi po click' data-kpi='ho'><div class='kpi-top'><div class='lab'>" + t("kpiHo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.hos) + "</b>" +
+        "<div class='delta'>" + t("hoSub")(fmt(s.pos), fmt(s.lines)) + "</div></div>" +
       "<div class='kpi spend click' data-kpi='spend'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
         "<div class='delta'>" + t("spendNote") + "</div></div>" +
       "<div class='kpi late click' data-kpi='late'><div class='kpi-top'><div class='lab'>" + t("kpiLate") + "</div>" + tile("clock", "rose") + "</div><b>" + fmt(s.late) + "</b>" +
@@ -1593,7 +1597,7 @@
       pop.classList.add("on");
       return;
     }
-    renderHoPop("Distinct POs", rows, "Current filter · tracking 9-24. One HO can have several PO.");
+    renderHoPop("Distinct HO", rows, "Current filter · tracking 9-24. One HO can have several PO. Big number is HO, not PO.");
   }
 
   function tableCard(rows, s) {
