@@ -855,11 +855,11 @@
     var hos = {};
     list.forEach(function (o) { if (o.ho) hos[o.ho] = true; });
     title.textContent = t(key === "d7" ? "ship7" : key === "d14" ? "ship14" : key === "d21" ? "ship21" : "ship30");
-    sub.textContent = Object.keys(hos).length + " HO · " + list.length + " lines · customer due vs " + AS + " · SO confirm next to due";
+    sub.textContent = Object.keys(hos).length + " HO · " + list.length + " lines · customer due vs " + AS;
     if (!list.length) {
       body.innerHTML = "<p class='empty'>No HO in this window.</p>";
     } else {
-      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>PO / item</span><span>Customer</span><span>Cust. due</span><span>SO confirm</span><span>Qty</span></div>" +
+      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>PO / item</span><span>Customer</span><span>Cust. due</span><span>SO cfm</span><span>Qty</span></div>" +
         list.map(function (o) {
           var pic = (o.ho && HO_IMAGES[o.ho])
             ? "<img class='thumb' src='" + esc(HO_IMAGES[o.ho]) + "' alt='' data-full='" + esc(HO_IMAGES[o.ho]) + "' loading='lazy' />"
@@ -927,7 +927,7 @@
           : "<div class='thumb-empty'>—</div>";
         var dues = [];
         h.ships.forEach(function (s) { if (s.due && dues.indexOf(s.due) < 0) dues.push(s.due); });
-        var ships = "<div class='ship-row head'><span>PO</span><span>Item</span><span>Cust. due</span><span>SO confirm</span><span>Qty</span></div>" +
+        var ships = "<div class='ship-row head'><span>PO</span><span>Item</span><span>Cust. due</span><span>SO cfm</span><span>Qty</span></div>" +
           h.ships.map(function (s) {
             return "<div class='ship-row'><span class='po'>" + esc(s.po || "–") + "</span><span>" +
               esc(s.item || h.item) + (s.code ? "<div class='sub'>" + esc(s.code) + (s.cust ? " · " + esc(s.cust) : "") + "</div>" : (s.cust ? "<div class='sub'>" + esc(s.cust) + "</div>" : "")) +
@@ -1856,10 +1856,10 @@
     return kpiRow(s) +
       "<div class='layout'>" + tableCard(rows, s) +
       "<div class='rail'>" +
-        "<div class='card'><h2>" + ico("clock") + " " + t("delayMix") + " <span>" + t("tapHint") + "</span></h2><div class='pad'>" +
+        "<div class='card'><h2>" + ico("clock") + " " + t("delayMix") + "</h2><div class='pad'>" +
           hbar(bandParts) +
         "</div></div>" +
-        "<div class='card'><h2>" + ico("customers") + " " + t("custMix") + " <span>" + t("tapHint") + "</span></h2><div class='pad'>" +
+        "<div class='card'><h2>" + ico("customers") + " " + t("custMix") + "</h2><div class='pad'>" +
           hbar(custParts) +
         "</div></div>" +
         "<div class='card'><h2>" + ico("factories") + " " + t("ftyFilter") + "</h2><div class='pad'><div class='chips'>" +
