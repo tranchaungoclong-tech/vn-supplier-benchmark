@@ -642,10 +642,10 @@
       newOrder: "New order", repeatOrder: "Repeat order",
       bellTitle: "Merchandiser Alert",
       bellEmpty: "No alerts yet. This bell is for later merch chase — not the QA Board lock-screen.",
-      kpiHo: "Distinct HO", kpiSpend: "Spend $", kpiLate: "Late customer POs", kpiFty: "Factories",
+      kpiHo: "Distinct HO", kpiSpend: "Spend $", kpiCat: "Top category", kpiFty: "Factories",
       notReported: "not reported", spendNote: "Total / Total qty column empty",
       hoSub: function (po, lines) { return po + " PO · " + lines + " lines"; },
-      lateOf: "% of PO · vs ",
+      catSub: function (n) { return n + " categories"; },
       vnNote: function (vn, unk) { return unk ? (vn + " VN · " + unk + " country not reported") : (vn + " Vietnam · province pinned"); },
       orderBook: "Order book", qualityLib: "Quality library", lines: " lines",
       tabAll: "All lines", tabLate: "Customer late", tabNew: "New order", tabRepeat: "Repeat",
@@ -703,10 +703,10 @@
       newOrder: "新单", repeatOrder: "返单",
       bellTitle: "跟单提醒",
       bellEmpty: "暂无提醒。此铃铛留给之后的跟单催办 — 不是 QA Board 锁屏推送。",
-      kpiHo: "HO 数", kpiSpend: "金额 $", kpiLate: "客户逾期 PO", kpiFty: "工厂",
+      kpiHo: "HO 数", kpiSpend: "金额 $", kpiCat: "主要品类", kpiFty: "工厂",
       notReported: "未填写", spendNote: "Total / Total qty 列为空",
       hoSub: function (po, lines) { return po + " 个 PO · " + lines + " 行"; },
-      lateOf: "% PO · 对比 ",
+      catSub: function (n) { return n + " 个品类"; },
       vnNote: function (vn, unk) { return unk ? (vn + " 家越南 · " + unk + " 家国家未报") : (vn + " 家越南 · 已钉省份"); },
       orderBook: "订单台账", qualityLib: "质量库", lines: " 行",
       tabAll: "全部", tabLate: "客户逾期", tabNew: "新单", tabRepeat: "返单",
@@ -948,6 +948,12 @@
     if (n.length > 22) n = n.slice(0, 20) + "…";
     return n || code;
   }
+  function shortCat(s) {
+    var n = String(s || "");
+    var i = n.lastIndexOf("→");
+    if (i < 0) i = n.lastIndexOf(">");
+    return (i >= 0 ? n.slice(i + 1) : n).trim() || n;
+  }
   function poKey(o) { return (o.factoryCode || o.sheet) + "|" + o.po; }
   function delayBand(due) {
     if (!due) return { key: "none", label: "No date", cls: "tag", days: null };
@@ -1166,13 +1172,17 @@
   function stats(rows) {
     var pos = {}, latePo = {}, fty = {}, cust = {}, qty = 0, newN = 0, repN = 0;
     var bands = { easy: 0, med: 0, hard: 0, vhard: 0, none: 0 };
-    var cats = {}, months = {}, hoMonth = {}, allHo = {}, dueHo = {}, inspect = { blank: 0, pending: 0, passed: 0, "3rd": 0, dated: 0 };
+    var cats = {}, catHo = {}, months = {}, hoMonth = {}, allHo = {}, dueHo = {}, inspect = { blank: 0, pending: 0, passed: 0, "3rd": 0, dated: 0 };
     var qa = { blank: 0, pass: 0, nothing: 0, other: 0 };
     var ftyMap = {};
     rows.forEach(function (o) {
       qty += o.qty || 0;
       if (o.orderCategory === "Repeat order") repN++; else newN++;
-      if (o.category) cats[o.category] = (cats[o.category] || 0) + 1;
+      if (o.category) {
+        cats[o.category] = (cats[o.category] || 0) + 1;
+        if (!catHo[o.category]) catHo[o.category] = {};
+        if (o.ho) catHo[o.category][String(o.ho)] = true;
+      }
       if (o.ho) allHo[String(o.ho)] = true;
       if (o.customerDue) {
         var m = o.customerDue.slice(0, 7);
@@ -1222,7 +1232,10 @@
       newN: newN, repN: repN, bands: bands, cats: cats, months: months, hoMonth: hoMonth,
       hos: Object.keys(allHo).length,
       distinctHo: Object.keys(dueHo).length,
-      inspect: inspect, qa: qa, ftyMap: ftyMap
+      inspect: inspect, qa: qa, ftyMap: ftyMap,
+      catList: Object.keys(catHo).map(function (c) {
+        return { name: c, ho: Object.keys(catHo[c]).length, lines: cats[c] || 0 };
+      }).sort(function (a, b) { return b.ho - a.ho; })
     };
   }
 
@@ -1594,18 +1607,20 @@
   }
 
   function kpiRow(s) {
-    var latePct = s.pos ? Math.round(100 * s.late / s.pos) : 0;
     var vn = 0, unknown = 0;
     Object.keys(s.ftyMap).forEach(function (k) {
       if (s.ftyMap[k].country === "VN") vn++; else unknown++;
     });
+    var top = s.catList[0];
+    var catLab = top ? shortCat(top.name) : t("kpiCat");
+    var catN = top ? fmt(top.ho) : "—";
     return "<div class='kpis'>" +
       "<div class='kpi po click' data-kpi='ho'><div class='kpi-top'><div class='lab'>" + t("kpiHo") + "</div>" + tile("po", "blue") + "</div><b>" + fmt(s.hos) + "</b>" +
         "<div class='delta'>" + t("hoSub")(fmt(s.pos), fmt(s.lines)) + "</div></div>" +
       "<div class='kpi spend click' data-kpi='spend'><div class='kpi-top'><div class='lab'>" + t("kpiSpend") + "</div>" + tile("dollar", "green") + "</div><b>" + t("notReported") + "</b>" +
         "<div class='delta'>" + t("spendNote") + "</div></div>" +
-      "<div class='kpi late click' data-kpi='late'><div class='kpi-top'><div class='lab'>" + t("kpiLate") + "</div>" + tile("clock", "rose") + "</div><b>" + fmt(s.late) + "</b>" +
-        "<div class='delta down'>" + latePct + t("lateOf") + AS + "</div></div>" +
+      "<div class='kpi late click' data-kpi='cat'><div class='kpi-top'><div class='lab'>" + esc(catLab) + "</div>" + tile("clock", "rose") + "</div><b>" + catN + "</b>" +
+        "<div class='delta'>" + t("catSub")(s.catList.length) + "</div></div>" +
       "<div class='kpi fty click' data-kpi='fty'><div class='kpi-top'><div class='lab'>" + t("kpiFty") + "</div>" + tile("factories", "violet") + "</div><b>" + fmt(s.factories) + "</b>" +
         "<div class='delta'>" + t("vnNote")(vn, unknown) + "</div></div>" +
       "</div>";
@@ -1621,10 +1636,18 @@
       pop.classList.add("on");
       return;
     }
-    if (kind === "late") {
-      renderHoPop("Late customer POs", rows.filter(function (o) {
-        return o.customerDue && o.customerDue < AS;
-      }), "Customer due before " + AS + " · tracking 9-24.");
+    if (kind === "cat") {
+      var sm = stats(rows);
+      var blocks = sm.catList.map(function (c) {
+        return "<div class='factory-row' data-kpi-cat='" + encodeURIComponent(c.name) + "' style='cursor:pointer'><div><strong>" +
+          esc(shortCat(c.name)) + "</strong><div class='sub'>" + esc(c.name) +
+          "</div></div><div class='sub'>" + c.ho + " HO · " + c.lines + " lines</div></div>";
+      }).join("");
+      var pop = document.getElementById("delayPop");
+      document.getElementById("delayPopTitle").textContent = t("kpiCat");
+      document.getElementById("delayPopSub").textContent = sm.catList.length + " categories · HO count · tracking 9-24. Tap a row for HO.";
+      document.getElementById("delayPopBody").innerHTML = blocks || "<p class='empty'>No category in this filter.</p>";
+      pop.classList.add("on");
       return;
     }
     if (kind === "fty") {
@@ -2134,6 +2157,15 @@
       try { code = decodeURIComponent(kf.getAttribute("data-kpi-fty")); }
       catch (err) { code = kf.getAttribute("data-kpi-fty"); }
       openFtyPop(code);
+      e.stopPropagation();
+      return;
+    }
+    var kc = e.target.closest("[data-kpi-cat]");
+    if (kc) {
+      var cat;
+      try { cat = decodeURIComponent(kc.getAttribute("data-kpi-cat")); }
+      catch (err) { cat = kc.getAttribute("data-kpi-cat"); }
+      renderHoPop(shortCat(cat), filtered().filter(function (o) { return o.category === cat; }), cat + " · tracking 9-24.");
       e.stopPropagation();
       return;
     }
