@@ -306,6 +306,11 @@
   }
   .pop-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex: 0 0 auto; }
   .pop-head strong { font-size: 16px; font-weight: 800; }
+  .pop-back {
+    display: none; width: 32px; height: 32px; border: 0; background: #f1f5f9; border-radius: 8px;
+    font-size: 22px; color: #334155; line-height: 1; flex: 0 0 auto; margin-top: 0;
+  }
+  .pop-back.on { display: inline-flex; align-items: center; justify-content: center; }
   .pop-x {
     width: 32px; height: 32px; border: 0; background: #f1f5f9; border-radius: 8px; font-size: 18px; color: #334155;
   }
@@ -579,7 +584,8 @@
 <div class="pop" id="delayPop" role="dialog" aria-label="Delay list">
   <div class="pop-card" id="delayPopCard">
     <div class="pop-head">
-      <div>
+      <button type="button" class="pop-back" id="popBack" aria-label="Back">‹</button>
+      <div style="min-width:0;flex:1">
         <strong id="delayPopTitle">Delay</strong>
         <p class="sub" id="delayPopSub" style="margin:4px 0 0"></p>
       </div>
@@ -1626,8 +1632,27 @@
       "</div>";
   }
 
-  function openKpiPop(kind) {
+  var popStack = [];
+  function setPopBack(on) {
+    var b = document.getElementById("popBack");
+    if (on) b.classList.add("on"); else b.classList.remove("on");
+  }
+  function resetPopStack() { popStack = []; setPopBack(false); }
+  function pushPop(restore) { popStack.push(restore); setPopBack(true); }
+  function popPop() {
+    var fn = popStack.pop();
+    setPopBack(popStack.length > 0);
+    if (fn) fn();
+  }
+
+  function openKpiPop(kind, keepStack) {
+    if (!keepStack) resetPopStack();
+    else setPopBack(false);
     var rows = filtered();
+    if (kind === "ho") {
+      renderHoPop("Distinct HO", rows, "Current filter · tracking 9-24. One HO can have several PO. Big number is HO, not PO.");
+      return;
+    }
     if (kind === "spend") {
       var pop = document.getElementById("delayPop");
       document.getElementById("delayPopTitle").textContent = t("kpiSpend");
@@ -1671,7 +1696,6 @@
       pop.classList.add("on");
       return;
     }
-    renderHoPop("Distinct HO", rows, "Current filter · tracking 9-24. One HO can have several PO. Big number is HO, not PO.");
   }
 
   function tableCard(rows, s) {
@@ -2138,8 +2162,13 @@
     }
   });
   var delayPop = document.getElementById("delayPop");
-  function closeDelayPop() { delayPop.classList.remove("on"); }
+  function closeDelayPop() { delayPop.classList.remove("on"); resetPopStack(); }
   document.getElementById("delayPopX").addEventListener("click", closeDelayPop);
+  document.getElementById("popBack").addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (popStack.length) popPop();
+    else closeDelayPop();
+  });
   delayPop.addEventListener("click", function (e) {
     if (e.target === delayPop) closeDelayPop();
   });
@@ -2156,6 +2185,7 @@
       var code;
       try { code = decodeURIComponent(kf.getAttribute("data-kpi-fty")); }
       catch (err) { code = kf.getAttribute("data-kpi-fty"); }
+      pushPop(function () { openKpiPop("fty", true); });
       openFtyPop(code);
       e.stopPropagation();
       return;
@@ -2165,6 +2195,7 @@
       var cat;
       try { cat = decodeURIComponent(kc.getAttribute("data-kpi-cat")); }
       catch (err) { cat = kc.getAttribute("data-kpi-cat"); }
+      pushPop(function () { openKpiPop("cat", true); });
       renderHoPop(shortCat(cat), filtered().filter(function (o) { return o.category === cat; }), cat + " · tracking 9-24.");
       e.stopPropagation();
       return;
@@ -2172,7 +2203,10 @@
     e.stopPropagation();
   });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeDelayPop();
+    if (e.key === "Escape") {
+      if (popStack.length) popPop();
+      else closeDelayPop();
+    }
   });
   document.getElementById("langBtn").addEventListener("click", function () {
     setLang(lang === "zh" ? "en" : "zh");
