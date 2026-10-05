@@ -170,6 +170,7 @@
   .act-ico.rose { background: #f43f5e; }
   .act-ico.pink { background: #ec4899; }
   .act-ico.slate { background: #64748b; }
+  .act-ico.navy { background: #1d4ed8; }
   .btn {
     border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 8px 12px; color: #334155;
   }
@@ -546,14 +547,15 @@
       <div class="stick-tools">
       <div class="head">
         <div class="actions">
+          <button class="act" type="button" data-jump="dash"><span class="act-ico navy"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg></span> <span data-i18n="actHome">Home</span></button>
           <button class="act" type="button" data-jump="orders"><span class="act-ico violet"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span> <span data-i18n="actOrders">Order book</span></button>
-          <button class="act" type="button" id="btnExport"><span class="act-ico blue"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/></svg></span> <span data-i18n="actExport">Export CSV</span></button>
           <button class="act" type="button" data-jump="quality"><span class="act-ico green"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></span> <span data-i18n="actQuality">Quality</span></button>
           <button class="act" type="button" data-jump="merch"><span class="act-ico amber"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="actMerch">Merchandiser</span></button>
           <button class="act" type="button" data-jump="factories"><span class="act-ico sky"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
           <button class="act" type="button" data-jump="customers"><span class="act-ico pink"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
           <button class="act" type="button" id="btnLate"><span class="act-ico rose"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span> Late queue</button>
           <button class="act" type="button" id="btnMap"><span class="act-ico slate"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></span> Map</button>
+          <button class="act" type="button" id="btnExport"><span class="act-ico blue"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/></svg></span> <span data-i18n="actExport">Export CSV</span></button>
         </div>
       </div>
 
@@ -647,7 +649,7 @@
       navDash: "Dashboard", navMerch: "Merchandiser", navQuality: "Quality library", navBook: "Book",
       navOrders: "Order book", navFactories: "Factories", navCustomers: "Customers",
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
-      actOrders: "Order book", actExport: "Export CSV", actQuality: "Quality", actMerch: "Merchandiser",
+      actHome: "Home", actOrders: "Order book", actExport: "Export CSV", actQuality: "Quality", actMerch: "Merchandiser",
       allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
       allLocations: "All locations", locVN: "Vietnam", locKH: "Cambodia", locTH: "Thailand",
       allPeriods: "All periods",
@@ -709,7 +711,7 @@
       navDash: "仪表盘", navMerch: "跟单", navQuality: "质量库", navBook: "台账",
       navOrders: "订单台账", navFactories: "工厂", navCustomers: "客户",
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
-      actOrders: "订单台账", actExport: "导出 CSV", actQuality: "质量", actMerch: "跟单",
+      actHome: "首页", actOrders: "订单台账", actExport: "导出 CSV", actQuality: "质量", actMerch: "跟单",
       allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
       allLocations: "全部地点", locVN: "越南", locKH: "柬埔寨", locTH: "泰国",
       allPeriods: "全部期间",
@@ -2241,16 +2243,19 @@
   applyChrome();
   document.getElementById("btnExport").addEventListener("click", function () {
     var rows = filtered();
-    var cols = ["po", "factoryCode", "factoryName", "customer", "endCustomer", "category", "item", "qty", "amount", "orderDate", "customerDue", "factoryDue", "orderCategory", "qa", "inspect", "country"];
+    var cols = ["ho", "photo", "po", "factoryCode", "factoryName", "customer", "endCustomer", "category", "item", "qty", "amount", "orderDate", "customerDue", "factoryDue", "orderCategory", "qa", "inspect", "country"];
+    function cell(v) {
+      if (v == null) v = "";
+      v = String(v).replace(/"/g, '""');
+      return /[",\n]/.test(v) ? '"' + v + '"' : v;
+    }
     var lines = [cols.join(",")].concat(rows.map(function (o) {
       return cols.map(function (k) {
-        var v = o[k];
-        if (v == null) v = "";
-        v = String(v).replace(/"/g, '""');
-        return /[",\n]/.test(v) ? '"' + v + '"' : v;
+        if (k === "photo") return cell(o.ho && HO_IMAGES[o.ho] ? HO_IMAGES[o.ho] : "");
+        return cell(o[k]);
       }).join(",");
     }));
-    var blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    var blob = new Blob([String.fromCharCode(0xFEFF) + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "supplier-benchmark-9-24.csv";
