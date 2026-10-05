@@ -555,7 +555,7 @@
           <button class="act" type="button" data-jump="customers"><span class="act-ico pink"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
           <button class="act" type="button" id="btnLate"><span class="act-ico rose"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span> Late queue</button>
           <button class="act" type="button" id="btnMap"><span class="act-ico slate"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></span> Map</button>
-          <button class="act" type="button" id="btnExport"><span class="act-ico blue"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/></svg></span> <span data-i18n="actExport">Export CSV</span></button>
+          <button class="act" type="button" id="btnExport"><span class="act-ico blue"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/></svg></span> <span data-i18n="actExport">Export Excel</span></button>
         </div>
       </div>
 
@@ -649,7 +649,7 @@
       navDash: "Dashboard", navMerch: "Merchandiser", navQuality: "Quality library", navBook: "Book",
       navOrders: "Order book", navFactories: "Factories", navCustomers: "Customers",
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
-      actHome: "Home", actOrders: "Order book", actExport: "Export CSV", actQuality: "Quality", actMerch: "Merchandiser",
+      actHome: "Home", actOrders: "Order book", actExport: "Export Excel", actQuality: "Quality", actMerch: "Merchandiser",
       allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
       allLocations: "All locations", locVN: "Vietnam", locKH: "Cambodia", locTH: "Thailand",
       allPeriods: "All periods",
@@ -711,7 +711,7 @@
       navDash: "仪表盘", navMerch: "跟单", navQuality: "质量库", navBook: "台账",
       navOrders: "订单台账", navFactories: "工厂", navCustomers: "客户",
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
-      actHome: "首页", actOrders: "订单台账", actExport: "导出 CSV", actQuality: "质量", actMerch: "跟单",
+      actHome: "首页", actOrders: "订单台账", actExport: "导出 Excel", actQuality: "质量", actMerch: "跟单",
       allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
       allLocations: "全部地点", locVN: "越南", locKH: "柬埔寨", locTH: "泰国",
       allPeriods: "全部期间",
@@ -2241,25 +2241,101 @@
     }
   });
   applyChrome();
+  var excelJsReady = null;
+  function loadExcelJs() {
+    if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    if (excelJsReady) return excelJsReady;
+    excelJsReady = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "vendor/exceljs.min.js";
+      s.onload = function () {
+        if (window.ExcelJS) resolve(window.ExcelJS);
+        else reject(new Error("ExcelJS missing"));
+      };
+      s.onerror = function () { reject(new Error("ExcelJS load failed")); };
+      document.head.appendChild(s);
+    });
+    return excelJsReady;
+  }
+  function fetchHoBuf(rel, cache) {
+    if (cache[rel]) return cache[rel];
+    cache[rel] = fetch(rel).then(function (res) {
+      if (!res.ok) return null;
+      return res.arrayBuffer();
+    }).catch(function () { return null; });
+    return cache[rel];
+  }
   document.getElementById("btnExport").addEventListener("click", function () {
+    var btn = document.getElementById("btnExport");
     var rows = filtered();
-    var cols = ["ho", "photo", "po", "factoryCode", "factoryName", "customer", "endCustomer", "category", "item", "qty", "amount", "orderDate", "customerDue", "factoryDue", "orderCategory", "qa", "inspect", "country"];
-    function cell(v) {
-      if (v == null) v = "";
-      v = String(v).replace(/"/g, '""');
-      return /[",\n]/.test(v) ? '"' + v + '"' : v;
-    }
-    var lines = [cols.join(",")].concat(rows.map(function (o) {
-      return cols.map(function (k) {
-        if (k === "photo") return cell(o.ho && HO_IMAGES[o.ho] ? HO_IMAGES[o.ho] : "");
-        return cell(o[k]);
-      }).join(",");
-    }));
-    var blob = new Blob([String.fromCharCode(0xFEFF) + lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "supplier-benchmark-9-24.csv";
-    a.click();
+    if (!rows.length) return;
+    btn.disabled = true;
+    loadExcelJs().then(function (ExcelJS) {
+      var wb = new ExcelJS.Workbook();
+      var ws = wb.addWorksheet("Tracking", { views: [{ state: "frozen", ySplit: 1 }] });
+      ws.columns = [
+        { header: "Photo", key: "pic", width: 14 },
+        { header: "HO", key: "ho", width: 14 },
+        { header: "PO", key: "po", width: 16 },
+        { header: "Factory", key: "factoryName", width: 28 },
+        { header: "Code", key: "factoryCode", width: 10 },
+        { header: "Customer", key: "customer", width: 16 },
+        { header: "End customer", key: "endCustomer", width: 16 },
+        { header: "Category", key: "category", width: 22 },
+        { header: "Item", key: "item", width: 28 },
+        { header: "Qty", key: "qty", width: 10 },
+        { header: "Amount", key: "amount", width: 12 },
+        { header: "Order date", key: "orderDate", width: 12 },
+        { header: "Customer due", key: "customerDue", width: 14 },
+        { header: "Factory due", key: "factoryDue", width: 14 },
+        { header: "Order type", key: "orderCategory", width: 14 },
+        { header: "QA", key: "qa", width: 12 },
+        { header: "Inspect", key: "inspect", width: 14 }
+      ];
+      ws.getRow(1).font = { bold: true };
+      var cache = {};
+      var jobs = [];
+      rows.forEach(function (o, i) {
+        var r = i + 2;
+        var row = ws.getRow(r);
+        row.height = 52;
+        row.values = [
+          "",
+          o.ho || "",
+          o.po || "",
+          o.factoryName || "",
+          o.factoryCode || "",
+          o.customer || "",
+          o.endCustomer || "",
+          o.category || "",
+          o.item || o.productName || "",
+          o.qty == null ? "" : o.qty,
+          o.amount == null ? "" : o.amount,
+          o.orderDate || "",
+          o.customerDue || "",
+          o.factoryDue || "",
+          o.orderCategory || "",
+          o.qa || "",
+          o.inspect || ""
+        ];
+        var pic = o.ho && HO_IMAGES[o.ho] ? HO_IMAGES[o.ho] : "";
+        if (!pic) return;
+        jobs.push(fetchHoBuf(pic, cache).then(function (buf) {
+          if (!buf) return;
+          var imgId = wb.addImage({ buffer: buf, extension: "jpeg" });
+          ws.addImage(imgId, { tl: { col: 0, row: r - 1 }, ext: { width: 72, height: 72 } });
+        }));
+      });
+      return Promise.all(jobs).then(function () { return wb.xlsx.writeBuffer(); });
+    }).then(function (buf) {
+      var blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "supplier-benchmark-9-24.xlsx";
+      a.click();
+    }).catch(function () {
+      alert("Excel export failed. Stay on this page and try again.");
+    }).then(function () { btn.disabled = false; });
   });
 
   setView("dash");
