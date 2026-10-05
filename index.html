@@ -822,14 +822,9 @@
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
   };
-  function soLabel(v) {
+  function soHtml(v) {
     if (v == null || v === "") return "–";
-    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
-    var d = new Date(v);
-    if (!isNaN(d.getTime()) && d.getFullYear() > 1990) {
-      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-    }
-    return String(v);
+    return esc(String(v)).replace(/\n/g, "<br>");
   }
   function shipWindow(due) {
     if (!due) return "";
@@ -868,7 +863,7 @@
             esc(o.ho || "–") + "</div></span><span><span class='po'>" + esc(o.po || "–") + "</span><div class='sub'>" +
             esc(o.item || o.productName || "") + " · " + esc(shortFty(o)) + "</div></span><span>" +
             esc(o.customer || "–") + "</span><span>" + esc(o.customerDue || "–") +
-            "</span><span>" + esc(soLabel(o.soCfm)) + "</span><span>" + fmt(o.qty) + "</span></div>";
+            "</span><span>" + soHtml(o.soCfm) + "</span><span>" + fmt(o.qty) + "</span></div>";
         }).join("");
     }
     pop.classList.add("on");
@@ -932,7 +927,7 @@
             return "<div class='ship-row'><span class='po'>" + esc(s.po || "–") + "</span><span>" +
               esc(s.item || h.item) + (s.code ? "<div class='sub'>" + esc(s.code) + (s.cust ? " · " + esc(s.cust) : "") + "</div>" : (s.cust ? "<div class='sub'>" + esc(s.cust) + "</div>" : "")) +
               "</span><span>" + esc(s.due || "–") +
-              "</span><span>" + esc(soLabel(s.so)) + "</span><span>" + fmt(s.qty) + "</span></div>";
+              "</span><span>" + soHtml(s.so) + "</span><span>" + fmt(s.qty) + "</span></div>";
           }).join("");
         return "<div class='ho-block'><div class='ho-block-head'>" + pic +
           "<div class='meta'><div class='po'>HO " + esc(h.ho || "–") + "</div><div class='sub'>" +
