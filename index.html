@@ -338,6 +338,12 @@
     background: var(--bg); padding: 0 0 8px; margin: 0 0 6px;
   }
   .tbl-wrap { overflow: auto; max-height: 520px; }
+  .card.fill-book { display: flex; flex-direction: column; }
+  .card.fill-book .tbl-wrap {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: calc(100vh - 360px);
+  }
   table thead th {
     position: sticky; top: 0; z-index: 1; background: #fff; color: #0f172a; font-weight: 800;
   }
@@ -481,6 +487,7 @@
     .filters select, .period-btn { flex: none; width: 100%; font-size: 11px; padding: 3px 6px; max-width: none; }
     .period-sub { left: 0; top: 100%; }
     .fty-dash { grid-template-columns: 1fr; }
+    .card.fill-book .tbl-wrap { min-height: calc(100vh - 420px); }
   }
 </style>
 </head>
@@ -1698,7 +1705,7 @@
     }
   }
 
-  function tableCard(rows, s) {
+  function tableCard(rows, s, fill) {
     var list = rows.slice();
     if (tableTab === "late") list = list.filter(function (o) { return o.customerDue && o.customerDue < AS; });
     else if (tableTab === "new") list = list.filter(function (o) { return o.orderCategory === "New order"; });
@@ -1755,7 +1762,7 @@
     });
     btns += pageBtn(page + 1, "›");
 
-    return "<div class='card' id='orderBook'>" +
+    return "<div class='card" + (fill ? " fill-book" : "") + "' id='orderBook'>" +
       "<h2>" + ico("orders") + " " + t("orderBook") + " <span>" + fmt(list.length) + t("lines") + "</span></h2>" +
       "<div class='tabs'>" +
         "<button data-tab='all' class='" + (tableTab === "all" ? "on" : "") + "'>" + t("tabAll") + "</button>" +
@@ -2032,7 +2039,7 @@
     if (view === "dash") html = dash(rows, s);
     else if (view === "merch") html = merch(rows, s);
     else if (view === "quality") html = quality(rows, s);
-    else if (view === "orders") html = kpiRow(s) + tableCard(rows, s);
+    else if (view === "orders") html = kpiRow(s) + tableCard(rows, s, true);
     else if (view === "factories") html = factoriesView(rows, s);
     else html = customersView(rows, s);
     document.getElementById("view").innerHTML = html;
