@@ -317,7 +317,7 @@
     width: 32px; height: 32px; border: 0; background: #f1f5f9; border-radius: 8px; font-size: 18px; color: #334155;
   }
   .pop-body { overflow: auto; flex: 1 1 auto; min-height: 0; }
-  .pop-row { display: grid; grid-template-columns: 72px 1fr 90px 88px 56px; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12.5px; }
+  .pop-row { display: grid; grid-template-columns: 72px 1fr 80px 88px 96px 48px; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12.5px; }
   .pop-row.head {
     position: sticky; top: 0; z-index: 2; background: #fff;
     color: var(--ink); font-size: 12px; font-weight: 800; border-bottom: 1px solid var(--line);
@@ -326,7 +326,7 @@
   .ho-block { border-bottom: 1px solid var(--line); padding: 10px 0 8px; }
   .ho-block-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 6px; }
   .ho-block-head .meta { min-width: 0; }
-  .ship-row { display: grid; grid-template-columns: 110px 1fr 88px 56px; gap: 8px; padding: 5px 0 5px 54px; font-size: 12.5px; }
+  .ship-row { display: grid; grid-template-columns: 110px 1fr 88px 96px 48px; gap: 8px; padding: 5px 0 5px 54px; font-size: 12.5px; }
   .ship-row.head {
     position: sticky; top: 0; z-index: 1; background: #fff;
     color: var(--ink); font-weight: 800; font-size: 11.5px; border-bottom: 1px solid var(--line);
@@ -666,8 +666,9 @@
       orderBook: "Order book", qualityLib: "Quality library", lines: " lines",
       tabAll: "All lines", tabLate: "Customer late", tabNew: "New order", tabRepeat: "Repeat",
       tabInspect: "Has inspection note",
-      delayMix: "Delay", catMix: "Category", custMix: "Customers", ftyFilter: "Factories in filter",
+      delayMix: "Upcoming", catMix: "Category", custMix: "Customers", ftyFilter: "Factories in filter",
       tapHint: "Tap a row",
+      ship7: "1–7 days", ship14: "8–14 days", ship21: "15–21 days", ship30: "22–30 days",
       qtyMonth: "Order qty by month", pcsNot: "pcs — not $",
       hoMonth: "Total HO per month", hoNote: "Distinct HO · Customer delivery time · tracking 9-24. Not $. Jan–Dec always shown. Empty month = 0.",
       purchaseValue: "Monthly Purchase Value",
@@ -728,8 +729,9 @@
       orderBook: "订单台账", qualityLib: "质量库", lines: " 行",
       tabAll: "全部", tabLate: "客户逾期", tabNew: "新单", tabRepeat: "返单",
       tabInspect: "有验货备注",
-      delayMix: "交期", catMix: "品类", custMix: "客户", ftyFilter: "筛选内工厂",
+      delayMix: "即将出货", catMix: "品类", custMix: "客户", ftyFilter: "筛选内工厂",
       tapHint: "点一行查看",
+      ship7: "1–7 天", ship14: "8–14 天", ship21: "15–21 天", ship30: "22–30 天",
       qtyMonth: "月订货数量", pcsNot: "件数 — 不是金额",
       hoMonth: "每月 HO 总数", hoNote: "按客户交期去重 HO · tracking 9-24。不是金额。1–12 月都显示。空月 = 0。",
       purchaseValue: "Monthly Purchase Value",
@@ -820,33 +822,45 @@
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
   };
-  var BAND_TITLE = {
-    easy: "Not due yet",
-    med: "1–7d late",
-    hard: "8–21d late",
-    vhard: "22d+ late",
-    none: "No customer due"
-  };
+  function soLabel(v) {
+    if (v == null || v === "") return "–";
+    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+    var d = new Date(v);
+    if (!isNaN(d.getTime()) && d.getFullYear() > 1990) {
+      return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    }
+    return String(v);
+  }
+  function shipWindow(due) {
+    if (!due) return "";
+    var n = daysBetween(AS, due);
+    if (n == null || n < 1) return "";
+    if (n <= 7) return "d7";
+    if (n <= 14) return "d14";
+    if (n <= 21) return "d21";
+    if (n <= 30) return "d30";
+    return "";
+  }
+  var SHIP_TITLE = { d7: "1–7 days", d14: "8–14 days", d21: "15–21 days", d30: "22–30 days" };
   function openDelayPop(key) {
     var pop = document.getElementById("delayPop");
     var title = document.getElementById("delayPopTitle");
     var sub = document.getElementById("delayPopSub");
     var body = document.getElementById("delayPopBody");
-    var list = filtered().filter(function (o) { return delayBand(o.customerDue).key === key; });
+    var list = filtered().filter(function (o) { return shipWindow(o.customerDue) === key; });
     list.sort(function (a, b) {
       var da = a.customerDue || "9999", db = b.customerDue || "9999";
       return da < db ? -1 : da > db ? 1 : 0;
     });
-    var pos = {};
-    list.forEach(function (o) { if (o.po) pos[poKey(o)] = true; });
-    title.textContent = BAND_TITLE[key] || key;
-    sub.textContent = list.length + " lines · " + Object.keys(pos).length + " PO · customer due vs " + AS + " · tracking 9-24";
+    var hos = {};
+    list.forEach(function (o) { if (o.ho) hos[o.ho] = true; });
+    title.textContent = t(key === "d7" ? "ship7" : key === "d14" ? "ship14" : key === "d21" ? "ship21" : "ship30");
+    sub.textContent = Object.keys(hos).length + " HO · " + list.length + " lines · customer due vs " + AS + " · SO confirm next to due";
     if (!list.length) {
-      body.innerHTML = "<p class='empty'>No lines in this band.</p>";
+      body.innerHTML = "<p class='empty'>No HO in this window.</p>";
     } else {
-      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>PO / item</span><span>Customer</span><span>Cust. due</span><span>Qty</span></div>" +
+      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>PO / item</span><span>Customer</span><span>Cust. due</span><span>SO confirm</span><span>Qty</span></div>" +
         list.map(function (o) {
-          var band = delayBand(o.customerDue);
           var pic = (o.ho && HO_IMAGES[o.ho])
             ? "<img class='thumb' src='" + esc(HO_IMAGES[o.ho]) + "' alt='' data-full='" + esc(HO_IMAGES[o.ho]) + "' loading='lazy' />"
             : "<div class='thumb-empty'>—</div>";
@@ -854,7 +868,7 @@
             esc(o.ho || "–") + "</div></span><span><span class='po'>" + esc(o.po || "–") + "</span><div class='sub'>" +
             esc(o.item || o.productName || "") + " · " + esc(shortFty(o)) + "</div></span><span>" +
             esc(o.customer || "–") + "</span><span>" + esc(o.customerDue || "–") +
-            "<div class='sub'>" + esc(band.label) + "</div></span><span>" + fmt(o.qty) + "</span></div>";
+            "</span><span>" + esc(soLabel(o.soCfm)) + "</span><span>" + fmt(o.qty) + "</span></div>";
         }).join("");
     }
     pop.classList.add("on");
@@ -885,6 +899,7 @@
       h.ships.push({
         po: o.po || "",
         due: o.customerDue || "",
+        so: o.soCfm || "",
         qty: o.qty,
         item: o.item || o.productName || "",
         code: o.productCode || "",
@@ -912,13 +927,12 @@
           : "<div class='thumb-empty'>—</div>";
         var dues = [];
         h.ships.forEach(function (s) { if (s.due && dues.indexOf(s.due) < 0) dues.push(s.due); });
-        var ships = "<div class='ship-row head'><span>PO</span><span>Item</span><span>Cust. due</span><span>Qty</span></div>" +
+        var ships = "<div class='ship-row head'><span>PO</span><span>Item</span><span>Cust. due</span><span>SO confirm</span><span>Qty</span></div>" +
           h.ships.map(function (s) {
-            var band = delayBand(s.due);
             return "<div class='ship-row'><span class='po'>" + esc(s.po || "–") + "</span><span>" +
               esc(s.item || h.item) + (s.code ? "<div class='sub'>" + esc(s.code) + (s.cust ? " · " + esc(s.cust) : "") + "</div>" : (s.cust ? "<div class='sub'>" + esc(s.cust) + "</div>" : "")) +
-              "</span><span>" + esc(s.due || "–") + "<div class='sub'>" + esc(band.label) +
-              "</div></span><span>" + fmt(s.qty) + "</span></div>";
+              "</span><span>" + esc(s.due || "–") +
+              "</span><span>" + esc(soLabel(s.so)) + "</span><span>" + fmt(s.qty) + "</span></div>";
           }).join("");
         return "<div class='ho-block'><div class='ho-block-head'>" + pic +
           "<div class='meta'><div class='po'>HO " + esc(h.ho || "–") + "</div><div class='sub'>" +
@@ -1787,12 +1801,18 @@
   }
 
   function dash(rows, s) {
+    var shipHo = { d7: {}, d14: {}, d21: {}, d30: {} };
+    rows.forEach(function (o) {
+      var w = shipWindow(o.customerDue);
+      if (!w) return;
+      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o));
+      shipHo[w][id] = true;
+    });
     var bandParts = [
-      { band: "easy", label: t("onTime"), n: s.bands.easy, color: "#22c55e" },
-      { band: "med", label: t("late17"), n: s.bands.med, color: "#f59e0b" },
-      { band: "hard", label: t("late821"), n: s.bands.hard, color: "#f97316" },
-      { band: "vhard", label: t("late22"), n: s.bands.vhard, color: "#ef4444" },
-      { band: "none", label: t("noDue"), n: s.bands.none, color: "#6366f1" }
+      { band: "d7", label: t("ship7"), n: Object.keys(shipHo.d7).length, color: "#22c55e" },
+      { band: "d14", label: t("ship14"), n: Object.keys(shipHo.d14).length, color: "#3b82f6" },
+      { band: "d21", label: t("ship21"), n: Object.keys(shipHo.d21).length, color: "#f59e0b" },
+      { band: "d30", label: t("ship30"), n: Object.keys(shipHo.d30).length, color: "#f43f5e" }
     ];
     var custHo = {};
     rows.forEach(function (o) {
