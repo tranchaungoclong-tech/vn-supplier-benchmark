@@ -222,7 +222,8 @@
   .kpi.click:hover { filter: brightness(1.06); }
   .kpi .ico-tile { background: rgba(255,255,255,.18); color: #fff; }
 
-  .layout { display: grid; grid-template-columns: 1.7fr .9fr; gap: 14px; }
+  .layout { display: grid; grid-template-columns: 1.7fr .9fr; gap: 14px; align-items: stretch; }
+  .layout > .card { min-height: 100%; }
   .card {
     background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
   }
@@ -340,12 +341,14 @@
     background: var(--bg); padding: 0 0 8px; margin: 0 0 6px;
   }
   .tbl-wrap { overflow: auto; max-height: 520px; }
-  .card.fill-book { display: flex; flex-direction: column; }
+  .card.fill-book { display: flex; flex-direction: column; height: 100%; min-height: 0; }
   .card.fill-book .tbl-wrap {
     flex: 1 1 auto;
     max-height: none;
-    min-height: calc(100vh - 360px);
+    min-height: 0;
   }
+  .card.fill-book .pager { margin-top: auto; flex-shrink: 0; }
+  .card.fill-page .tbl-wrap { min-height: calc(100vh - 360px); }
   table thead th {
     position: sticky; top: 0; z-index: 1; background: #fff; color: #0f172a; font-weight: 800;
   }
@@ -489,7 +492,7 @@
     .filters select, .period-btn { flex: none; width: 100%; font-size: 11px; padding: 3px 6px; max-width: none; }
     .period-sub { left: 0; top: 100%; }
     .fty-dash { grid-template-columns: 1fr; }
-    .card.fill-book .tbl-wrap { min-height: calc(100vh - 420px); }
+    .card.fill-page .tbl-wrap { min-height: calc(100vh - 420px); }
   }
 </style>
 </head>
@@ -1776,7 +1779,8 @@
     });
     btns += pageBtn(page + 1, "›");
 
-    return "<div class='card" + (fill ? " fill-book" : "") + "' id='orderBook'>" +
+    var bookCls = fill === "page" ? " fill-book fill-page" : (fill ? " fill-book" : "");
+    return "<div class='card" + bookCls + "' id='orderBook'>" +
       "<h2>" + ico("orders") + " " + t("orderBook") + " <span>" + fmt(list.length) + t("lines") + "</span></h2>" +
       "<div class='tabs'>" +
         "<button data-tab='all' class='" + (tableTab === "all" ? "on" : "") + "'>" + t("tabAll") + "</button>" +
@@ -1849,7 +1853,7 @@
     if (lang === "zh") ftyNote = "按工厂去重 HO · tracking 9-24。点标签看 HO / PO / 交期。不是行数。";
     var score = s.pos ? Math.round(100 * s.late / s.pos) : 0;
     return kpiRow(s) +
-      "<div class='layout'>" + tableCard(rows, s) +
+      "<div class='layout'>" + tableCard(rows, s, true) +
       "<div class='rail'>" +
         "<div class='card'><h2>" + ico("clock") + " " + t("delayMix") + "</h2><div class='pad'>" +
           hbar(bandParts) +
@@ -1919,7 +1923,7 @@
     var qRows = rows.filter(function (o) {
       return inspectKind(o.inspect) !== "blank" || qaKind(o.qa) !== "blank";
     });
-    var tableHtml = tableCard(qRows.length ? qRows : rows, s).replace(
+    var tableHtml = tableCard(qRows.length ? qRows : rows, s, true).replace(
       ico("orders") + " " + t("orderBook"),
       ico("quality") + " " + t("qualityLib")
     );
@@ -2057,7 +2061,7 @@
     if (view === "dash") html = dash(rows, s);
     else if (view === "merch") html = merch(rows, s);
     else if (view === "quality") html = quality(rows, s);
-    else if (view === "orders") html = kpiRow(s) + tableCard(rows, s, true);
+    else if (view === "orders") html = kpiRow(s) + tableCard(rows, s, "page");
     else if (view === "factories") html = factoriesView(rows, s);
     else html = customersView(rows, s);
     document.getElementById("view").innerHTML = html;
