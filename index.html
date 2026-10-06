@@ -82,6 +82,8 @@
   .nav-ico.amber { background: #f59e0b; }
   .nav-ico.rose { background: #f43f5e; }
   .nav-ico.pink { background: #ec4899; }
+  .nav-ico.teal { background: #14b8a6; }
+  .nav-ico.indigo { background: #6366f1; }
   .nav .sec { margin: 14px 8px 6px; font-size: 11px; color: #94a3b8; letter-spacing: .08em; text-transform: uppercase; }
   .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .ico-tile {
@@ -108,6 +110,12 @@
   .act-ico.blue { background: #3b82f6; }
   .act-ico.green { background: #10b981; }
   .act-ico.amber { background: #f59e0b; }
+  .act-ico.teal { background: #14b8a6; }
+  .act-ico.indigo { background: #6366f1; }
+  .act-ico.sky { background: #0ea5e9; }
+  .act-ico.pink { background: #ec4899; }
+  .act-ico.navy { background: #1e3a5f; }
+  .act-ico.slate { background: #64748b; }
   .search .ico { color: #94a3b8; }
   .chip-user .ico { color: #94a3b8; width: 16px; height: 16px; }
   .chip-user .ico svg { width: 16px; height: 16px; }
@@ -515,6 +523,8 @@
     <nav class="nav">
       <button class="active" data-view="dash"><span class="nav-ico blue"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span> <span data-i18n="navDash">Dashboard</span></button>
       <button data-view="merch"><span class="nav-ico violet"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="navMerch">Merchandiser</span></button>
+      <button data-view="costing"><span class="nav-ico teal"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span> <span data-i18n="navCosting">Costing</span></button>
+      <button data-view="designer"><span class="nav-ico indigo"><svg viewBox="0 0 24 24"><path d="M12 19 19 5l-4-2-7 14 1 4 3-2z"/><path d="m15 7 2 1"/></svg></span> <span data-i18n="navDesigner">Designer</span></button>
       <button data-view="quality"><span class="nav-ico green"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></span> <span data-i18n="navQuality">Quality library</span></button>
       <div class="sec" data-i18n="navBook">Book</div>
       <button data-view="orders"><span class="nav-ico sky"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span> <span data-i18n="navOrders">Order book</span></button>
@@ -557,6 +567,8 @@
         <div class="actions">
           <button class="act" type="button" id="btnHome"><span class="act-ico navy"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg></span> <span data-i18n="actHome">Home</span></button>
           <button class="act" type="button" data-jump="merch"><span class="act-ico amber"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="actMerch">Merchandiser</span></button>
+          <button class="act" type="button" data-jump="costing"><span class="act-ico teal"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span> <span data-i18n="actCosting">Costing</span></button>
+          <button class="act" type="button" data-jump="designer"><span class="act-ico indigo"><svg viewBox="0 0 24 24"><path d="M12 19 19 5l-4-2-7 14 1 4 3-2z"/><path d="m15 7 2 1"/></svg></span> <span data-i18n="actDesigner">Designer</span></button>
           <button class="act" type="button" data-jump="quality"><span class="act-ico green"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></span> <span data-i18n="actQuality">Quality</span></button>
           <button class="act" type="button" data-jump="orders"><span class="act-ico violet"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span> <span data-i18n="actOrders">Order book</span></button>
           <button class="act" type="button" data-jump="factories"><span class="act-ico sky"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
@@ -653,10 +665,10 @@
 
   var I18N = {
     en: {
-      navDash: "Dashboard", navMerch: "Merchandiser", navQuality: "Quality library", navBook: "Book",
+      navDash: "Dashboard", navMerch: "Merchandiser", navCosting: "Costing", navDesigner: "Designer", navQuality: "Quality library", navBook: "Book",
       navOrders: "Order book", navFactories: "Factories", navCustomers: "Customers",
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
-      actHome: "Home", actOrders: "Order book", actExport: "Export Excel", actQuality: "Quality", actMerch: "Merchandiser",
+      actHome: "Home", actOrders: "Order book", actExport: "Export Excel", actQuality: "Quality", actMerch: "Merchandiser", actCosting: "Costing", actDesigner: "Designer",
       allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
       allLocations: "All locations", locVN: "Vietnam", locKH: "Cambodia", locTH: "Thailand",
       allPeriods: "All periods",
@@ -712,9 +724,13 @@
       latePoPct: "late PO %", passLines: "Pass lines", pending: "pending",
       mapTitle: "Factory location · Asia",
       mapNote: "Pins = province he named 4 Oct. All 10 factories Vietnam. Same province (Binh Duong ×3) are offset so they do not sit on one dot.",
+      costingNote: "SAMPLE. No costing Excel yet. Do not invent FOB / MOQ / $ from tracking 9-24.",
+      designerNote: "SAMPLE. No artwork / spec pack file yet. Do not invent drawings from tracking 9-24.",
       titles: {
         dash: ["VN Supplier Benchmark", "VN-handled orders, customers, factories — numbers from ORDER TRACKING LIST 9-24."],
         merch: ["Merchandiser", "Factory master by category and customer book. Same 9-24 file."],
+        costing: ["Costing", "SAMPLE until a costing Excel. Tracking 9-24 has no FOB / $."],
+        designer: ["Designer", "SAMPLE until artwork / spec pack. Tracking 9-24 has no drawings."],
         quality: ["Quality library", "QA test + inspection plan cells from tracking — not the live QA Board sheet."],
         orders: ["Order book", "Every SKU / port split in the current filter."],
         factories: ["Factories", "Factory dashboard from tracking 9-24. $ empty — Monthly Purchase Value counts HO, not amount."],
@@ -722,10 +738,10 @@
       }
     },
     zh: {
-      navDash: "仪表盘", navMerch: "跟单", navQuality: "质量库", navBook: "台账",
+      navDash: "仪表盘", navMerch: "跟单", navCosting: "核价", navDesigner: "设计", navQuality: "质量库", navBook: "台账",
       navOrders: "订单台账", navFactories: "工厂", navCustomers: "客户",
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
-      actHome: "首页", actOrders: "订单台账", actExport: "导出 Excel", actQuality: "质量", actMerch: "跟单",
+      actHome: "首页", actOrders: "订单台账", actExport: "导出 Excel", actQuality: "质量", actMerch: "跟单", actCosting: "核价", actDesigner: "设计",
       allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
       allLocations: "全部地点", locVN: "越南", locKH: "柬埔寨", locTH: "泰国",
       allPeriods: "全部期间",
@@ -781,9 +797,13 @@
       latePoPct: "逾期 PO %", passLines: "Pass 行", pending: "待定",
       mapTitle: "工厂位置 · 亚洲",
       mapNote: "针脚 = 4 Oct 他给的省份。10 家工厂都在越南。同省（平阳 ×3）错开，避免叠点。",
+      costingNote: "SAMPLE。还没有核价 Excel。不要从 tracking 9-24 编 FOB / MOQ / $。",
+      designerNote: "SAMPLE。还没有图纸 / spec pack。不要从 tracking 9-24 编图。",
       titles: {
         dash: ["VN Supplier Benchmark", "越南跟进的订单 / 客户 / 工厂 — 数字仅来自 ORDER TRACKING LIST 9-24。"],
         merch: ["跟单", "按品类的工厂主档和客户台账。同一份 9-24 文件。"],
+        costing: ["核价", "SAMPLE，等核价 Excel。tracking 9-24 没有 FOB / $。"],
+        designer: ["设计", "SAMPLE，等图纸 / spec pack。tracking 9-24 没有图。"],
         quality: ["质量库", "跟踪表里的 QA / 验货单元格 — 不是线上 QA Board。"],
         orders: ["订单台账", "当前筛选下的每一行 SKU / 港口。"],
         factories: ["工厂", "工厂看板来自 tracking 9-24。金额为空 — Monthly Purchase Value 按 HO 计，不是 $。"],
@@ -839,7 +859,9 @@
     pie: '<path d="M12 3a9 9 0 1 0 9 9h-9V3z"/><path d="M12 3a9 9 0 0 1 9 9h-9V3z"/>',
     tag: '<path d="M20 13 11 4H4v7l9 9 7-7z"/><circle cx="7.5" cy="7.5" r=".8"/>',
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-    inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'
+    inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    costing: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    designer: '<path d="M12 19 19 5l-4-2-7 14 1 4 3-2z"/><path d="m15 7 2 1"/>'
   };
   function soHtml(v) {
     if (v == null || v === "") return "–";
@@ -2106,6 +2128,15 @@
       blocks + "</div></div>";
   }
 
+  function sampleDesk(kind) {
+    var titles = (I18N[lang] && I18N[lang].titles) || I18N.en.titles;
+    var pack = titles[kind] || [kind, ""];
+    var note = t(kind === "designer" ? "designerNote" : "costingNote");
+    return "<div class='card'><h2>" + ico(kind) + " " + esc(pack[0]) +
+      " <span>SAMPLE</span></h2><div class='pad'><p class='sub' style='margin:0 0 10px'>" +
+      esc(pack[1]) + "</p><p class='empty' style='padding:12px 0'>" + esc(note) + "</p></div></div>";
+  }
+
   function factoriesView(rows, s) {
     return "<div class='fty-dash'>" +
         factoryDrillCard(rows, s) +
@@ -2137,6 +2168,8 @@
     var html = "";
     if (view === "dash") html = dash(rows, s);
     else if (view === "merch") html = merch(rows, s);
+    else if (view === "costing") html = sampleDesk("costing");
+    else if (view === "designer") html = sampleDesk("designer");
     else if (view === "quality") html = quality(rows, s);
     else if (view === "orders") html = kpiRow(s) + tableCard(rows, s, "page");
     else if (view === "factories") html = factoriesView(rows, s);
