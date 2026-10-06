@@ -69,12 +69,14 @@
   .ico { width: 18px; height: 18px; display: inline-flex; flex: 0 0 18px; color: inherit; }
   .ico svg, .ico-tile svg, .nav-ico svg, .act-ico svg { width: 18px; height: 18px; display: block; stroke: currentColor; fill: none;
     stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ico svg path[fill-rule], .ico-tile svg path[fill-rule] { fill: currentColor; stroke: none; }
   .ico-tile svg { width: 18px; height: 18px; }
   .nav-ico {
     width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center;
     flex: 0 0 28px; color: #fff;
   }
   .nav-ico svg { width: 15px; height: 15px; stroke: #fff; }
+  .nav-ico.solid svg { fill: #fff; stroke: none; }
   .nav-ico.blue { background: #3b82f6; }
   .nav-ico.violet { background: #8b5cf6; }
   .nav-ico.green { background: #10b981; }
@@ -106,6 +108,7 @@
     width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: #fff;
   }
   .act-ico svg { width: 16px; height: 16px; stroke: #fff; }
+  .act-ico.solid svg { fill: #fff; stroke: none; }
   .act-ico.violet { background: #8b5cf6; }
   .act-ico.blue { background: #3b82f6; }
   .act-ico.green { background: #10b981; }
@@ -521,14 +524,14 @@
       </div>
     </div>
     <nav class="nav">
-      <button class="active" data-view="dash"><span class="nav-ico blue"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span> <span data-i18n="navDash">Dashboard</span></button>
+      <button class="active" data-view="dash"><span class="nav-ico blue solid"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span> <span data-i18n="navDash">Dashboard</span></button>
       <button data-view="merch"><span class="nav-ico violet"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="navMerch">Merchandiser</span></button>
-      <button data-view="costing"><span class="nav-ico teal"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span> <span data-i18n="navCosting">Costing</span></button>
-      <button data-view="designer"><span class="nav-ico indigo"><svg viewBox="0 0 24 24"><path d="M12 19 19 5l-4-2-7 14 1 4 3-2z"/><path d="m15 7 2 1"/></svg></span> <span data-i18n="navDesigner">Designer</span></button>
-      <button data-view="quality"><span class="nav-ico green"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></span> <span data-i18n="navQuality">Quality library</span></button>
+      <button data-view="costing"><span class="nav-ico teal solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/></svg></span> <span data-i18n="navCosting">Costing</span></button>
+      <button data-view="designer"><span class="nav-ico indigo solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/></svg></span> <span data-i18n="navDesigner">Designer</span></button>
+      <button data-view="quality"><span class="nav-ico green solid"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/></svg></span> <span data-i18n="navQuality">Quality library</span></button>
       <div class="sec" data-i18n="navBook">Book</div>
       <button data-view="orders"><span class="nav-ico sky"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span> <span data-i18n="navOrders">Order book</span></button>
-      <button data-view="factories"><span class="nav-ico amber"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
+      <button data-view="factories"><span class="nav-ico amber solid"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="10" width="4" height="10" rx="1"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
       <button data-view="customers"><span class="nav-ico rose"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
     </nav>
   </aside>
@@ -567,8 +570,8 @@
         <div class="actions">
           <button class="act" type="button" id="btnHome"><span class="act-ico navy"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg></span> <span data-i18n="actHome">Home</span></button>
           <button class="act" type="button" data-jump="merch"><span class="act-ico amber"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="actMerch">Merchandiser</span></button>
-          <button class="act" type="button" data-jump="costing"><span class="act-ico teal"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span> <span data-i18n="actCosting">Costing</span></button>
-          <button class="act" type="button" data-jump="designer"><span class="act-ico indigo"><svg viewBox="0 0 24 24"><path d="M12 19 19 5l-4-2-7 14 1 4 3-2z"/><path d="m15 7 2 1"/></svg></span> <span data-i18n="actDesigner">Designer</span></button>
+          <button class="act" type="button" data-jump="costing"><span class="act-ico teal solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/></svg></span> <span data-i18n="actCosting">Costing</span></button>
+          <button class="act" type="button" data-jump="designer"><span class="act-ico indigo solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/></svg></span> <span data-i18n="actDesigner">Designer</span></button>
           <button class="act" type="button" data-jump="quality"><span class="act-ico green"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/></svg></span> <span data-i18n="actQuality">Quality</span></button>
           <button class="act" type="button" data-jump="orders"><span class="act-ico violet"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span> <span data-i18n="actOrders">Order book</span></button>
           <button class="act" type="button" data-jump="factories"><span class="act-ico sky"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
@@ -860,8 +863,8 @@
     tag: '<path d="M20 13 11 4H4v7l9 9 7-7z"/><circle cx="7.5" cy="7.5" r=".8"/>',
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
-    costing: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
-    designer: '<path d="M12 19 19 5l-4-2-7 14 1 4 3-2z"/><path d="m15 7 2 1"/>'
+    costing: '<path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/>',
+    designer: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/>'
   };
   function soHtml(v) {
     if (v == null || v === "") return "–";
