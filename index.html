@@ -421,8 +421,13 @@
   .qp-chart svg { width: 100%; height: 280px; display: block; }
   .fty-dash .qp-chart { height: 280px; }
   .fty-dash .qp-chart svg { height: 280px; }
+  .fty-dash .card.span-all { grid-column: 1 / -1; }
   .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .factory-row strong { display: block; }
+  .factory-row.click { cursor: pointer; border-radius: 8px; padding: 8px 6px; margin: 0 -6px; }
+  .factory-row.click:hover { background: #f8fafc; }
+  .dtime-lab.click { cursor: pointer; }
+  .dtime-lab.click:hover { color: var(--blue-deep); }
   .bar { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; min-width: 90px; }
   .bar > i { display: block; height: 100%; background: var(--blue); }
   .spark { display: flex; gap: 2px; align-items: flex-end; height: 22px; }
@@ -694,7 +699,13 @@
       qpAvg: "Average of defects (sample)",
       qpNote: "Late = distinct late HO by customer due month. Complaints + average defects = SAMPLE until the monthly/quarterly/yearly Excel.",
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
-      factoryMaster: "Factory master", customers: "Customers", factories: "Factories",
+      factoryMaster: "Factory master",
+      factoryDrill: "Factory drill-down",
+      factoryDrillNote: "Tap a factory for HO / PO / customer due / SO cfm / inspect. Tracking 9-24 only. $ not reported. Defect SAMPLE is not a factory.",
+      nextDue: "Next due",
+      lateHo: "Late HO",
+      inspectPend: "Inspect pending",
+      customers: "Customers", factories: "Factories",
       qaTest: "QA test", inspectPlan: "Inspection plan",
       qualityNote: "QA test + inspection plan from the tracking Excel — not the live QA Board. Pass in this file = 5 lines. Blank is not Pass.",
       onTime: "Not due yet", late17: "1–7d late", late821: "8–21d late", late22: "22d+ late", noDue: "No customer due",
@@ -757,7 +768,13 @@
       qpAvg: "平均不良 (示意)",
       qpNote: "逾期 = 按客户交期月去重逾期 HO。投诉 + 平均不良 = 示意，等月/季/年 Excel。",
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
-      factoryMaster: "工厂主档", customers: "客户", factories: "工厂",
+      factoryMaster: "工厂主档",
+      factoryDrill: "工厂下钻",
+      factoryDrillNote: "点工厂看 HO / PO / 客户交期 / SO cfm / 验货。仅 tracking 9-24。无金额。SAMPLE 不良不是工厂实绩。",
+      nextDue: "下一交期",
+      lateHo: "逾期 HO",
+      inspectPend: "验货待定",
+      customers: "客户", factories: "工厂",
       qaTest: "QA 测试", inspectPlan: "验货计划",
       qualityNote: "QA / 验货来自跟踪表 — 不是线上 QA Board。本文件 Pass = 5 行。空白不是 Pass。",
       onTime: "未到期", late17: "逾期 1–7 天", late821: "逾期 8–21 天", late22: "逾期 22 天+", noDue: "无客户交期",
@@ -945,7 +962,23 @@
   function openFtyPop(code) {
     var list = filtered().filter(function (o) { return (o.factoryCode || o.sheet) === code; });
     var name = list[0] ? shortFty(list[0]) : code;
-    renderHoPop(name, list);
+    var lateHo = {}, pendHo = {}, nextDue = "";
+    list.forEach(function (o) {
+      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o));
+      var band = delayBand(o.customerDue);
+      if (band.key !== "easy" && band.key !== "none") lateHo[id] = true;
+      if (inspectKind(o.inspect) === "pending") pendHo[id] = true;
+      if (o.customerDue && o.customerDue >= AS) {
+        if (!nextDue || o.customerDue < nextDue) nextDue = o.customerDue;
+      }
+    });
+    var bits = [
+      Object.keys(lateHo).length + " " + t("lateHo"),
+      t("nextDue") + " " + (nextDue || "–"),
+      Object.keys(pendHo).length + " " + t("inspectPend"),
+      "$ not reported"
+    ];
+    renderHoPop(name, list, bits.join(" · ") + ".");
   }
   function ico(name) {
     return '<span class="ico"><svg viewBox="0 0 24 24">' + (PATHS[name] || PATHS.dash) + '</svg></span>';
@@ -1406,7 +1439,7 @@
           "%;background:" + color + "' title='" + esc(k + " · " + label + " — " + n + " HO") + "'>" +
           (show ? (Math.round(w) + "%") : "") + "</i>";
       }
-      return "<div class='dtime-row'><div class='dtime-lab' title='" + esc(f.name) + "'>" + esc(ftyNick(k, f.name)) + "</div>" +
+      return "<div class='dtime-row'><div class='dtime-lab click' data-fty='" + encodeURIComponent(k) + "' title='" + esc(f.name) + " · tap'>" + esc(ftyNick(k, f.name)) + "</div>" +
         "<div class='dtime-track'>" +
           seg(on, C_ON, "on", t("dOnTime")) +
           seg(late, C_LATE, "late", t("dLate")) +
@@ -1877,7 +1910,7 @@
       var rate = nPo ? Math.round(100 * nLate / nPo) : 0;
       var cats = Object.keys(f.cats).join(" · ") || "–";
       var custs = Object.keys(f.customers).join(", ") || "–";
-      return "<div class='factory-row'><div><strong>" + esc(f.code || k) + " · " + esc(f.name || "") +
+      return "<div class='factory-row click' data-fty='" + encodeURIComponent(k) + "' title='Tap for HO'><div><strong>" + esc(f.code || k) + " · " + esc(f.name || "") +
         "</strong><div class='sub'>" + esc(f.province ? f.province + ", Vietnam" : f.country) + " · " + esc(cats) +
         "<br>Customers: " + esc(custs) + "</div></div>" +
         "<div style='text-align:right;min-width:160px'><div class='sub'>" + nLate + " / " + nPo +
@@ -2029,8 +2062,53 @@
     setTimeout(function () { if (asiaMap) asiaMap.invalidateSize(); }, 80);
   }
 
+  function factoryDrillCard(rows, s) {
+    var by = {};
+    rows.forEach(function (o) {
+      var k = o.factoryCode || o.sheet || "?";
+      if (!by[k]) {
+        by[k] = { code: k, name: o.factoryName || k, hos: {}, late: {}, pend: {}, nextDue: "", qty: 0, pos: {} };
+      }
+      var rec = by[k];
+      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o));
+      rec.hos[id] = true;
+      rec.qty += o.qty || 0;
+      if (o.po) rec.pos[poKey(o)] = true;
+      var band = delayBand(o.customerDue);
+      if (band.key !== "easy" && band.key !== "none") rec.late[id] = true;
+      if (inspectKind(o.inspect) === "pending") rec.pend[id] = true;
+      if (o.customerDue && o.customerDue >= AS) {
+        if (!rec.nextDue || o.customerDue < rec.nextDue) rec.nextDue = o.customerDue;
+      }
+    });
+    var keys = Object.keys(by).sort(function (a, b) {
+      return Object.keys(by[b].hos).length - Object.keys(by[a].hos).length;
+    });
+    if (!keys.length) return "";
+    var blocks = keys.map(function (k) {
+      var f = by[k];
+      var nHo = Object.keys(f.hos).length;
+      var nLate = Object.keys(f.late).length;
+      var nPend = Object.keys(f.pend).length;
+      var loc = FTY_LOC[k];
+      var place = loc ? loc.province + ", Vietnam" : (s.ftyMap[k] && s.ftyMap[k].province ? s.ftyMap[k].province + ", Vietnam" : "");
+      return "<div class='factory-row click' data-fty='" + encodeURIComponent(k) + "' title='Tap for HO'>" +
+        "<div><strong>" + esc(ftyNick(k, f.name)) + "</strong><div class='sub'>" +
+        esc(f.code) + (place ? " · " + esc(place) : "") + "</div></div>" +
+        "<div class='sub' style='text-align:right'>" + nHo + " HO · " + Object.keys(f.pos).length + " PO" +
+        "<br>" + nLate + " " + t("lateHo") + " · " + t("nextDue") + " " + esc(f.nextDue || "–") +
+        (nPend ? "<br>" + nPend + " " + t("inspectPend") : "") +
+        "</div></div>";
+    }).join("");
+    return "<div class='card span-all'><h2>" + ico("factories") + " " + t("factoryDrill") +
+      " <span>" + keys.length + "</span></h2><div class='pad'>" +
+      "<p class='sub' style='margin:0 0 8px'>" + t("factoryDrillNote") + "</p>" +
+      blocks + "</div></div>";
+  }
+
   function factoriesView(rows, s) {
     return "<div class='fty-dash'>" +
+        factoryDrillCard(rows, s) +
         purchaseLine(s.hoMonth) +
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
