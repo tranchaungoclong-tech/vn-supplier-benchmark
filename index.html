@@ -125,6 +125,10 @@
   .h1-row { display: flex; align-items: center; gap: 10px; }
   .h1-row .ico-tile { width: 40px; height: 40px; border-radius: 12px; }
   .h1-row .ico-tile svg { width: 20px; height: 20px; }
+  .page-head { margin: 0 0 14px; }
+  .page-head h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
+  .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .page-head .asof { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
   .card h2 .ico { color: var(--blue-deep); margin-right: 2px; }
 
   .main { min-width: 0; }
@@ -2131,6 +2135,16 @@
       blocks + "</div></div>";
   }
 
+  function pageHead() {
+    var titles = (I18N[lang] && I18N[lang].titles) || I18N.en.titles;
+    var pack = titles[view] || titles.dash || [view, ""];
+    var icoName = PATHS[view] ? view : "dash";
+    var tint = view === "costing" ? "green" : view === "designer" ? "violet" : view === "quality" ? "green" : view === "factories" ? "amber" : view === "customers" ? "rose" : "blue";
+    return "<div class='page-head h1-row'>" + tile(icoName, tint) +
+      "<div><h1>" + esc(pack[0]) + "</h1><p>" + esc(pack[1] || "") + "</p></div>" +
+      "<span class='asof'>" + t("asOf") + " " + AS + "</span></div>";
+  }
+
   function sampleDesk(kind) {
     var titles = (I18N[lang] && I18N[lang].titles) || I18N.en.titles;
     var pack = titles[kind] || [kind, ""];
@@ -2177,7 +2191,7 @@
     else if (view === "orders") html = kpiRow(s) + tableCard(rows, s, "page");
     else if (view === "factories") html = factoriesView(rows, s);
     else html = customersView(rows, s);
-    document.getElementById("view").innerHTML = html;
+    document.getElementById("view").innerHTML = pageHead() + html;
     if (document.getElementById("asiaMap")) paintAsiaMap(s);
     if (keepBook) {
       var book = document.getElementById("orderBook");
