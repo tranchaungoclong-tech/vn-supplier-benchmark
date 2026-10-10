@@ -2153,16 +2153,16 @@
       "</div><b>" + (custKeys.length ? Math.round(100 * ukN / custKeys.length) : 0) + "%</b><div class='delta'>" +
       ukN + " · " + esc((byCountry.UK && byCountry.UK.names.join(", ")) || "–") + "</div></div>" +
       "</div>" +
-      "<div class='layout'>" +
+      "<div class='card' style='margin-bottom:14px'><h2>" + ico("customers") + " " + t("byCountry") +
+      "</h2><div class='pad'><div class='cust-flags'>" + countryHtml + "</div></div></div>" +
+      yearPurchaseDonuts() +
+      "<div class='layout' style='margin-top:14px'>" +
       "<div class='card'><h2>" + ico("trend") + " " + t("poByMonth") +
       " <span>" + total + " PO</span></h2><div class='pad'>" + monthBars(parts) + "</div></div>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("hoByCat") +
       " <span>" + catTotal + " HO</span></h2><div class='pad'><table class='grid'><thead><tr><th>" +
       t("colCat") + "</th><th>HO</th><th>" + t("colBuyer") + "</th></tr></thead><tbody>" +
-      catRows + "</tbody></table></div></div></div>" +
-      "<div class='card' style='margin-top:14px'><h2>" + ico("customers") + " " + t("byCountry") +
-      "</h2><div class='pad'><div class='cust-flags'>" + countryHtml + "</div></div></div>" +
-      yearPurchaseDonuts();
+      catRows + "</tbody></table></div></div></div>";
   }
 
   function yearPurchaseDonuts() {
@@ -2173,7 +2173,7 @@
     var cat = groupPurchase(function (r) { return r.cat; });
     var fty = groupPurchase(function (r) { return r.fty; });
     var bu = groupPurchase(function (r) { return r.bu; });
-    return "<div class='donut-grid'>" +
+    return "<div class='donut-grid' style='margin-top:0;margin-bottom:0'>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
       " <span>" + span + "</span></h2><div class='pad'>" + donut(cust, mid, "USD", money) + "</div></div>" +
       "<div class='card'><h2>" + ico("quality") + " " + t("purchaseByCat") +
@@ -2450,6 +2450,12 @@
   }
 
   function setView(name) {
+    if (name === view) {
+      document.querySelectorAll(".nav button").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-view") === name);
+      });
+      return;
+    }
     view = name;
     page = 1;
     if (name !== "quality") tableTab = "all";
