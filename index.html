@@ -2036,14 +2036,15 @@
     var catMax = 1;
     catKeys.forEach(function (c) { if (byCat[c].n > catMax) catMax = byCat[c].n; });
     var catTotal = catKeys.reduce(function (a, c) { return a + byCat[c].n; }, 0);
-    var catRows = catKeys.map(function (c) {
+    var catRows = catKeys.map(function (c, i) {
       var lab = c.indexOf("→") > 0 ? c.split("→").pop() : c;
       var x = byCat[c];
       var buyers = Object.keys(x.buyers).sort(function (a, b) { return x.buyers[b] - x.buyers[a]; })
         .map(function (b) { return b + " " + x.buyers[b]; }).join(", ");
       var w = Math.round(100 * x.n / catMax);
+      var col = COLORS[i % COLORS.length];
       return "<tr><td>" + esc(lab) + "</td><td>" +
-        "<div style='background:#dbeafe;width:" + w + "%;min-width:34px;border-radius:6px;padding:3px 8px;font-weight:700'>" +
+        "<div style='background:" + col + ";color:#fff;width:" + w + "%;min-width:34px;border-radius:6px;padding:3px 8px;font-weight:700'>" +
         x.n + "</div></td><td class='sub'>" + esc(buyers) + "</td></tr>";
     }).join("");
     var COUNTRY = { U09: "UK", P01: "UK", N08: "UK", U67: "UK", U26: "UK", G35: "UK", F23: "USA", JJA: "USA", WMT: "USA", A93: "USA", A74: "USA", C24: "Canada" };
@@ -2122,7 +2123,7 @@
       var cx = x + barW / 2;
       pts.push(cx.toFixed(1) + "," + y.toFixed(1));
       return "<rect x='" + x.toFixed(1) + "' y='" + y.toFixed(1) + "' width='" + barW.toFixed(1) +
-        "' height='" + Math.max(1, bh).toFixed(1) + "' rx='4' fill='#3b82f6'></rect>" +
+        "' height='" + Math.max(1, bh).toFixed(1) + "' rx='4' fill='" + (p.color || "#3b82f6") + "'></rect>" +
         "<text x='" + cx.toFixed(1) + "' y='" + (y - 6).toFixed(1) + "' text-anchor='middle' font-size='11' font-weight='800' fill='#0f172a'>" + p.n + "</text>" +
         "<text x='" + cx.toFixed(1) + "' y='" + (h - 10) + "' text-anchor='middle' font-size='10' font-weight='700' fill='#334155'>" + esc(p.label) + "</text>";
     }).join("");
