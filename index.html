@@ -66,6 +66,11 @@
   }
   .nav button:hover { background: #f8fafc; }
   .nav button.active { background: var(--blue-soft); color: var(--blue-deep); font-weight: 650; }
+  .nav .soon {
+    margin-left: auto; font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+    color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 999px; padding: 2px 6px;
+    white-space: nowrap;
+  }
   .ico { width: 18px; height: 18px; display: inline-flex; flex: 0 0 18px; color: inherit; }
   .ico svg, .ico-tile svg, .nav-ico svg, .act-ico svg { width: 18px; height: 18px; display: block; stroke: currentColor; fill: none;
     stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -672,10 +677,10 @@
     </div>
     <nav class="nav">
       <button class="active" data-view="dash"><span class="nav-ico blue solid"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span> <span data-i18n="navDash">Dashboard</span></button>
-      <button data-view="merch"><span class="nav-ico violet"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="navMerch">Merchandiser</span></button>
-      <button data-view="costing"><span class="nav-ico teal solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/></svg></span> <span data-i18n="navCosting">Costing</span></button>
-      <button data-view="designer"><span class="nav-ico indigo solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/></svg></span> <span data-i18n="navDesigner">Designer</span></button>
-      <button data-view="quality"><span class="nav-ico green solid"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/></svg></span> <span data-i18n="navQuality">Quality library</span></button>
+      <button data-view="merch"><span class="nav-ico violet"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="navMerch">Merchandiser</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
+      <button data-view="costing"><span class="nav-ico teal solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/></svg></span> <span data-i18n="navCosting">Costing</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
+      <button data-view="designer"><span class="nav-ico indigo solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/></svg></span> <span data-i18n="navDesigner">Designer</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
+      <button data-view="quality"><span class="nav-ico green solid"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/></svg></span> <span data-i18n="navQuality">Quality library</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <div class="sec" data-i18n="navBook">Book</div>
       <button data-view="orders"><span class="nav-ico sky"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span> <span data-i18n="navOrders">Order book</span></button>
       <button data-view="factories"><span class="nav-ico amber solid"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="10" width="4" height="10" rx="1"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
@@ -816,6 +821,7 @@
   var I18N = {
     en: {
       navDash: "Dashboard", navMerch: "Merchandiser", navCosting: "Costing", navDesigner: "Designer", navQuality: "Quality library", navBook: "Book",
+      comingSoon: "Coming soon",
       navOrders: "Order book", navFactories: "Factories", navCustomers: "Customers",
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
       actHome: "Home", actOrders: "Order book", actExport: "Export Excel", actQuality: "Quality", actMerch: "Merchandiser", actCosting: "Costing", actDesigner: "Designer",
@@ -908,6 +914,7 @@
     },
     zh: {
       navDash: "仪表盘", navMerch: "跟单", navCosting: "核价", navDesigner: "设计", navQuality: "质量库", navBook: "台账",
+      comingSoon: "即将上线",
       navOrders: "订单台账", navFactories: "工厂", navCustomers: "客户",
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
       actHome: "首页", actOrders: "订单台账", actExport: "导出 Excel", actQuality: "质量", actMerch: "跟单", actCosting: "核价", actDesigner: "设计",
