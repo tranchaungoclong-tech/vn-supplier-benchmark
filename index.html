@@ -461,7 +461,7 @@
   .ho-table td { text-align: right; font-variant-numeric: tabular-nums; }
   .ho-table tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
   .map-desk {
-    display: grid; grid-template-columns: 210px 1fr; min-height: 360px;
+    display: grid; grid-template-columns: 240px 1fr; min-height: 480px;
     background: #0b1220; border-radius: 12px; overflow: hidden; color: #e2e8f0;
   }
   .fty-ho-rail { padding: 12px 10px; overflow: auto; }
@@ -478,10 +478,10 @@
   .fty-ho-row .track { height: 8px; background: #1e293b; border-radius: 99px; overflow: hidden; }
   .fty-ho-row .track i { display: block; height: 100%; border-radius: 99px; }
   .asia-map {
-    height: 360px; overflow: hidden; background: #0b1220;
+    height: 480px; overflow: hidden; background: #0b1220;
     isolation: isolate; position: relative; z-index: 0;
   }
-  .asia-map .leaflet-container { height: 360px; width: 100%; background: #0b1220; font: inherit; z-index: 0; }
+  .asia-map .leaflet-container { height: 480px; width: 100%; background: #0b1220; font: inherit; z-index: 0; }
   .asia-map .leaflet-pane, .asia-map .leaflet-top, .asia-map .leaflet-bottom { z-index: 1; }
   .asia-map .leaflet-control-zoom a { color: #e2e8f0; background: #1e293b; border-color: #334155; }
   .asia-map .leaflet-bar { border: 0; }
@@ -591,8 +591,8 @@
   .fty-dash .dtime-leg { gap: 10px; font-size: 12px; margin-top: 8px; }
   .fty-dash .fty-legend { gap: 8px; margin-top: 8px; }
   .fty-dash .fty-legend span { font-size: 12px; }
-  .fty-dash .map-desk { min-height: 280px; }
-  .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 280px; }
+  .fty-dash .map-desk { min-height: 440px; }
+  .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 440px; }
   .qp-chart { height: 280px; }
   .qp-chart svg { width: 100%; height: 280px; display: block; }
   .fty-dash .qp-chart { height: 280px; }
@@ -2268,10 +2268,8 @@
         "<div class='card'><h2>" + ico("factories") + " " + t("ftyFilter") + "</h2><div class='pad'><div class='chips'>" +
           topics + "</div><p class='sub' style='margin:10px 0 0'>" + ftyNote + "</p></div></div>" +
       "</div></div>" +
-      "<div class='grid2' style='margin-top:14px'>" +
-        hoMonthBlock(s.hoMonth, s.distinctHo) +
-        asiaMapHtml() +
-      "</div>";
+      "<div style='margin-top:14px'>" + hoMonthBlock(s.hoMonth, s.distinctHo) + "</div>" +
+      "<div style='margin-top:14px'>" + asiaMapHtml(true) + "</div>";
   }
 
   function merch(rows) {
@@ -2530,8 +2528,8 @@
     TH: "Thailand", ID: "Indonesia", PK: "Pakistan", LK: "Sri Lanka"
   };
   var asiaMap = null;
-  function asiaMapHtml() {
-    return "<div class='card'><h2>" + ico("factories") + " " + t("mapTitle") + "</h2>" +
+  function asiaMapHtml(wide) {
+    return "<div class='card" + (wide ? " span-all" : "") + "'><h2>" + ico("factories") + " " + t("mapTitle") + "</h2>" +
       "<div class='pad' style='padding:0 0 12px'><div class='map-desk'>" +
       "<div class='fty-ho-rail'><div class='rail-h'>HO by factory</div><div id='ftyHoRail'></div></div>" +
       "<div id='asiaMap' class='asia-map'></div></div>" +
@@ -2665,7 +2663,7 @@
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
         qualityPerfCard(rows) +
-        asiaMapHtml() +
+        asiaMapHtml(true) +
       "</div>";
   }
 
