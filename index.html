@@ -438,6 +438,58 @@
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .donut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .spend-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .spend-tbl th {
+    background: #2563eb; color: #fff; font-weight: 700; padding: 7px 10px; font-size: 12px;
+  }
+  .spend-tbl th:first-child { background: #f8fafc; color: #64748b; }
+  .spend-tbl td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  .spend-tbl .usd { font-weight: 750; color: #0f172a; white-space: nowrap; }
+  .tx-cell { display: flex; align-items: center; gap: 6px; min-width: 92px; }
+  .tx-cell .bar { flex: 1; height: 10px; background: #e2e8f0; border-radius: 2px; overflow: hidden; }
+  .tx-cell .bar i { display: block; height: 100%; background: #60a5fa; }
+  .tx-cell b { font-variant-numeric: tabular-nums; font-size: 12px; min-width: 22px; font-weight: 700; color: #334155; }
+  .sup-chip {
+    display: inline-block; min-width: 28px; text-align: center;
+    padding: 2px 8px; border-radius: 4px; font-weight: 800; font-size: 12px; color: #fff;
+  }
+  .sup-chip.g { background: #34d399; }
+  .sup-chip.a { background: #fbbf24; color: #78350f; }
+  .sup-chip.r { background: #fb7185; }
+  .share-strip { display: flex; height: 26px; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }
+  .share-strip i { display: block; height: 100%; }
+  .share-row {
+    display: grid; grid-template-columns: 48px 1fr 92px 40px; gap: 8px;
+    align-items: center; padding: 5px 0; font-size: 12.5px;
+  }
+  .share-row .lab { font-weight: 750; }
+  .share-row .track { height: 8px; background: #eef2f7; border-radius: 99px; overflow: hidden; }
+  .share-row .track b { display: block; height: 100%; border-radius: 99px; }
+  .share-row .usd { text-align: right; font-weight: 750; white-space: nowrap; }
+  .share-row .pct { text-align: right; color: #64748b; font-variant-numeric: tabular-nums; }
+  .lolli {
+    display: grid; grid-template-columns: 118px 1fr 88px; gap: 8px;
+    align-items: center; margin: 9px 0; font-size: 12.5px;
+  }
+  .lolli .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+  .lolli .rail { position: relative; height: 14px; }
+  .lolli .rail span {
+    display: block; height: 3px; background: #e2e8f0; position: absolute;
+    left: 0; right: 0; top: 5px; border-radius: 99px;
+  }
+  .lolli .rail i {
+    position: absolute; top: 0; width: 14px; height: 14px; border-radius: 50%;
+    transform: translateX(-50%); box-shadow: 0 0 0 3px #fff;
+  }
+  .lolli .usd { text-align: right; font-weight: 750; white-space: nowrap; }
+  .bu-mosaic { display: flex; min-height: 132px; border-radius: 14px; overflow: hidden; }
+  .bu-mosaic .cell {
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 12px; color: #fff; min-width: 0; flex: 1 1 0;
+  }
+  .bu-mosaic .cell small { opacity: .88; font-size: 11px; font-weight: 800; letter-spacing: .04em; }
+  .bu-mosaic .cell b { font-size: 18px; letter-spacing: -.03em; line-height: 1.15; }
+  .bu-mosaic .cell em { font-style: normal; font-size: 12px; opacity: .9; }
   .fty-dash { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
   .fty-dash > .card { margin-top: 0 !important; min-width: 0; }
   .fty-dash .card h2 { font-size: 14px; }
@@ -752,6 +804,7 @@
       topCust: "Top customers by HO",
       hoByCat: "HO by category",
       colCat: "Category", colBuyer: "Buyer",
+      colSpend: "Spend", colTx: "Lines", colSuppliers: "Factories",
       cmpBtn: "Compare period", cmpTitle: "Compare period",
       cmpSub: "Δ = A against B. B is the earlier period.",
       cmpWeek: "Week vs week", cmpMonth: "Month vs month",
@@ -843,6 +896,7 @@
       topCust: "客户 HO 排名",
       hoByCat: "按品类 HO",
       colCat: "品类", colBuyer: "客户",
+      colSpend: "采购额", colTx: "行数", colSuppliers: "工厂",
       cmpBtn: "对比周期", cmpTitle: "对比周期",
       cmpSub: "Δ = A 对比 B。B 是上一期。",
       cmpWeek: "周 vs 周", cmpMonth: "月 vs 月",
@@ -944,14 +998,71 @@
     var map = {};
     YEAR_PURCHASE.forEach(function (r) {
       var k = keyFn(r);
-      map[k] = (map[k] || 0) + r.usd;
+      if (!map[k]) map[k] = { label: k, n: 0, tx: 0, ftys: {}, clients: {} };
+      map[k].n += r.usd;
+      map[k].tx++;
+      map[k].ftys[r.fty] = 1;
+      map[k].clients[r.client] = 1;
     });
-    return Object.keys(map).sort(function (a, b) { return map[b] - map[a]; }).map(function (k, i) {
-      return { label: k, n: map[k], color: COLORS[i % COLORS.length] };
+    return Object.keys(map).sort(function (a, b) { return map[b].n - map[a].n; }).map(function (k, i) {
+      var x = map[k];
+      return {
+        label: k, n: x.n, tx: x.tx,
+        ftyN: Object.keys(x.ftys).length,
+        custN: Object.keys(x.clients).length,
+        color: COLORS[i % COLORS.length]
+      };
     });
   }
   function yearPurchaseTotal() {
     return YEAR_PURCHASE.reduce(function (a, r) { return a + r.usd; }, 0);
+  }
+  function spendCatTable(parts) {
+    var maxTx = 1;
+    parts.forEach(function (p) { if (p.tx > maxTx) maxTx = p.tx; });
+    var rows = parts.map(function (p) {
+      var w = Math.max(6, Math.round(100 * p.tx / maxTx));
+      var chip = p.ftyN === 1 ? "g" : (p.ftyN <= 3 ? "a" : "r");
+      return "<tr><td>" + esc(p.label) + "</td><td class='usd'>" + money(p.n) + "</td>" +
+        "<td><div class='tx-cell'><span class='bar'><i style='width:" + w + "%'></i></span><b>" + p.tx +
+        "</b></div></td><td><span class='sup-chip " + chip + "'>" + p.ftyN + "</span></td></tr>";
+    }).join("");
+    return "<table class='spend-tbl'><thead><tr><th>" + t("colCat") + "</th><th>" + t("colSpend") +
+      "</th><th>" + t("colTx") + "</th><th>" + t("colSuppliers") + "</th></tr></thead><tbody>" +
+      rows + "</tbody></table>";
+  }
+  function spendShare(parts) {
+    var tot = parts.reduce(function (a, p) { return a + p.n; }, 0) || 1;
+    var strip = parts.map(function (p) {
+      return "<i style='width:" + (100 * p.n / tot).toFixed(2) + "%;background:" + p.color + "' title='" +
+        esc(p.label) + "'></i>";
+    }).join("");
+    var rows = parts.map(function (p) {
+      var pct = Math.round(100 * p.n / tot);
+      return "<div class='share-row'><div class='lab'>" + esc(p.label) + "</div>" +
+        "<div class='track'><b style='width:" + pct + "%;background:" + p.color + "'></b></div>" +
+        "<div class='usd'>" + money(p.n) + "</div><div class='pct'>" + pct + "%</div></div>";
+    }).join("");
+    return "<div class='share-strip'>" + strip + "</div>" + rows;
+  }
+  function spendLolli(parts) {
+    var max = 1;
+    parts.forEach(function (p) { if (p.n > max) max = p.n; });
+    return parts.map(function (p) {
+      var x = Math.max(8, Math.round(100 * p.n / max));
+      return "<div class='lolli'><div class='lab'>" + esc(p.label) + "</div>" +
+        "<div class='rail'><span></span><i style='left:" + x + "%;background:" + p.color + "'></i></div>" +
+        "<div class='usd'>" + money(p.n) + "</div></div>";
+    }).join("");
+  }
+  function spendMosaic(parts) {
+    var tot = parts.reduce(function (a, p) { return a + p.n; }, 0) || 1;
+    return "<div class='bu-mosaic'>" + parts.map(function (p) {
+      var pct = Math.round(100 * p.n / tot);
+      var flex = Math.max(8, pct);
+      return "<div class='cell' style='flex-grow:" + flex + ";background:" + p.color + "'>" +
+        "<small>" + esc(p.label) + "</small><b>" + moneyShort(p.n) + "</b><em>" + pct + "%</em></div>";
+    }).join("") + "</div>";
   }
   var PATHS = {
     dash: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
@@ -2167,22 +2278,21 @@
 
   function yearPurchaseDonuts() {
     var tot = yearPurchaseTotal();
-    var mid = moneyShort(tot);
     var span = "2026 · " + money(tot);
     var cust = groupPurchase(function (r) { return r.client; });
     var cat = groupPurchase(function (r) { return r.cat; });
     var fty = groupPurchase(function (r) { return r.fty; });
     var bu = groupPurchase(function (r) { return r.bu; });
-    return "<div class='donut-grid' style='margin-top:0;margin-bottom:0'>" +
+    return "<div class='card' style='margin-bottom:14px'><h2>" + ico("quality") + " " + t("purchaseByCat") +
+      " <span>" + span + "</span></h2><div class='pad'>" + spendCatTable(cat) + "</div></div>" +
+      "<div class='donut-grid' style='margin-top:0;margin-bottom:0'>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
-      " <span>" + span + "</span></h2><div class='pad'>" + donut(cust, mid, "USD", money) + "</div></div>" +
-      "<div class='card'><h2>" + ico("quality") + " " + t("purchaseByCat") +
-      " <span>" + span + "</span></h2><div class='pad'>" + donut(cat, mid, "USD", money) + "</div></div>" +
+      " <span>" + span + "</span></h2><div class='pad'>" + spendShare(cust) + "</div></div>" +
       "<div class='card'><h2>" + ico("factories") + " " + t("purchaseByFty") +
-      " <span>" + span + "</span></h2><div class='pad'>" + donut(fty, mid, "USD", money) + "</div></div>" +
-      "<div class='card'><h2>" + ico("po") + " " + t("purchaseByBu") +
-      " <span>" + span + "</span></h2><div class='pad'>" + donut(bu, mid, "USD", money) + "</div></div>" +
-      "</div>";
+      " <span>" + span + "</span></h2><div class='pad'>" + spendLolli(fty) + "</div></div>" +
+      "</div>" +
+      "<div class='card' style='margin-top:14px'><h2>" + ico("po") + " " + t("purchaseByBu") +
+      " <span>" + span + "</span></h2><div class='pad'>" + spendMosaic(bu) + "</div></div>";
   }
 
   function monthBars(parts) {
