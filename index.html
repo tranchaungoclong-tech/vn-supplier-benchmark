@@ -437,6 +437,7 @@
   .empty { padding: 24px; color: var(--muted); }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .donut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
   .fty-dash { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
   .fty-dash > .card { margin-top: 0 !important; min-width: 0; }
   .fty-dash .card h2 { font-size: 14px; }
@@ -489,7 +490,7 @@
   }
 
   @media (max-width: 1180px) {
-    .kpis, .layout, .grid2 { grid-template-columns: 1fr; }
+    .kpis, .layout, .grid2, .donut-grid { grid-template-columns: 1fr; }
     .fty-dash { grid-template-columns: 1fr 1fr; }
     .app { grid-template-columns: 1fr; }
     .side {
@@ -743,9 +744,13 @@
       factoryMaster: "Factory master",
       poByMonth: "PO released by month",
       purchaseByCat: "Total purchase by category",
+      purchaseByCust: "Total purchase by customer",
+      purchaseByFty: "Total purchase by factory",
+      purchaseByBu: "Total purchase by BU",
       totalCust: "Total customers", newCust: "New customers",
       newOf: "new · no repeat order yet", byCountry: "Customers by country",
       topCust: "Top customers by HO",
+      hoByCat: "HO by category",
       colCat: "Category", colBuyer: "Buyer",
       cmpBtn: "Compare period", cmpTitle: "Compare period",
       cmpSub: "Δ = A against B. B is the earlier period.",
@@ -830,9 +835,13 @@
       factoryMaster: "工厂主档",
       poByMonth: "每月下单 PO",
       purchaseByCat: "按品类采购合计",
+      purchaseByCust: "按客户采购合计",
+      purchaseByFty: "按工厂采购合计",
+      purchaseByBu: "按 BU 采购合计",
       totalCust: "客户总数", newCust: "新客户",
       newOf: "新客户 · 还没有翻单", byCountry: "客户国家",
       topCust: "客户 HO 排名",
+      hoByCat: "按品类 HO",
       colCat: "品类", colBuyer: "客户",
       cmpBtn: "对比周期", cmpTitle: "对比周期",
       cmpSub: "Δ = A 对比 B。B 是上一期。",
@@ -901,6 +910,48 @@
     if (n == null || n === "") return "–";
     var x = Math.round(n);
     return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  function money(n) {
+    if (n == null || n === "") return "–";
+    return "$" + fmt(n);
+  }
+  function moneyShort(n) {
+    if (n == null || n === "") return "–";
+    if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "m";
+    if (n >= 1e3) return "$" + (n / 1e3).toFixed(0) + "k";
+    return money(n);
+  }
+  var YEAR_PURCHASE = [
+    { bu: "QGBG", cat: "Candle", client: "U09", fty: "G191 Sanlian", usd: 1881405.07 },
+    { bu: "QGBG", cat: "Candle", client: "U09", fty: "A474 SUPREME", usd: 1298591.80 },
+    { bu: "QGBG", cat: "Candle", client: "F23", fty: "A474 SUPREME", usd: 787483.47 },
+    { bu: "QGBG", cat: "Candle", client: "P01", fty: "G191 Sanlian", usd: 780754.67 },
+    { bu: "QGBG", cat: "Candle", client: "P01", fty: "A353 EVERGREEN", usd: 323718.99 },
+    { bu: "DPU", cat: "Faux Plant", client: "A74", fty: "A447 LILY", usd: 277142.56 },
+    { bu: "MPN", cat: "PET", client: "WMT", fty: "A498 YUSHUNDA", usd: 272668.44 },
+    { bu: "QGBG", cat: "Candle", client: "F23", fty: "G191 Sanlian", usd: 138797.76 },
+    { bu: "QGBG", cat: "Candle", client: "U26", fty: "G191 Sanlian", usd: 109144.12 },
+    { bu: "QGBG", cat: "Candle", client: "A93", fty: "G191 Sanlian", usd: 102066.86 },
+    { bu: "QGBG", cat: "Candle", client: "F23", fty: "A401 ISUN", usd: 65908.07 },
+    { bu: "DPK", cat: "Dinnerware", client: "U67", fty: "A506 Artway", usd: 39375.00 },
+    { bu: "QGBG", cat: "Candle", client: "N08", fty: "G191 Sanlian", usd: 25674.48 },
+    { bu: "QGBG", cat: "Candle", client: "N08", fty: "A474 SUPREME", usd: 23416.08 },
+    { bu: "DPU", cat: "Ceramic Décor", client: "A74", fty: "A514 NP", usd: 16364.48 },
+    { bu: "QMT", cat: "Storage", client: "C24", fty: "A163 IN HOME", usd: 6955.52 }
+  ];
+  function groupPurchase(keyFn) {
+    var COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#f43f5e", "#8b5cf6", "#0ea5e9", "#ec4899", "#14b8a6", "#eab308", "#6366f1", "#fb923c", "#64748b"];
+    var map = {};
+    YEAR_PURCHASE.forEach(function (r) {
+      var k = keyFn(r);
+      map[k] = (map[k] || 0) + r.usd;
+    });
+    return Object.keys(map).sort(function (a, b) { return map[b] - map[a]; }).map(function (k, i) {
+      return { label: k, n: map[k], color: COLORS[i % COLORS.length] };
+    });
+  }
+  function yearPurchaseTotal() {
+    return YEAR_PURCHASE.reduce(function (a, r) { return a + r.usd; }, 0);
   }
   var PATHS = {
     dash: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
@@ -1407,7 +1458,8 @@
     };
   }
 
-  function donut(parts, centerLabel, centerSub) {
+  function donut(parts, centerLabel, centerSub, fmtFn) {
+    var show = fmtFn || fmt;
     var total = 0;
     parts.forEach(function (p) { total += p.n; });
     if (!total) return "<p class='empty'>No rows in this filter.</p>";
@@ -1436,7 +1488,7 @@
     var legend = "<ul class='legend'>" + parts.map(function (p) {
       var pct = Math.round(100 * p.n / total);
       return "<li><span><i style='background:" + p.color + "'></i>" + esc(p.label) +
-        "</span><b>" + pct + "% · " + fmt(p.n) + "</b></li>";
+        "</span><b>" + pct + "% · " + show(p.n) + "</b></li>";
     }).join("") + "</ul>";
     return "<div class='donut-wrap'><div class='donut'><svg viewBox='0 0 210 210'>" +
       slices + "</svg><div class='mid'><b>" + esc(centerLabel) + "</b><span>" + esc(centerSub) +
@@ -2104,12 +2156,33 @@
       "<div class='layout'>" +
       "<div class='card'><h2>" + ico("trend") + " " + t("poByMonth") +
       " <span>" + total + " PO</span></h2><div class='pad'>" + monthBars(parts) + "</div></div>" +
-      "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCat") +
+      "<div class='card'><h2>" + ico("customers") + " " + t("hoByCat") +
       " <span>" + catTotal + " HO</span></h2><div class='pad'><table class='grid'><thead><tr><th>" +
       t("colCat") + "</th><th>HO</th><th>" + t("colBuyer") + "</th></tr></thead><tbody>" +
       catRows + "</tbody></table></div></div></div>" +
       "<div class='card' style='margin-top:14px'><h2>" + ico("customers") + " " + t("byCountry") +
-      "</h2><div class='pad'><div class='cust-flags'>" + countryHtml + "</div></div></div>";
+      "</h2><div class='pad'><div class='cust-flags'>" + countryHtml + "</div></div></div>" +
+      yearPurchaseDonuts();
+  }
+
+  function yearPurchaseDonuts() {
+    var tot = yearPurchaseTotal();
+    var mid = moneyShort(tot);
+    var span = "2026 · " + money(tot);
+    var cust = groupPurchase(function (r) { return r.client; });
+    var cat = groupPurchase(function (r) { return r.cat; });
+    var fty = groupPurchase(function (r) { return r.fty; });
+    var bu = groupPurchase(function (r) { return r.bu; });
+    return "<div class='donut-grid'>" +
+      "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
+      " <span>" + span + "</span></h2><div class='pad'>" + donut(cust, mid, "USD", money) + "</div></div>" +
+      "<div class='card'><h2>" + ico("quality") + " " + t("purchaseByCat") +
+      " <span>" + span + "</span></h2><div class='pad'>" + donut(cat, mid, "USD", money) + "</div></div>" +
+      "<div class='card'><h2>" + ico("factories") + " " + t("purchaseByFty") +
+      " <span>" + span + "</span></h2><div class='pad'>" + donut(fty, mid, "USD", money) + "</div></div>" +
+      "<div class='card'><h2>" + ico("po") + " " + t("purchaseByBu") +
+      " <span>" + span + "</span></h2><div class='pad'>" + donut(bu, mid, "USD", money) + "</div></div>" +
+      "</div>";
   }
 
   function monthBars(parts) {
