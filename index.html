@@ -278,13 +278,13 @@
 
   .rail { display: flex; flex-direction: column; gap: 14px; }
   .donut-wrap { display: flex; align-items: center; gap: 14px; }
-  .donut { position: relative; width: 148px; height: 148px; flex: 0 0 148px; }
-  .donut svg { width: 148px; height: 148px; transform: rotate(-90deg); filter: drop-shadow(0 4px 8px rgba(15,23,42,.08)); }
+  .donut { position: relative; width: 210px; height: 210px; flex: 0 0 210px; }
+  .donut svg { width: 210px; height: 210px; transform: rotate(-90deg); filter: drop-shadow(0 4px 8px rgba(15,23,42,.08)); }
   .legend i { width: 10px; height: 10px; box-shadow: 0 0 0 2px #fff inset; }
   .donut .mid {
     position: absolute; inset: 0; display: grid; place-items: center; text-align: center; transform: none;
   }
-  .donut .mid b { display: block; font-size: 22px; letter-spacing: -.03em; }
+  .donut .mid b { display: block; font-size: 30px; letter-spacing: -.03em; }
   .donut .mid span { color: var(--muted); font-size: 11px; }
   .legend { list-style: none; margin: 0; padding: 0; font-size: 12.5px; }
   .legend li { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; color: #334155; }
@@ -1367,7 +1367,7 @@
     var total = 0;
     parts.forEach(function (p) { total += p.n; });
     if (!total) return "<p class='empty'>No rows in this filter.</p>";
-    var cx = 74, cy = 74, r = 50, ir = 28;
+    var cx = 105, cy = 105, r = 78, ir = 46;
     var acc = 0;
     function polar(a, rad) {
       var rads = (a - 90) * Math.PI / 180;
@@ -1394,7 +1394,7 @@
       return "<li><span><i style='background:" + p.color + "'></i>" + esc(p.label) +
         "</span><b>" + pct + "% · " + fmt(p.n) + "</b></li>";
     }).join("") + "</ul>";
-    return "<div class='donut-wrap'><div class='donut'><svg viewBox='0 0 148 148'>" +
+    return "<div class='donut-wrap'><div class='donut'><svg viewBox='0 0 210 210'>" +
       slices + "</svg><div class='mid'><b>" + esc(centerLabel) + "</b><span>" + esc(centerSub) +
       "</span></div></div>" + legend + "</div>";
   }
