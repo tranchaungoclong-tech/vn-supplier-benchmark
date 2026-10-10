@@ -2059,7 +2059,7 @@
     var countryHtml = countryOrder.filter(function (cc) { return byCountry[cc]; }).map(function (cc) {
       var x = byCountry[cc];
       var pct = Math.round(100 * x.n / custKeys.length);
-      return "<div style='flex:1;min-width:150px;color:#fff;border-radius:14px;padding:10px 12px;background:" + TINT[cc] +
+      return "<div style='flex:0 0 auto;width:230px;color:#fff;border-radius:14px;padding:10px 12px;background:" + TINT[cc] +
         ";box-shadow:0 6px 14px rgba(15,23,42,.12);display:flex;align-items:center;justify-content:space-between;gap:8px'>" +
         "<div><div style='font-size:12px;font-weight:700;opacity:.85'>" + esc(cc) + "</div>" +
         "<div style='font-size:22px;font-weight:800;letter-spacing:-.03em'>" + pct + "%</div>" +
