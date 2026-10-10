@@ -222,11 +222,28 @@
   .period-sub .q { font-weight: 800; color: var(--blue-deep); border-top: 1px solid #f1f5f9; }
 
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-  .kpis.kpis-sm { display: flex; flex-wrap: wrap; gap: 10px; }
+  .kpis.kpis-sm { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
   .kpis.kpis-sm .kpi {
     width: 188px; flex: 0 0 188px; min-height: 78px; padding: 11px 12px; border-radius: 14px;
   }
   .kpis.kpis-sm .kpi b { font-size: 22px; margin: 2px 0 0; }
+  .kpi-ink {
+    width: 188px; flex: 0 0 188px; min-height: 78px; padding: 11px 12px 11px 14px;
+    border-radius: 14px; background: #fff; color: #0f172a;
+    box-shadow: var(--shadow); border: 1px solid var(--line); border-left-width: 5px;
+  }
+  .kpi-ink.total { border-left-color: #6366f1; }
+  .kpi-ink.fresh { border-left-color: #db2777; }
+  .kpi-ink .lab { color: #64748b; font-size: 12px; font-weight: 700; }
+  .kpi-ink b { display: block; font-size: 22px; letter-spacing: -.03em; margin: 2px 0 0; color: #0f172a; }
+  .kpi-ink .delta { font-size: 11.5px; color: #64748b; }
+  .kpi-ink .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .kpi-ink.total .ico-tile { background: #eef2ff; color: #4338ca; }
+  .kpi-ink.fresh .ico-tile { background: #fce7f3; color: #be185d; }
+  .cust-bento {
+    display: grid; grid-template-columns: 1.55fr 1fr; gap: 14px; align-items: stretch;
+  }
+  .cust-bento .span2 { grid-column: 1 / -1; }
   .kpi {
     border-radius: 16px; padding: 14px 16px; min-height: 92px; color: #fff;
     box-shadow: 0 8px 20px rgba(15,23,42,.12);
@@ -542,7 +559,8 @@
   }
 
   @media (max-width: 1180px) {
-    .kpis, .layout, .grid2, .donut-grid { grid-template-columns: 1fr; }
+    .kpis, .layout, .grid2, .donut-grid, .cust-bento { grid-template-columns: 1fr; }
+    .cust-bento .span2 { grid-column: auto; }
     .fty-dash { grid-template-columns: 1fr 1fr; }
     .app { grid-template-columns: 1fr; }
     .side {
@@ -2242,8 +2260,6 @@
       "Not mapped": "<svg viewBox='0 0 36 36'><circle cx='18' cy='18' r='17' fill='#475569'/><circle cx='18' cy='18' r='6' fill='none' stroke='#fff' stroke-width='2'/></svg>"
     };
     var TINT = { USA: "linear-gradient(160deg,#60a5fa,#2563eb)", UK: "linear-gradient(160deg,#fb7185,#e11d48)", Canada: "linear-gradient(160deg,#fb923c,#f97316)", "Not mapped": "linear-gradient(160deg,#94a3b8,#475569)" };
-    var usaN = (byCountry.USA && byCountry.USA.n) || 0;
-    var ukN = (byCountry.UK && byCountry.UK.n) || 0;
     var countryHtml = countryOrder.filter(function (cc) { return byCountry[cc]; }).map(function (cc) {
       var x = byCountry[cc];
       var pct = Math.round(100 * x.n / custKeys.length);
@@ -2252,28 +2268,23 @@
         "</div></div><div class='flag'>" + FLAG[cc] + "</div></div>";
     }).join("");
     return "<div class='cust-bar'><button type='button' class='btn' id='cmpBtn'>" + t("cmpBtn") + "</button></div>" +
-      "<div class='kpis kpis-sm'>" +
-      "<div class='kpi po'><div class='kpi-top'><div class='lab'>" + t("totalCust") + "</div>" + tile("customers", "blue") +
-      "</div><b>" + custKeys.length + "</b><div class='delta'>" + newKeys.length + " " + t("newOf") + "</div></div>" +
-      "<div class='kpi fty'><div class='kpi-top'><div class='lab'>" + t("newCust") + "</div>" + tile("customers", "green") +
-      "</div><b>" + newKeys.length + "</b><div class='delta'>" + esc(newKeys.join(", ") || "–") + "</div></div>" +
-      "<div class='kpi spend'><div class='kpi-top'><div class='lab'>USA</div>" + tile("customers", "violet") +
-      "</div><b>" + (custKeys.length ? Math.round(100 * usaN / custKeys.length) : 0) + "%</b><div class='delta'>" +
-      usaN + " · " + esc((byCountry.USA && byCountry.USA.names.join(", ")) || "–") + "</div></div>" +
-      "<div class='kpi late'><div class='kpi-top'><div class='lab'>UK</div>" + tile("customers", "rose") +
-      "</div><b>" + (custKeys.length ? Math.round(100 * ukN / custKeys.length) : 0) + "%</b><div class='delta'>" +
-      ukN + " · " + esc((byCountry.UK && byCountry.UK.names.join(", ")) || "–") + "</div></div>" +
-      "</div>" +
       "<div class='card' style='margin-bottom:14px'><h2>" + ico("customers") + " " + t("byCountry") +
       "</h2><div class='pad'><div class='cust-flags'>" + countryHtml + "</div></div></div>" +
-      yearPurchaseDonuts() +
-      "<div class='layout' style='margin-top:14px'>" +
+      "<div class='kpis kpis-sm'>" +
+      "<div class='kpi-ink total'><div class='kpi-top'><div class='lab'>" + t("totalCust") + "</div>" + tile("customers", "violet") +
+      "</div><b>" + custKeys.length + "</b><div class='delta'>" + newKeys.length + " " + t("newOf") + "</div></div>" +
+      "<div class='kpi-ink fresh'><div class='kpi-top'><div class='lab'>" + t("newCust") + "</div>" + tile("customers", "rose") +
+      "</div><b>" + newKeys.length + "</b><div class='delta'>" + esc(newKeys.join(", ") || "–") + "</div></div>" +
+      "</div>" +
+      "<div class='cust-bento'>" +
       "<div class='card'><h2>" + ico("trend") + " " + t("poByMonth") +
       " <span>" + total + " PO</span></h2><div class='pad'>" + monthBars(parts) + "</div></div>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("hoByCat") +
       " <span>" + catTotal + " HO</span></h2><div class='pad'><table class='grid'><thead><tr><th>" +
       t("colCat") + "</th><th>HO</th><th>" + t("colBuyer") + "</th></tr></thead><tbody>" +
-      catRows + "</tbody></table></div></div></div>";
+      catRows + "</tbody></table></div></div>" +
+      yearPurchaseDonuts() +
+      "</div>";
   }
 
   function yearPurchaseDonuts() {
@@ -2283,15 +2294,13 @@
     var cat = groupPurchase(function (r) { return r.cat; });
     var fty = groupPurchase(function (r) { return r.fty; });
     var bu = groupPurchase(function (r) { return r.bu; });
-    return "<div class='card' style='margin-bottom:14px'><h2>" + ico("quality") + " " + t("purchaseByCat") +
+    return "<div class='card span2'><h2>" + ico("quality") + " " + t("purchaseByCat") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendCatTable(cat) + "</div></div>" +
-      "<div class='donut-grid' style='margin-top:0;margin-bottom:0'>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendShare(cust) + "</div></div>" +
       "<div class='card'><h2>" + ico("factories") + " " + t("purchaseByFty") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendLolli(fty) + "</div></div>" +
-      "</div>" +
-      "<div class='card' style='margin-top:14px'><h2>" + ico("po") + " " + t("purchaseByBu") +
+      "<div class='card span2'><h2>" + ico("po") + " " + t("purchaseByBu") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendMosaic(bu) + "</div></div>";
   }
 
