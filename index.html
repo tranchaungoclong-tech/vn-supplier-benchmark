@@ -2343,6 +2343,7 @@
       "<div class='cust-col'><div class='col-title'>" + ico("customers") + " " + t("navCustomers") +
       "</div><div class='col-tiles'>" + inkHtml + "</div></div>" +
       "</div></div></div>" +
+      yearPurchaseBu() +
       "<div class='cust-bento'>" +
       yearPurchaseDonuts() +
       "<div class='card'><h2>" + ico("trend") + " " + t("poByMonth") +
@@ -2354,21 +2355,25 @@
       "</div>";
   }
 
+  function yearSpan() {
+    return "2026 · " + money(yearPurchaseTotal());
+  }
+  function yearPurchaseBu() {
+    var bu = groupPurchase(function (r) { return r.bu; });
+    return "<div class='card' style='margin-bottom:14px'><h2>" + ico("po") + " " + t("purchaseByBu") +
+      " <span>" + yearSpan() + "</span></h2><div class='pad'>" + spendMosaic(bu) + "</div></div>";
+  }
   function yearPurchaseDonuts() {
-    var tot = yearPurchaseTotal();
-    var span = "2026 · " + money(tot);
+    var span = yearSpan();
     var cust = groupPurchase(function (r) { return r.client; });
     var cat = groupPurchase(function (r) { return r.cat; });
     var fty = groupPurchase(function (r) { return r.fty; });
-    var bu = groupPurchase(function (r) { return r.bu; });
     return "<div class='card span2'><h2>" + ico("quality") + " " + t("purchaseByCat") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendCatTable(cat) + "</div></div>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendShare(cust) + "</div></div>" +
       "<div class='card'><h2>" + ico("factories") + " " + t("purchaseByFty") +
-      " <span>" + span + "</span></h2><div class='pad'>" + spendLolli(fty) + "</div></div>" +
-      "<div class='card span2'><h2>" + ico("po") + " " + t("purchaseByBu") +
-      " <span>" + span + "</span></h2><div class='pad'>" + spendMosaic(bu) + "</div></div>";
+      " <span>" + span + "</span></h2><div class='pad'>" + spendLolli(fty) + "</div></div>";
   }
 
   function monthBars(parts) {
