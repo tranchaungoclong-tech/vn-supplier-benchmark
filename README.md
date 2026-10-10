@@ -70,6 +70,27 @@ If the tracking file is not refreshed, the numbers stay on the 9-24 cut. The lay
 
 ---
 
+## Result
+
+After this desk is in use, the team should be able to do the following **without opening Excel**:
+
+1. **State the Vietnam book in one sentence** — how many distinct HO, how many PO, how many factories, how many customers — from the current tracking cut, not from memory.
+2. **See the calendar** — which customer-due months are heavy, which are empty, which factories sit in those months.
+3. **Name delay correctly** — late = past customer due; on time = not due yet. No “early”, no invented ship date.
+4. **Place customers** — UK / USA (and others when mapped), total vs new, without mixing HO counts into $.
+5. **Place 2026 spend** — only from the year-purchase table: which BU, category, customer, and factory hold the **USD 6,214,799.37**. Tracking still does not pretend to have amount.
+6. **Hand the same URL to a colleague** — they see the same filter, the same definitions, the same map. They do not need a new screenshot pack.
+
+What this desk does **not** produce, and should not be quoted as a result:
+
+- FOB, MOQ, or a costing verdict (Costing is Coming soon).
+- A pass/fail quality score (defect charts are SAMPLE until a quality Excel exists).
+- A live $ spend figure from ORDER TRACKING LIST 9-24 (that column is empty).
+
+The result is **shared visibility of the Vietnam book**, with $ and quality kept on the files that actually contain them.
+
+---
+
 ## Source rules (do not blur)
 
 - Tracking **Total $ empty** → show “not reported”. Never show `$0`.
