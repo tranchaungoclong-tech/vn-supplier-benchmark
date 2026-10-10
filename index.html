@@ -222,6 +222,11 @@
   .period-sub .q { font-weight: 800; color: var(--blue-deep); border-top: 1px solid #f1f5f9; }
 
   .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpis.kpis-sm { display: flex; flex-wrap: wrap; gap: 10px; }
+  .kpis.kpis-sm .kpi {
+    width: 188px; flex: 0 0 188px; min-height: 78px; padding: 11px 12px; border-radius: 14px;
+  }
+  .kpis.kpis-sm .kpi b { font-size: 22px; margin: 2px 0 0; }
   .kpi {
     border-radius: 16px; padding: 14px 16px; min-height: 92px; color: #fff;
     box-shadow: 0 8px 20px rgba(15,23,42,.12);
@@ -772,7 +777,7 @@
         quality: ["Quality library", "QA test + inspection plan cells from tracking — not the live QA Board sheet."],
         orders: ["Order book", "Every SKU / port split in the current filter."],
         factories: ["Factories", ""],
-        customers: ["Customers", "Customer / end-customer split from the tracking list."]
+        customers: ["Customers", ""]
       }
     },
     zh: {
@@ -859,7 +864,7 @@
         quality: ["质量库", "跟踪表里的 QA / 验货单元格 — 不是线上 QA Board。"],
         orders: ["订单台账", "当前筛选下的每一行 SKU / 港口。"],
         factories: ["工厂", ""],
-        customers: ["客户", "跟踪表里的客户 / 终端客户。"]
+        customers: ["客户", ""]
       }
     }
   };
@@ -2084,7 +2089,7 @@
         "</div></div><div class='flag'>" + FLAG[cc] + "</div></div>";
     }).join("");
     return "<div class='cust-bar'><button type='button' class='btn' id='cmpBtn'>" + t("cmpBtn") + "</button></div>" +
-      "<div class='kpis'>" +
+      "<div class='kpis kpis-sm'>" +
       "<div class='kpi po'><div class='kpi-top'><div class='lab'>" + t("totalCust") + "</div>" + tile("customers", "blue") +
       "</div><b>" + custKeys.length + "</b><div class='delta'>" + newKeys.length + " " + t("newOf") + "</div></div>" +
       "<div class='kpi fty'><div class='kpi-top'><div class='lab'>" + t("newCust") + "</div>" + tile("customers", "green") +
@@ -2327,9 +2332,10 @@
     var pack = titles[view] || titles.dash || [view, ""];
     var icoName = PATHS[view] ? view : "dash";
     var tint = view === "costing" ? "green" : view === "designer" ? "violet" : view === "quality" ? "green" : view === "factories" ? "amber" : view === "customers" ? "rose" : "blue";
+    var sub = pack[1] ? "<p>" + esc(pack[1]) + "</p>" : "";
+    var asof = view === "customers" ? "" : "<span class='asof'>" + t("asOf") + " " + AS + "</span>";
     return "<div class='page-head h1-row'>" + tile(icoName, tint) +
-      "<div><h1>" + esc(pack[0]) + "</h1><p>" + esc(pack[1] || "") + "</p></div>" +
-      "<span class='asof'>" + t("asOf") + " " + AS + "</span></div>";
+      "<div><h1>" + esc(pack[0]) + "</h1>" + sub + "</div>" + asof + "</div>";
   }
 
   function sampleDesk(kind) {
