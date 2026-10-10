@@ -1073,7 +1073,7 @@
     { bu: "DPH", cat: "Ceramic Décor", client: "A74", fty: "A351 Sanlian", usd: 49996.00 }
   ];
   function groupPurchase(keyFn) {
-    var COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#f43f5e", "#8b5cf6", "#0ea5e9", "#ec4899", "#14b8a6", "#eab308", "#6366f1", "#fb923c", "#64748b"];
+    var COLORS = ["#5B8DEF", "#3E4A6B", "#E6C35C", "#D96B6B", "#5BA88A", "#8B7EC8", "#C4A484", "#6B8F71", "#7AA2C4", "#B07A5A", "#6A7B9A", "#A3B18A"];
     var map = {};
     YEAR_PURCHASE.forEach(function (r) {
       var k = keyFn(r);
@@ -1098,7 +1098,7 @@
   }
   function spendCatTable(parts) {
     var tot = parts.reduce(function (a, p) { return a + p.n; }, 0) || 1;
-    var TINT = ["#ec4899", "#f59e0b", "#10b981", "#fbbf24", "#34d399", "#22c55e", "#f43f5e", "#8b5cf6"];
+    var TINT = ["#5B8DEF", "#E6C35C", "#5BA88A", "#D96B6B", "#8B7EC8", "#3E4A6B", "#C4A484", "#6B8F71"];
     if (!parts.length) return "<p class='empty'>No rows.</p>";
     var hero = parts[0];
     var rest = parts.slice(1);
