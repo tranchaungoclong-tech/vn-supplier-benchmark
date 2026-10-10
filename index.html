@@ -2009,6 +2009,7 @@
       var id = o.ho ? String(o.ho) : ("NOHO|" + (o.po || "") + "|" + (o.factoryCode || ""));
       if (catSeen[id]) return;
       catSeen[id] = true;
+      if (DROP[o.endCustomer] || DROP[o.customer]) return;
       var c = o.category || "(blank)";
       if (!byCat[c]) byCat[c] = { n: 0, buyers: {} };
       byCat[c].n++;
@@ -2029,10 +2030,12 @@
         "<div style='background:#dbeafe;width:" + w + "%;min-width:34px;border-radius:6px;padding:3px 8px;font-weight:700'>" +
         x.n + "</div></td><td class='sub'>" + esc(buyers) + "</td></tr>";
     }).join("");
-    var COUNTRY = { U09: "UK", P01: "UK", N08: "UK", U67: "UK", U26: "UK", F23: "USA", JJA: "USA", WMT: "USA", A93: "USA", C24: "Canada" };
+    var COUNTRY = { U09: "UK", P01: "UK", N08: "UK", U67: "UK", U26: "UK", F23: "USA", JJA: "USA", WMT: "USA", A93: "USA", A74: "USA", C24: "Canada" };
+    var DROP = { G35: 1 };
     var custRec = {};
     rows.forEach(function (o) {
       var k = o.endCustomer || o.customer || "?";
+      if (DROP[k]) return;
       if (!custRec[k]) custRec[k] = { neu: 0, rep: 0, ho: {} };
       var cat = o.orderCategory || "";
       if (/new/i.test(cat)) custRec[k].neu++;
@@ -2059,12 +2062,12 @@
     var countryHtml = countryOrder.filter(function (cc) { return byCountry[cc]; }).map(function (cc) {
       var x = byCountry[cc];
       var pct = Math.round(100 * x.n / custKeys.length);
-      return "<div style='flex:1;min-width:180px;color:#fff;border-radius:16px;padding:14px 16px;background:" + TINT[cc] +
-        ";box-shadow:0 8px 20px rgba(15,23,42,.12);display:flex;align-items:center;justify-content:space-between;gap:10px'>" +
-        "<div><div style='font-size:13px;font-weight:700;opacity:.85'>" + esc(cc) + "</div>" +
-        "<div style='font-size:30px;font-weight:800;letter-spacing:-.03em'>" + pct + "%</div>" +
-        "<div style='font-size:12px;opacity:.85'>" + x.n + " · " + esc(x.names.join(", ")) + "</div></div>" +
-        "<div style='width:58px;height:58px;flex:0 0 58px'>" + FLAG[cc] + "</div></div>";
+      return "<div style='flex:1;min-width:150px;color:#fff;border-radius:14px;padding:10px 12px;background:" + TINT[cc] +
+        ";box-shadow:0 6px 14px rgba(15,23,42,.12);display:flex;align-items:center;justify-content:space-between;gap:8px'>" +
+        "<div><div style='font-size:12px;font-weight:700;opacity:.85'>" + esc(cc) + "</div>" +
+        "<div style='font-size:22px;font-weight:800;letter-spacing:-.03em'>" + pct + "%</div>" +
+        "<div style='font-size:11px;opacity:.85'>" + x.n + " · " + esc(x.names.join(", ")) + "</div></div>" +
+        "<div style='width:40px;height:40px;flex:0 0 40px'>" + FLAG[cc] + "</div></div>";
     }).join("");
     var topHtml = custKeys.sort(function (a, b) {
       return Object.keys(custRec[b].ho).length - Object.keys(custRec[a].ho).length;
