@@ -724,6 +724,7 @@
       totalCust: "Total customers", newCust: "New customers",
       newOf: "new · no repeat order yet", byCountry: "Customers by country",
       topCust: "Top customers by HO",
+      colCat: "Category", colBuyer: "Buyer",
       cmpBtn: "Compare period", cmpTitle: "Compare period",
       cmpSub: "Δ = A against B. B is the earlier period.",
       cmpWeek: "Week vs week", cmpMonth: "Month vs month",
@@ -810,6 +811,7 @@
       totalCust: "客户总数", newCust: "新客户",
       newOf: "新客户 · 还没有翻单", byCountry: "客户国家",
       topCust: "客户 HO 排名",
+      colCat: "品类", colBuyer: "客户",
       cmpBtn: "对比周期", cmpTitle: "对比周期",
       cmpSub: "Δ = A 对比 B。B 是上一期。",
       cmpWeek: "周 vs 周", cmpMonth: "月 vs 月",
@@ -2008,13 +2010,25 @@
       if (catSeen[id]) return;
       catSeen[id] = true;
       var c = o.category || "(blank)";
-      byCat[c] = (byCat[c] || 0) + 1;
+      if (!byCat[c]) byCat[c] = { n: 0, buyers: {} };
+      byCat[c].n++;
+      var b = o.endCustomer || o.customer || "?";
+      byCat[c].buyers[b] = (byCat[c].buyers[b] || 0) + 1;
     });
-    var catParts = Object.keys(byCat).sort(function (a, b) { return byCat[b] - byCat[a]; }).map(function (c, i) {
+    var catKeys = Object.keys(byCat).sort(function (a, b) { return byCat[b].n - byCat[a].n; });
+    var catMax = 1;
+    catKeys.forEach(function (c) { if (byCat[c].n > catMax) catMax = byCat[c].n; });
+    var catTotal = catKeys.reduce(function (a, c) { return a + byCat[c].n; }, 0);
+    var catRows = catKeys.map(function (c) {
       var lab = c.indexOf("→") > 0 ? c.split("→").pop() : c;
-      return { label: lab, n: byCat[c], color: COLORS[(i + 3) % COLORS.length] };
-    });
-    var catTotal = catParts.reduce(function (a, p) { return a + p.n; }, 0);
+      var x = byCat[c];
+      var buyers = Object.keys(x.buyers).sort(function (a, b) { return x.buyers[b] - x.buyers[a]; })
+        .map(function (b) { return b + " " + x.buyers[b]; }).join(", ");
+      var w = Math.round(100 * x.n / catMax);
+      return "<tr><td>" + esc(lab) + "</td><td>" +
+        "<div style='background:#dbeafe;width:" + w + "%;min-width:34px;border-radius:6px;padding:3px 8px;font-weight:700'>" +
+        x.n + "</div></td><td class='sub'>" + esc(buyers) + "</td></tr>";
+    }).join("");
     var COUNTRY = { U09: "UK", P01: "UK", N08: "UK", U67: "UK", U26: "UK", F23: "USA", JJA: "USA", WMT: "USA", A93: "USA", C24: "Canada" };
     var custRec = {};
     rows.forEach(function (o) {
@@ -2062,7 +2076,9 @@
       "<div class='card'><h2>" + ico("trend") + " " + t("poByMonth") +
       " <span>" + total + " PO</span></h2><div class='pad'>" + monthBars(parts) + "</div></div>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCat") +
-      " <span>" + catTotal + " HO</span></h2><div class='pad'>" + donut(catParts, String(catTotal), "HO") + "</div></div></div>" +
+      " <span>" + catTotal + " HO</span></h2><div class='pad'><table class='grid'><thead><tr><th>" +
+      t("colCat") + "</th><th>HO</th><th>" + t("colBuyer") + "</th></tr></thead><tbody>" +
+      catRows + "</tbody></table></div></div></div>" +
       "<div class='grid2' style='margin-top:14px'>" +
       statCard(t("totalCust"), custKeys.length, newKeys.length + " " + t("newOf")) +
       statCard(t("newCust"), newKeys.length, newKeys.join(", ") || "–") +
