@@ -516,6 +516,27 @@
     transform: translateX(-50%); box-shadow: 0 0 0 3px #fff;
   }
   .lolli .usd { text-align: right; font-weight: 750; white-space: nowrap; }
+  .cat-tree {
+    display: grid; grid-template-columns: 1.7fr 1fr 1fr; grid-template-rows: repeat(3, minmax(86px, 1fr));
+    gap: 8px; min-height: 280px;
+  }
+  .cat-tree .cell {
+    border-radius: 14px; padding: 12px 14px; color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end; min-width: 0;
+    box-shadow: 0 8px 18px rgba(15,23,42,.12);
+  }
+  .cat-tree .hero { grid-column: 1; grid-row: 1 / span 3; padding: 20px 22px; }
+  .cat-tree .hero .name { font-size: 20px; font-weight: 800; }
+  .cat-tree .hero .amt { font-size: 34px; font-weight: 800; letter-spacing: -.04em; line-height: 1.1; margin: 6px 0 4px; }
+  .cat-tree .hero .pct { font-size: 13px; opacity: .9; font-weight: 700; }
+  .cat-tree .cell .name { font-size: 13px; font-weight: 750; }
+  .cat-tree .cell .amt { font-size: 16px; font-weight: 800; margin-top: 4px; }
+  .cat-tree .wide { grid-column: 2 / span 2; }
+  @media (max-width: 900px) {
+    .cat-tree { grid-template-columns: 1fr 1fr; grid-template-rows: none; }
+    .cat-tree .hero { grid-column: 1 / -1; grid-row: auto; min-height: 140px; }
+    .cat-tree .wide { grid-column: auto; }
+  }
   .bu-mosaic { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
   .bu-mosaic .cell {
     display: flex; flex-direction: column; justify-content: flex-end;
@@ -1056,18 +1077,22 @@
     return YEAR_PURCHASE.reduce(function (a, r) { return a + r.usd; }, 0);
   }
   function spendCatTable(parts) {
-    var maxTx = 1;
-    parts.forEach(function (p) { if (p.tx > maxTx) maxTx = p.tx; });
-    var rows = parts.map(function (p) {
-      var w = Math.max(6, Math.round(100 * p.tx / maxTx));
-      var chip = p.ftyN === 1 ? "g" : (p.ftyN <= 3 ? "a" : "r");
-      return "<tr><td>" + esc(p.label) + "</td><td class='usd'>" + money(p.n) + "</td>" +
-        "<td><div class='tx-cell'><span class='bar'><i style='width:" + w + "%'></i></span><b>" + p.tx +
-        "</b></div></td><td><span class='sup-chip " + chip + "'>" + p.ftyN + "</span></td></tr>";
+    var tot = parts.reduce(function (a, p) { return a + p.n; }, 0) || 1;
+    var TINT = ["#ec4899", "#f59e0b", "#10b981", "#fbbf24", "#34d399", "#22c55e", "#f43f5e", "#8b5cf6"];
+    if (!parts.length) return "<p class='empty'>No rows.</p>";
+    var hero = parts[0];
+    var rest = parts.slice(1);
+    var heroHtml = "<div class='cell hero' style='background:" + TINT[0] + "'>" +
+      "<div class='name'>" + esc(hero.label) + "</div>" +
+      "<div class='amt'>" + money(hero.n) + "</div>" +
+      "<div class='pct'>" + Math.round(100 * hero.n / tot) + "% of year</div></div>";
+    var small = rest.map(function (p, i) {
+      var wide = (i === rest.length - 1 && rest.length % 2 === 1) ? " wide" : "";
+      return "<div class='cell" + wide + "' style='background:" + TINT[(i + 1) % TINT.length] + "'>" +
+        "<div class='name'>" + esc(p.label) + "</div>" +
+        "<div class='amt'>" + money(p.n) + "</div></div>";
     }).join("");
-    return "<table class='spend-tbl'><thead><tr><th>" + t("colCat") + "</th><th>" + t("colSpend") +
-      "</th><th>" + t("colTx") + "</th><th>" + t("colSuppliers") + "</th></tr></thead><tbody>" +
-      rows + "</tbody></table>";
+    return "<div class='cat-tree'>" + heroHtml + small + "</div>";
   }
   function spendShare(parts) {
     var tot = parts.reduce(function (a, p) { return a + p.n; }, 0) || 1;
