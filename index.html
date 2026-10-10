@@ -2049,13 +2049,22 @@
       byCountry[cc].names.push(k);
     });
     var countryOrder = ["USA", "UK", "Canada", "Not mapped"];
+    var FLAG = {
+      USA: "<svg viewBox='0 0 60 60'><circle cx='30' cy='30' r='28' fill='#3b5998'/><path d='M8 30h44M30 4v52' stroke='#fff' stroke-width='6'/><path d='M12 12l36 36M48 12L12 48' stroke='#fff' stroke-width='6'/><circle cx='30' cy='30' r='16' fill='#b91c1c'/><path d='M30 18l2.4 6.6H39l-5.4 4 2 6.4L30 31.6 24.4 35l2-6.4-5.4-4h6.6z' fill='#fff'/></svg>",
+      UK: "<svg viewBox='0 0 60 60'><circle cx='30' cy='30' r='28' fill='#1d4ed8'/><path d='M8 30h44M30 4v52' stroke='#fff' stroke-width='10'/><path d='M8 30h44M30 4v52' stroke='#b91c1c' stroke-width='5'/><path d='M12 12l36 36M48 12L12 48' stroke='#fff' stroke-width='7'/><path d='M14 14l32 32M46 14L14 46' stroke='#b91c1c' stroke-width='3'/></svg>",
+      Canada: "<svg viewBox='0 0 60 60'><circle cx='30' cy='30' r='28' fill='#dc2626'/><rect x='16' y='6' width='28' height='48' rx='4' fill='#fff'/><path d='M30 16l2 6 6-1-3 5 5 2-5 2 3 5-6-1-2 6-2-6-6 1 3-5-5-2 5-2-3-5 6 1z' fill='#dc2626'/></svg>",
+      "Not mapped": "<svg viewBox='0 0 60 60'><circle cx='30' cy='30' r='28' fill='#64748b'/><circle cx='30' cy='30' r='10' fill='none' stroke='#fff' stroke-width='3'/></svg>"
+    };
+    var TINT = { USA: "linear-gradient(160deg,#60a5fa,#2563eb)", UK: "linear-gradient(160deg,#fb7185,#e11d48)", Canada: "linear-gradient(160deg,#fb923c,#f97316)", "Not mapped": "linear-gradient(160deg,#94a3b8,#475569)" };
     var countryHtml = countryOrder.filter(function (cc) { return byCountry[cc]; }).map(function (cc) {
       var x = byCountry[cc];
       var pct = Math.round(100 * x.n / custKeys.length);
-      return "<div style='background:#f8fafc;border-radius:12px;padding:12px 14px;min-width:120px'>" +
-        "<div style='font-weight:700'>" + esc(cc) + "</div>" +
-        "<div style='font-size:22px;font-weight:800;color:#0ea5e9'>" + pct + "%</div>" +
-        "<div class='sub'>" + x.n + " · " + esc(x.names.join(", ")) + "</div></div>";
+      return "<div style='flex:1;min-width:180px;color:#fff;border-radius:16px;padding:14px 16px;background:" + TINT[cc] +
+        ";box-shadow:0 8px 20px rgba(15,23,42,.12);display:flex;align-items:center;justify-content:space-between;gap:10px'>" +
+        "<div><div style='font-size:13px;font-weight:700;opacity:.85'>" + esc(cc) + "</div>" +
+        "<div style='font-size:30px;font-weight:800;letter-spacing:-.03em'>" + pct + "%</div>" +
+        "<div style='font-size:12px;opacity:.85'>" + x.n + " · " + esc(x.names.join(", ")) + "</div></div>" +
+        "<div style='width:58px;height:58px;flex:0 0 58px'>" + FLAG[cc] + "</div></div>";
     }).join("");
     var topHtml = custKeys.sort(function (a, b) {
       return Object.keys(custRec[b].ho).length - Object.keys(custRec[a].ho).length;
