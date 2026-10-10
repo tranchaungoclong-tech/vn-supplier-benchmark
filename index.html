@@ -1133,11 +1133,30 @@
       return "<button type='button' data-loc='" + val + "'>" + lab + "</button>";
     }
     var html = item("", t("allLocations"));
+    var SIDES = [
+      { key: "North side", set: { "Ha Noi": 1, "Ninh Binh": 1, "Vinh Phuc": 1 } },
+      { key: "Middle side", set: {} },
+      { key: "South side", set: null }
+    ];
     LOC_COUNTRIES.forEach(function (c) {
       var sub = "";
+      var provs = Object.keys(locProv[c.code] || {});
+      if (c.code === "VN") {
+        SIDES.forEach(function (side) {
+          var kids = "";
+          provs.forEach(function (p) {
+            var north = SIDES[0].set[p];
+            var inSide = side.set ? !!side.set[p] : !north;
+            if (inSide) kids += item("P:" + c.code + ":" + p, p);
+          });
+          sub += "<div class='period-year'>" + item("S:" + c.code + ":" + side.key, side.key) +
+            (kids ? "<div class='period-sub'>" + kids + "</div>" : "") + "</div>";
+        });
+      } else {
       Object.keys(locProv[c.code] || {}).sort().forEach(function (p) {
         sub += item("P:" + c.code + ":" + p, p);
       });
+      }
       html += "<div class='period-year'>" + item("C:" + c.code, t(c.key)) +
         (sub ? "<div class='period-sub'>" + sub + "</div>" : "") + "</div>";
     });
@@ -1244,6 +1263,14 @@
       if (loc.indexOf("C:") === 0) {
         var cc = loc.slice(2);
         if (!pin || (pin.country || "VN") !== cc) return false;
+      } else if (loc.indexOf("S:") === 0) {
+        var sp = loc.split(":");
+        var northSet = { "Ha Noi": 1, "Ninh Binh": 1, "Vinh Phuc": 1 };
+        if (!pin || (pin.country || "VN") !== sp[1]) return false;
+        var isNorth = !!northSet[pin.province];
+        if (sp[2] === "North side" && !isNorth) return false;
+        if (sp[2] === "South side" && isNorth) return false;
+        if (sp[2] === "Middle side") return false;
       } else if (loc.indexOf("P:") === 0) {
         var parts = loc.split(":");
         if (!pin || (pin.country || "VN") !== parts[1] || pin.province !== parts[2]) return false;
