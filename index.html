@@ -719,6 +719,12 @@
       qpNote: "Late = distinct late HO by customer due month. Complaints + average defects = SAMPLE until the monthly/quarterly/yearly Excel.",
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
       factoryMaster: "Factory master",
+      poByMonth: "PO released by month",
+      cmpBtn: "Compare period", cmpTitle: "Compare period",
+      cmpSub: "Δ = A against B. B is the earlier period.",
+      cmpWeek: "Week vs week", cmpMonth: "Month vs month",
+      cmpQuarter: "Quarter vs quarter", cmpYear: "Year vs year",
+      cmpA: "This period", cmpB: "Previous", cmpNeed: "Need two periods to compare.",
       factoryDrill: "Factory drill-down",
       factoryDrillNote: "Tap a factory for HO / PO / customer due / SO cfm / inspect. Tracking 9-24 only. $ not reported. Defect SAMPLE is not a factory.",
       dueSoon: "Due in 30 days",
@@ -795,6 +801,12 @@
       qpNote: "逾期 = 按客户交期月去重逾期 HO。投诉 + 平均不良 = 示意，等月/季/年 Excel。",
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
       factoryMaster: "工厂主档",
+      poByMonth: "每月下单 PO",
+      cmpBtn: "对比周期", cmpTitle: "对比周期",
+      cmpSub: "Δ = A 对比 B。B 是上一期。",
+      cmpWeek: "周 vs 周", cmpMonth: "月 vs 月",
+      cmpQuarter: "季 vs 季", cmpYear: "年 vs 年",
+      cmpA: "本期", cmpB: "上期", cmpNeed: "需要两个周期才能对比。",
       factoryDrill: "工厂下钻",
       factoryDrillNote: "点工厂看 HO / PO / 客户交期 / SO cfm / 验货。仅 tracking 9-24。无金额。SAMPLE 不良不是工厂实绩。",
       dueSoon: "30 天内到期",
@@ -1964,40 +1976,94 @@
       "</div>";
   }
 
-  function merch(rows, s) {
-    var blocks = Object.keys(s.ftyMap).sort().map(function (k) {
-      var f = s.ftyMap[k];
-      var nPo = Object.keys(f.pos).length;
-      var nLate = Object.keys(f.late).length;
-      var rate = nPo ? Math.round(100 * nLate / nPo) : 0;
-      var cats = Object.keys(f.cats).join(" · ") || "–";
-      var custs = Object.keys(f.customers).join(", ") || "–";
-      return "<div class='factory-row click' data-fty='" + encodeURIComponent(k) + "' title='Tap for HO'><div><strong>" + esc(f.code || k) + " · " + esc(f.name || "") +
-        "</strong><div class='sub'>" + esc(f.province ? f.province + ", Vietnam" : f.country) + " · " + esc(cats) +
-        "<br>Customers: " + esc(custs) + "</div></div>" +
-        "<div style='text-align:right;min-width:160px'><div class='sub'>" + nLate + " / " + nPo +
-        " late PO · " + fmt(f.qty) + " pcs</div><div class='bar'><i style='width:" + rate +
-        "%;background:" + (rate > 20 ? "#f43f5e" : "#3b82f6") + "'></i></div>" +
-        "<div class='sub'>$ not reported</div></div></div>";
-    }).join("");
-    var custMap = {};
+  function merch(rows) {
+    var COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#8b5cf6", "#06b6d4", "#84cc16", "#e11d48", "#0ea5e9", "#a855f7", "#14b8a6", "#f97316"];
+    var seen = {};
+    var byMonth = {};
     rows.forEach(function (o) {
-      var c = o.customer || "(blank)";
-      if (!custMap[c]) custMap[c] = { lines: 0, qty: 0, pos: {}, end: o.endCustomer || "" };
-      custMap[c].lines++; custMap[c].qty += o.qty || 0;
-      if (o.po) custMap[c].pos[poKey(o)] = true;
+      var k = (o.po || "") + "|" + (o.factoryCode || o.sheet || "");
+      if (!o.po || seen[k]) return;
+      seen[k] = true;
+      var mo = (o.customerDue || "").slice(0, 7) || "(none)";
+      byMonth[mo] = (byMonth[mo] || 0) + 1;
     });
-    var custHtml = Object.keys(custMap).sort(function (a, b) {
-      return custMap[b].lines - custMap[a].lines;
-    }).map(function (c) {
-      var x = custMap[c];
-      return "<div class='factory-row'><div><strong>" + esc(c) + "</strong><div class='sub'>End: " +
-        esc(x.end || "–") + "</div></div><div class='sub'>" + Object.keys(x.pos).length + " PO · " +
-        x.lines + " lines · " + fmt(x.qty) + " pcs</div></div>";
+    var months = Object.keys(byMonth).sort();
+    var parts = months.map(function (mo, i) {
+      var lab = mo === "(none)" ? mo : mo.slice(5) + "/" + mo.slice(0, 4);
+      return { label: lab, n: byMonth[mo], color: COLORS[i % COLORS.length], key: mo };
+    });
+    var total = parts.reduce(function (a, p) { return a + p.n; }, 0);
+    return "<div class='card'><h2>" + ico("customers") + " " + t("poByMonth") +
+      " <span>" + total + " PO</span></h2><div class='pad'>" +
+      "<div style='display:flex;justify-content:flex-end;margin-bottom:8px'>" +
+      "<button type='button' id='cmpBtn' style='border:1.5px solid #06b6d4;color:#0891b2;background:#fff;border-radius:10px;padding:8px 16px;font-weight:700;cursor:pointer'>⧉ " +
+      t("cmpBtn") + "</button></div>" +
+      donut(parts, String(total), "PO") + "</div></div>";
+  }
+
+  function compareBuckets(rows, mode) {
+    var seen = {};
+    var map = {};
+    rows.forEach(function (o) {
+      var k = (o.po || "") + "|" + (o.factoryCode || o.sheet || "");
+      if (!o.po || !o.customerDue || seen[k]) return;
+      seen[k] = true;
+      var d = new Date(o.customerDue + "T00:00:00");
+      var key = "";
+      if (mode === "week") {
+        var one = new Date(d.getFullYear(), 0, 1);
+        var wk = Math.ceil(((d - one) / 86400000 + one.getDay() + 1) / 7);
+        key = d.getFullYear() + "-W" + (wk < 10 ? "0" + wk : wk);
+      } else if (mode === "quarter") {
+        key = d.getFullYear() + "-Q" + (Math.floor(d.getMonth() / 3) + 1);
+      } else if (mode === "year") {
+        key = String(d.getFullYear());
+      } else {
+        key = o.customerDue.slice(0, 7);
+      }
+      map[key] = (map[key] || 0) + 1;
+    });
+    var keys = Object.keys(map).sort();
+    if (keys.length < 2) return "<p class='empty'>" + t("cmpNeed") + "</p>";
+    var body = "";
+    for (var i = 1; i < keys.length; i++) {
+      var a = map[keys[i]], b = map[keys[i - 1]];
+      var diff = a - b;
+      var pct = b ? Math.round(100 * diff / b) : 0;
+      var sign = diff > 0 ? "+" : "";
+      body += "<tr><td>" + esc(keys[i]) + "</td><td class='num'>" + a + "</td><td>" + esc(keys[i - 1]) +
+        "</td><td class='num'>" + b + "</td><td class='num' style='color:" + (diff < 0 ? "#e11d48" : "#16a34a") + "'>" +
+        sign + diff + " · " + sign + pct + "%</td></tr>";
+    }
+    return "<table class='grid'><thead><tr><th>" + t("cmpA") + "</th><th class='num'>PO</th><th>" + t("cmpB") +
+      "</th><th class='num'>PO</th><th class='num'>Δ</th></tr></thead><tbody>" + body + "</tbody></table>";
+  }
+
+  function openCompare() {
+    var modes = [
+      ["week", t("cmpWeek")],
+      ["month", t("cmpMonth")],
+      ["quarter", t("cmpQuarter")],
+      ["year", t("cmpYear")]
+    ];
+    var chips = modes.map(function (m, i) {
+      return "<button type='button' data-cmp='" + m[0] + "' style='border:1.5px solid #2563eb;color:#2563eb;background:" +
+        (i === 1 ? "#eff6ff" : "#fff") + ";border-radius:999px;padding:7px 14px;font-weight:600;cursor:pointer;margin:0 6px 6px 0'>" +
+        m[1] + "</button>";
     }).join("");
-    return kpiRow(s) + "<div class='grid2'>" +
-      "<div class='card'><h2>" + ico("factories") + " " + t("factoryMaster") + "</h2><div class='pad'>" + blocks + "</div></div>" +
-      "<div class='card'><h2>" + ico("customers") + " " + t("customers") + "</h2><div class='pad'>" + custHtml + "</div></div></div>";
+    document.getElementById("delayPopTitle").textContent = t("cmpTitle");
+    document.getElementById("delayPopSub").textContent = t("cmpSub");
+    document.getElementById("delayPopBody").innerHTML =
+      "<div id='cmpChips'>" + chips + "</div><div id='cmpTable' style='margin-top:10px'>" +
+      compareBuckets(filtered(), "month") + "</div>";
+    document.getElementById("delayPop").classList.add("open");
+    document.getElementById("cmpChips").addEventListener("click", function (e) {
+      var b = e.target.closest("[data-cmp]");
+      if (!b) return;
+      document.querySelectorAll("#cmpChips [data-cmp]").forEach(function (x) { x.style.background = "#fff"; });
+      b.style.background = "#eff6ff";
+      document.getElementById("cmpTable").innerHTML = compareBuckets(filtered(), b.getAttribute("data-cmp"));
+    });
   }
 
   function quality(rows, s) {
@@ -2247,6 +2313,7 @@
     }
     var kpiEl = e.target.closest("[data-kpi]");
     if (kpiEl) { openKpiPop(kpiEl.getAttribute("data-kpi")); return; }
+    if (e.target.closest("#cmpBtn")) { openCompare(); return; }
     var bandEl = e.target.closest("[data-band]");
     if (bandEl) { openDelayPop(bandEl.getAttribute("data-band")); return; }
     var custEl = e.target.closest("[data-cust]");
