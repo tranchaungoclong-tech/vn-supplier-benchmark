@@ -551,7 +551,7 @@
     .cat-tree .hero { grid-column: 1 / -1; grid-row: auto; min-height: 140px; }
     .cat-tree .wide { grid-column: auto; }
   }
-  .bu-mosaic { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .bu-mosaic { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
   .bu-mosaic .cell {
     display: flex; flex-direction: column; justify-content: flex-end;
     padding: 12px; color: #fff; min-width: 0; border-radius: 14px; min-height: 92px;
@@ -561,7 +561,8 @@
   .bu-mosaic .cell em { font-style: normal; font-size: 12px; opacity: .9; }
   .bu-mosaic .cell .pct-bar { height: 4px; background: rgba(255,255,255,.28); border-radius: 99px; margin-top: 8px; overflow: hidden; }
   .bu-mosaic .cell .pct-bar i { display: block; height: 100%; background: #fff; border-radius: 99px; }
-  @media (max-width: 900px) { .bu-mosaic { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 1100px) { .bu-mosaic { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 640px) { .bu-mosaic { grid-template-columns: 1fr 1fr; } }
   .fty-dash { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
   .fty-dash > .card { margin-top: 0 !important; min-width: 0; }
   .fty-dash .card h2 { font-size: 14px; }
@@ -1066,7 +1067,10 @@
     { bu: "QGBG", cat: "Candle", client: "N08", fty: "G191 Sanlian", usd: 25674.48 },
     { bu: "QGBG", cat: "Candle", client: "N08", fty: "A474 SUPREME", usd: 23416.08 },
     { bu: "DPU", cat: "Ceramic Décor", client: "A74", fty: "A514 NP", usd: 16364.48 },
-    { bu: "QMT", cat: "Storage", client: "C24", fty: "A163 IN HOME", usd: 6955.52 }
+    { bu: "QMT", cat: "Storage", client: "C24", fty: "A163 IN HOME", usd: 6955.52 },
+    { bu: "QMT", cat: "Storage", client: "A93", fty: "A163 FarEastern", usd: 8502.50 },
+    { bu: "QMT", cat: "Storage", client: "A93", fty: "A163 IN HOME", usd: 6833.50 },
+    { bu: "DPH", cat: "Ceramic Décor", client: "A74", fty: "A351 Sanlian", usd: 49996.00 }
   ];
   function groupPurchase(keyFn) {
     var COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#f43f5e", "#8b5cf6", "#0ea5e9", "#ec4899", "#14b8a6", "#eab308", "#6366f1", "#fb923c", "#64748b"];
