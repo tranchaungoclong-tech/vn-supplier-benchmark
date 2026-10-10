@@ -72,22 +72,55 @@ If the tracking file is not refreshed, the numbers stay on the 9-24 cut. The lay
 
 ## Result
 
-After this desk is in use, the team should be able to do the following **without opening Excel**:
+The result is not “we built a dashboard.” The result is **time back on the Vietnam book**, and **one shared picture** instead of five people reading five Excel filters.
 
-1. **State the Vietnam book in one sentence** — how many distinct HO, how many PO, how many factories, how many customers — from the current tracking cut, not from memory.
-2. **See the calendar** — which customer-due months are heavy, which are empty, which factories sit in those months.
-3. **Name delay correctly** — late = past customer due; on time = not due yet. No “early”, no invented ship date.
-4. **Place customers** — UK / USA (and others when mapped), total vs new, without mixing HO counts into $.
-5. **Place 2026 spend** — only from the year-purchase table: which BU, category, customer, and factory hold the **USD 6,214,799.37**. Tracking still does not pretend to have amount.
-6. **Hand the same URL to a colleague** — they see the same filter, the same definitions, the same map. They do not need a new screenshot pack.
+### Time it saves — and how
 
-What this desk does **not** produce, and should not be quoted as a result:
+Before this desk, a typical ask (“how heavy is October?”, “which factory is late?”, “UK vs USA?”, “what did we buy in 2026?”) meant:
 
-- FOB, MOQ, or a costing verdict (Costing is Coming soon).
-- A pass/fail quality score (defect charts are SAMPLE until a quality Excel exists).
-- A live $ spend figure from ORDER TRACKING LIST 9-24 (that column is empty).
+1. Open the tracking workbook.
+2. Filter / pivot / scroll hundreds of SKU–port lines.
+3. Count HO and PO by hand (or hope the pivot did not double-count lines).
+4. Check customer due vs today, one row at a time.
+5. Screenshot or paste into chat / PPT — then do it again next week, because the screenshot is already stale.
 
-The result is **shared visibility of the Vietnam book**, with $ and quality kept on the files that actually contain them.
+That loop is **15–40 minutes per question**, and longer if two people get different counts from different filters.
+
+With the desk, the same question is **one URL + one filter**, usually **under a minute**:
+
+| Old way (Excel) | On this desk |
+| --- | --- |
+| Pivot HO by month, then check you used **customer due**, not order date | Dashboard / Factories already bucket by customer due; empty months show 0 |
+| Scan due dates to label late | Delay mix + Factories Delivery Time: Late = past customer due; On time = not due yet |
+| Count customers, guess UK vs USA | Customers page: country bar + Total / New |
+| Sum 2026 $ from a second yellow table, then chart it | Customers $ charts already hold **USD 6,214,799.37** from that table |
+| Send a screenshot; colleague asks “which filter?” | Same live link; their filter is visible |
+
+**Rough saving:** one weekly book-check that used to take a long Excel pass (often **30–60 minutes** to answer several of those questions and paste charts) drops to **a few minutes of reading the live page**. That time goes back to chasing factories and dates — the actual sourcing work — not rebuilding the same pivot.
+
+### How effective it is
+
+Effectiveness here means: **the team agrees on the same numbers, the same week, without a new file.**
+
+- **One count of the book** — 134 HO · 393 PO · 10 factories · 8 customers on the current cut. Not “I got 140, you got 128” because one person counted Excel lines and the other counted HO.
+- **One clock** — customer delivery time. Order date is not used for the month charts, so October/November/December volume is not missing just because order date stopped in September.
+- **One rule on money** — tracking $ empty stays “not reported.” 2026 spend is only the year table. Nobody presents a fake $0 collapse, and nobody mixes HO bars into a spend story.
+- **One map** — factory code + name, colour = that factory’s HO bar. Location talk (North / South) sits on the same pins.
+- **Reusable next month** — new tracking Excel in, same screen out. No new PowerPoint template for the same four questions.
+
+### What “good” looks like in practice
+
+A merchandiser or manager can open the link before a meeting and already know: which months are loaded, which factory is carrying HO, which customers are new, where 2026 $ sat (Candle / QGBG / U09…), and what is late — **without asking someone to “pull the Excel.”**
+
+### What is not a result of this desk
+
+Do not quote this page as:
+
+- a costing or FOB verdict (Costing is Coming soon);
+- a quality pass/fail score (defect charts are SAMPLE until a quality Excel exists);
+- live spend from ORDER TRACKING LIST 9-24 (that column is empty).
+
+Those answers still need their own files. This desk’s result is **shared, repeatable visibility of volume, timing, factories, customers, and the 2026 $ table** — faster than Excel, and the same for everyone who opens the URL.
 
 ---
 
