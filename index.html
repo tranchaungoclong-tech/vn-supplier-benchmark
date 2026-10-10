@@ -203,7 +203,7 @@
   .period-menu {
     display: none; position: absolute; left: 0; top: calc(100% + 4px); z-index: 12;
     background: #fff; border: 1px solid var(--line); border-radius: 12px;
-    box-shadow: var(--shadow); min-width: 128px; padding: 6px 0;
+    box-shadow: var(--shadow); min-width: 128px; padding: 6px 0; overflow: visible;
   }
   .period-wrap.open .period-menu, .period-wrap:hover .period-menu { display: block; }
   .period-menu button, .period-sub button {
@@ -213,7 +213,7 @@
   .period-menu button:hover, .period-sub button:hover { background: #eff6ff; }
   .period-year { position: relative; }
   .period-sub {
-    display: none; position: absolute; left: 100%; top: 0; z-index: 13;
+    display: none; position: absolute; left: calc(100% + 2px); top: 0; z-index: 30;
     background: #fff; border: 1px solid var(--line); border-radius: 12px;
     box-shadow: var(--shadow); min-width: 112px; padding: 6px 0; max-height: 320px; overflow: auto;
   }
