@@ -721,6 +721,9 @@
       factoryMaster: "Factory master",
       factoryDrill: "Factory drill-down",
       factoryDrillNote: "Tap a factory for HO / PO / customer due / SO cfm / inspect. Tracking 9-24 only. $ not reported. Defect SAMPLE is not a factory.",
+      dueSoon: "Due in 30 days",
+      dueSoonNote: "One row per HO. Customer due from today through 30 days. Tracking 9-24 only. $ not reported.",
+      colFactory: "Factory", colCustomer: "Customer", colDue: "Customer due", colDays: "Days",
       nextDue: "Next due",
       lateHo: "Late HO",
       inspectPend: "Inspect pending",
@@ -794,6 +797,9 @@
       factoryMaster: "工厂主档",
       factoryDrill: "工厂下钻",
       factoryDrillNote: "点工厂看 HO / PO / 客户交期 / SO cfm / 验货。仅 tracking 9-24。无金额。SAMPLE 不良不是工厂实绩。",
+      dueSoon: "30 天内到期",
+      dueSoonNote: "一行一个 HO。从今天到 30 天的客户交期。仅 tracking 9-24。无金额。",
+      colFactory: "工厂", colCustomer: "客户", colDue: "客户交期", colDays: "还剩",
       nextDue: "下一交期",
       lateHo: "逾期 HO",
       inspectPend: "验货待定",
@@ -2091,50 +2097,6 @@
     setTimeout(function () { if (asiaMap) asiaMap.invalidateSize(); }, 80);
   }
 
-  function factoryDrillCard(rows, s) {
-    var by = {};
-    rows.forEach(function (o) {
-      var k = o.factoryCode || o.sheet || "?";
-      if (!by[k]) {
-        by[k] = { code: k, name: o.factoryName || k, hos: {}, late: {}, pend: {}, nextDue: "", qty: 0, pos: {} };
-      }
-      var rec = by[k];
-      var id = o.ho ? String(o.ho) : ("NOHO|" + poKey(o));
-      rec.hos[id] = true;
-      rec.qty += o.qty || 0;
-      if (o.po) rec.pos[poKey(o)] = true;
-      var band = delayBand(o.customerDue);
-      if (band.key !== "easy" && band.key !== "none") rec.late[id] = true;
-      if (inspectKind(o.inspect) === "pending") rec.pend[id] = true;
-      if (o.customerDue && o.customerDue >= AS) {
-        if (!rec.nextDue || o.customerDue < rec.nextDue) rec.nextDue = o.customerDue;
-      }
-    });
-    var keys = Object.keys(by).sort(function (a, b) {
-      return Object.keys(by[b].hos).length - Object.keys(by[a].hos).length;
-    });
-    if (!keys.length) return "";
-    var blocks = keys.map(function (k) {
-      var f = by[k];
-      var nHo = Object.keys(f.hos).length;
-      var nLate = Object.keys(f.late).length;
-      var nPend = Object.keys(f.pend).length;
-      var loc = FTY_LOC[k];
-      var place = loc ? loc.province + ", Vietnam" : (s.ftyMap[k] && s.ftyMap[k].province ? s.ftyMap[k].province + ", Vietnam" : "");
-      return "<div class='factory-row click' data-fty='" + encodeURIComponent(k) + "' title='Tap for HO'>" +
-        "<div><strong>" + esc(ftyNick(k, f.name)) + "</strong><div class='sub'>" +
-        esc(f.code) + (place ? " · " + esc(place) : "") + "</div></div>" +
-        "<div class='sub' style='text-align:right'>" + nHo + " HO · " + Object.keys(f.pos).length + " PO" +
-        "<br>" + nLate + " " + t("lateHo") + " · " + t("nextDue") + " " + esc(f.nextDue || "–") +
-        (nPend ? "<br>" + nPend + " " + t("inspectPend") : "") +
-        "</div></div>";
-    }).join("");
-    return "<div class='card span-all'><h2>" + ico("factories") + " " + t("factoryDrill") +
-      " <span>" + keys.length + "</span></h2><div class='pad'>" +
-      "<p class='sub' style='margin:0 0 8px'>" + t("factoryDrillNote") + "</p>" +
-      blocks + "</div></div>";
-  }
-
   function pageHead() {
     var titles = (I18N[lang] && I18N[lang].titles) || I18N.en.titles;
     var pack = titles[view] || titles.dash || [view, ""];
@@ -2156,7 +2118,6 @@
 
   function factoriesView(rows, s) {
     return "<div class='fty-dash'>" +
-        factoryDrillCard(rows, s) +
         purchaseLine(s.hoMonth) +
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
