@@ -598,6 +598,7 @@
   .fty-dash .qp-chart { height: 280px; }
   .fty-dash .qp-chart svg { height: 280px; }
   .fty-dash .card.span-all { grid-column: 1 / -1; }
+  .fty-dash .card.span-2 { grid-column: span 2; }
   .factory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .factory-row strong { display: block; }
   .factory-row.click { cursor: pointer; border-radius: 8px; padding: 8px 6px; margin: 0 -6px; }
@@ -2269,7 +2270,7 @@
           topics + "</div><p class='sub' style='margin:10px 0 0'>" + ftyNote + "</p></div></div>" +
       "</div></div>" +
       "<div style='margin-top:14px'>" + hoMonthBlock(s.hoMonth, s.distinctHo) + "</div>" +
-      "<div style='margin-top:14px'>" + asiaMapHtml(true) + "</div>";
+      "<div style='margin-top:14px'>" + asiaMapHtml("span-all") + "</div>";
   }
 
   function merch(rows) {
@@ -2528,8 +2529,9 @@
     TH: "Thailand", ID: "Indonesia", PK: "Pakistan", LK: "Sri Lanka"
   };
   var asiaMap = null;
-  function asiaMapHtml(wide) {
-    return "<div class='card" + (wide ? " span-all" : "") + "'><h2>" + ico("factories") + " " + t("mapTitle") + "</h2>" +
+  function asiaMapHtml(span) {
+    var cls = span ? (" " + span) : "";
+    return "<div class='card" + cls + "'><h2>" + ico("factories") + " " + t("mapTitle") + "</h2>" +
       "<div class='pad' style='padding:0 0 12px'><div class='map-desk'>" +
       "<div class='fty-ho-rail'><div class='rail-h'>HO by factory</div><div id='ftyHoRail'></div></div>" +
       "<div id='asiaMap' class='asia-map'></div></div>" +
@@ -2663,7 +2665,7 @@
         deliveryTimeCard(rows) +
         defectSampleCard(s.ftyMap) +
         qualityPerfCard(rows) +
-        asiaMapHtml(true) +
+        asiaMapHtml("span-2") +
       "</div>";
   }
 
