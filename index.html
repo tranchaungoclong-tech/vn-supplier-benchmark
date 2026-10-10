@@ -130,8 +130,11 @@
   .page-head h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
   .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   .page-head .asof { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
-  .page-head .btn.cmp { margin-left: auto; background: #0f172a; border-color: #0f172a; color: #fff; font-weight: 700; }
-  .page-head .btn.cmp:hover { background: #1e293b; }
+  .page-head .btn.cmp {
+    margin-left: auto; background: #C33D27; border-color: #C33D27; color: #fff;
+    font-weight: 750; box-shadow: 0 8px 18px rgba(195,61,39,.28);
+  }
+  .page-head .btn.cmp:hover { background: #a83220; border-color: #a83220; }
   .card h2 .ico { color: var(--blue-deep); margin-right: 2px; }
 
   .main { min-width: 0; }
@@ -265,20 +268,26 @@
   .cust-bar { display: none; }
   .cust-flags { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
   .cust-head-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
-  .cust-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .cust-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; height: 100%; }
   .cust-col .col-title {
-    margin: 0; font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; min-height: 22px;
+    margin: 0; font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; min-height: 22px; flex: 0 0 auto;
   }
-  .cust-col .col-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .cust-col .col-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: 1 1 auto; align-items: stretch; }
   .cust-flag {
-    width: auto; min-height: 92px; border-radius: 16px; padding: 12px 14px; color: #fff;
+    width: auto; height: 108px; min-height: 108px; border-radius: 16px; padding: 12px 14px; color: #fff;
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
     box-shadow: 0 10px 24px rgba(15,23,42,.16);
   }
   .cust-flag b { font-size: 26px; }
+  .cust-flag .delta {
+    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .cust-flags .kpi-ink, .cust-col .kpi-ink {
-    width: auto; min-height: 92px; padding: 12px 14px 12px 16px;
+    width: auto; height: 108px; min-height: 108px; padding: 12px 14px 12px 16px;
     box-shadow: 0 8px 20px rgba(15,23,42,.08);
+  }
+  .cust-col .kpi-ink .delta {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   @media (max-width: 900px) {
     .cust-head-row, .cust-col .col-tiles { grid-template-columns: 1fr; }
