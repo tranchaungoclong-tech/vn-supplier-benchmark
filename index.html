@@ -2009,7 +2009,6 @@
       var id = o.ho ? String(o.ho) : ("NOHO|" + (o.po || "") + "|" + (o.factoryCode || ""));
       if (catSeen[id]) return;
       catSeen[id] = true;
-      if (DROP[o.endCustomer] || DROP[o.customer]) return;
       var c = o.category || "(blank)";
       if (!byCat[c]) byCat[c] = { n: 0, buyers: {} };
       byCat[c].n++;
@@ -2030,12 +2029,10 @@
         "<div style='background:#dbeafe;width:" + w + "%;min-width:34px;border-radius:6px;padding:3px 8px;font-weight:700'>" +
         x.n + "</div></td><td class='sub'>" + esc(buyers) + "</td></tr>";
     }).join("");
-    var COUNTRY = { U09: "UK", P01: "UK", N08: "UK", U67: "UK", U26: "UK", F23: "USA", JJA: "USA", WMT: "USA", A93: "USA", A74: "USA", C24: "Canada" };
-    var DROP = { G35: 1 };
+    var COUNTRY = { U09: "UK", P01: "UK", N08: "UK", U67: "UK", U26: "UK", G35: "UK", F23: "USA", JJA: "USA", WMT: "USA", A93: "USA", A74: "USA", C24: "Canada" };
     var custRec = {};
     rows.forEach(function (o) {
       var k = o.endCustomer || o.customer || "?";
-      if (DROP[k]) return;
       if (!custRec[k]) custRec[k] = { neu: 0, rep: 0, ho: {} };
       var cat = o.orderCategory || "";
       if (/new/i.test(cat)) custRec[k].neu++;
@@ -2362,6 +2359,21 @@
       "</div>";
   }
 
+  function merchDesk(rows, s) {
+    var blocks = Object.keys(s.ftyMap).sort().map(function (k) {
+      var f = s.ftyMap[k];
+      var nPo = Object.keys(f.pos).length;
+      var nLate = Object.keys(f.late).length;
+      var cats = Object.keys(f.cats).join(" · ") || "–";
+      return "<div class='factory-row click' data-fty='" + encodeURIComponent(k) + "'><div><strong>" +
+        esc(f.code || k) + " · " + esc(f.name || "") + "</strong><div class='sub'>" +
+        esc(f.province ? f.province + ", Vietnam" : f.country) + " · " + esc(cats) + "</div></div>" +
+        "<div class='sub' style='text-align:right'>" + nLate + " / " + nPo + " late PO · " + fmt(f.qty) + " pcs</div></div>";
+    }).join("");
+    return kpiRow(s) + "<div class='card'><h2>" + ico("factories") + " " + t("factoryMaster") +
+      "</h2><div class='pad'>" + blocks + "</div></div>";
+  }
+
   function customersView(rows, s) {
     return merch(rows, s);
   }
@@ -2381,7 +2393,7 @@
     var s = stats(rows);
     var html = "";
     if (view === "dash") html = dash(rows, s);
-    else if (view === "merch") html = merch(rows, s);
+    else if (view === "merch") html = merchDesk(rows, s);
     else if (view === "costing") html = sampleDesk("costing");
     else if (view === "designer") html = sampleDesk("designer");
     else if (view === "quality") html = quality(rows, s);
