@@ -499,14 +499,17 @@
     transform: translateX(-50%); box-shadow: 0 0 0 3px #fff;
   }
   .lolli .usd { text-align: right; font-weight: 750; white-space: nowrap; }
-  .bu-mosaic { display: flex; min-height: 132px; border-radius: 14px; overflow: hidden; }
+  .bu-mosaic { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
   .bu-mosaic .cell {
     display: flex; flex-direction: column; justify-content: flex-end;
-    padding: 12px; color: #fff; min-width: 0; flex: 1 1 0;
+    padding: 12px; color: #fff; min-width: 0; border-radius: 14px; min-height: 92px;
   }
   .bu-mosaic .cell small { opacity: .88; font-size: 11px; font-weight: 800; letter-spacing: .04em; }
   .bu-mosaic .cell b { font-size: 18px; letter-spacing: -.03em; line-height: 1.15; }
   .bu-mosaic .cell em { font-style: normal; font-size: 12px; opacity: .9; }
+  .bu-mosaic .cell .pct-bar { height: 4px; background: rgba(255,255,255,.28); border-radius: 99px; margin-top: 8px; overflow: hidden; }
+  .bu-mosaic .cell .pct-bar i { display: block; height: 100%; background: #fff; border-radius: 99px; }
+  @media (max-width: 900px) { .bu-mosaic { grid-template-columns: 1fr 1fr; } }
   .fty-dash { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: stretch; }
   .fty-dash > .card { margin-top: 0 !important; min-width: 0; }
   .fty-dash .card h2 { font-size: 14px; }
@@ -1077,9 +1080,9 @@
     var tot = parts.reduce(function (a, p) { return a + p.n; }, 0) || 1;
     return "<div class='bu-mosaic'>" + parts.map(function (p) {
       var pct = Math.round(100 * p.n / tot);
-      var flex = Math.max(8, pct);
-      return "<div class='cell' style='flex-grow:" + flex + ";background:" + p.color + "'>" +
-        "<small>" + esc(p.label) + "</small><b>" + moneyShort(p.n) + "</b><em>" + pct + "%</em></div>";
+      return "<div class='cell' style='background:" + p.color + "'>" +
+        "<small>" + esc(p.label) + "</small><b>" + moneyShort(p.n) + "</b><em>" + pct + "%</em>" +
+        "<div class='pct-bar'><i style='width:" + pct + "%'></i></div></div>";
     }).join("") + "</div>";
   }
   var PATHS = {
