@@ -260,12 +260,13 @@
   .kpi.click:hover { filter: brightness(1.06); }
   .kpi .ico-tile { background: rgba(255,255,255,.18); color: #fff; }
   .cust-bar { display: flex; justify-content: flex-end; margin: 0 0 12px; }
-  .cust-flags { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cust-flags { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
   .cust-flag {
     width: 168px; border-radius: 14px; padding: 10px 12px; color: #fff;
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
     box-shadow: 0 8px 20px rgba(15,23,42,.12);
   }
+  .cust-flags .kpi-ink { width: 188px; min-height: 78px; }
   .cust-flag .lab { font-size: 11px; font-weight: 700; opacity: .86; }
   .cust-flag b { display: block; font-size: 22px; letter-spacing: -.03em; margin: 2px 0; }
   .cust-flag .delta { font-size: 11px; opacity: .86; }
@@ -2270,15 +2271,14 @@
         "</div><b>" + pct + "%</b><div class='delta'>" + x.n + " · " + esc(x.names.join(", ")) +
         "</div></div><div class='flag'>" + FLAG[cc] + "</div></div>";
     }).join("");
-    return "<div class='cust-bar'><button type='button' class='btn' id='cmpBtn'>" + t("cmpBtn") + "</button></div>" +
-      "<div class='card' style='margin-bottom:14px'><h2>" + ico("customers") + " " + t("byCountry") +
-      "</h2><div class='pad'><div class='cust-flags'>" + countryHtml + "</div></div></div>" +
-      "<div class='kpis kpis-sm'>" +
+    var inkHtml =
       "<div class='kpi-ink total'><div class='kpi-top'><div class='lab'>" + t("totalCust") + "</div>" + tile("customers", "violet") +
       "</div><b>" + custKeys.length + "</b><div class='delta'>" + newKeys.length + " " + t("newOf") + "</div></div>" +
       "<div class='kpi-ink fresh'><div class='kpi-top'><div class='lab'>" + t("newCust") + "</div>" + tile("customers", "rose") +
-      "</div><b>" + newKeys.length + "</b><div class='delta'>" + esc(newKeys.join(", ") || "–") + "</div></div>" +
-      "</div>" +
+      "</div><b>" + newKeys.length + "</b><div class='delta'>" + esc(newKeys.join(", ") || "–") + "</div></div>";
+    return "<div class='cust-bar'><button type='button' class='btn' id='cmpBtn'>" + t("cmpBtn") + "</button></div>" +
+      "<div class='card' style='margin-bottom:14px'><h2>" + ico("customers") + " " + t("byCountry") +
+      "</h2><div class='pad'><div class='cust-flags'>" + countryHtml + inkHtml + "</div></div></div>" +
       "<div class='cust-bento'>" +
       "<div class='card'><h2>" + ico("trend") + " " + t("poByMonth") +
       " <span>" + total + " PO</span></h2><div class='pad'>" + monthBars(parts) + "</div></div>" +
@@ -2571,13 +2571,15 @@
     return merch(rows, s);
   }
 
+  var painted = false;
   function setView(name) {
-    if (name === view) {
+    if (painted && name === view) {
       document.querySelectorAll(".nav button").forEach(function (b) {
         b.classList.toggle("active", b.getAttribute("data-view") === name);
       });
       return;
     }
+    painted = true;
     view = name;
     page = 1;
     if (name !== "quality") tableTab = "all";
