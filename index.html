@@ -467,21 +467,40 @@
   .ho-table th:first-child, .ho-table td:first-child { text-align: left; }
   .ho-table td { text-align: right; font-variant-numeric: tabular-nums; }
   .ho-table tr.total td { font-weight: 700; border-top: 1px solid var(--line); }
+  .map-desk {
+    display: grid; grid-template-columns: 210px 1fr; min-height: 360px;
+    background: #0b1220; border-radius: 12px; overflow: hidden; color: #e2e8f0;
+  }
+  .fty-ho-rail { padding: 12px 10px; overflow: auto; }
+  .fty-ho-rail .rail-h {
+    font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    color: #94a3b8; margin: 0 0 10px;
+  }
+  .fty-ho-row { margin: 0 0 9px; }
+  .fty-ho-row .lab {
+    display: flex; justify-content: space-between; gap: 6px; font-size: 11px; font-weight: 700; margin-bottom: 4px;
+  }
+  .fty-ho-row .lab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fty-ho-row .lab b { color: #fff; font-variant-numeric: tabular-nums; }
+  .fty-ho-row .track { height: 8px; background: #1e293b; border-radius: 99px; overflow: hidden; }
+  .fty-ho-row .track i { display: block; height: 100%; border-radius: 99px; }
   .asia-map {
-    height: 360px; border-radius: 12px; overflow: hidden; background: #c5d4e0;
+    height: 360px; overflow: hidden; background: #0b1220;
     isolation: isolate; position: relative; z-index: 0;
   }
-  .asia-map .leaflet-container { height: 360px; width: 100%; background: #c5d4e0; font: inherit; z-index: 0; }
+  .asia-map .leaflet-container { height: 360px; width: 100%; background: #0b1220; font: inherit; z-index: 0; }
   .asia-map .leaflet-pane, .asia-map .leaflet-top, .asia-map .leaflet-bottom { z-index: 1; }
-  .asia-map .leaflet-control-zoom a { color: #0f172a; }
+  .asia-map .leaflet-control-zoom a { color: #e2e8f0; background: #1e293b; border-color: #334155; }
+  .asia-map .leaflet-bar { border: 0; }
   .map-label {
     background: transparent; border: 0; box-shadow: none; font: 700 11px/1 "Segoe UI", sans-serif;
-    color: #4b5563; letter-spacing: .03em; white-space: nowrap; pointer-events: none;
+    color: #94a3b8; letter-spacing: .03em; white-space: nowrap; pointer-events: none;
   }
   .map-pin {
-    background: transparent; border: 0; box-shadow: none; font: 800 10px/1 "Segoe UI", sans-serif;
-    color: #5b21b6; white-space: nowrap; pointer-events: none;
+    background: transparent; border: 0; box-shadow: none; font: 800 10px/1.15 "Segoe UI", sans-serif;
+    color: #fff; white-space: nowrap; pointer-events: none; text-shadow: 0 1px 2px #0b1220;
   }
+  .map-pin small { display: block; font-size: 9px; font-weight: 700; opacity: .9; }
   .empty { padding: 24px; color: var(--muted); }
 
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -579,6 +598,7 @@
   .fty-dash .dtime-leg { gap: 10px; font-size: 12px; margin-top: 8px; }
   .fty-dash .fty-legend { gap: 8px; margin-top: 8px; }
   .fty-dash .fty-legend span { font-size: 12px; }
+  .fty-dash .map-desk { min-height: 280px; }
   .fty-dash .asia-map, .fty-dash .asia-map .leaflet-container { height: 280px; }
   .qp-chart { height: 280px; }
   .qp-chart svg { width: 100%; height: 280px; display: block; }
@@ -615,7 +635,7 @@
   }
 
   @media (max-width: 1180px) {
-    .kpis, .layout, .grid2, .donut-grid, .cust-bento { grid-template-columns: 1fr; }
+    .kpis, .layout, .grid2, .donut-grid, .cust-bento, .map-desk { grid-template-columns: 1fr; }
     .cust-bento .span2 { grid-column: auto; }
     .fty-dash { grid-template-columns: 1fr 1fr; }
     .app { grid-template-columns: 1fr; }
@@ -1304,6 +1324,16 @@
     ];
     renderHoPop(name, list, bits.join(" · ") + ".");
   }
+  var FTY_PALETTE = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#f43f5e","#0ea5e9","#ec4899","#14b8a6","#eab308","#6366f1"];
+  function ftyColorOf(map) {
+    var keys = Object.keys(map || {}).sort();
+    var out = {};
+    keys.forEach(function (k, i) { out[k] = FTY_PALETTE[i % FTY_PALETTE.length]; });
+    return out;
+  }
+  function ftyHoN(f) {
+    return f && f.hos ? Object.keys(f.hos).length : 0;
+  }
   function ico(name) {
     return '<span class="ico"><svg viewBox="0 0 24 24">' + (PATHS[name] || PATHS.dash) + '</svg></span>';
   }
@@ -1624,11 +1654,12 @@
           province: loc ? loc.province : "",
           lat: loc ? loc.lat : null,
           lon: loc ? loc.lon : null,
-          lines: 0, qty: 0, pos: {}, late: {}, cats: {}, customers: {}
+          lines: 0, qty: 0, pos: {}, late: {}, cats: {}, customers: {}, hos: {}
         };
       }
       var f = ftyMap[fk];
       f.lines++; f.qty += o.qty || 0;
+      if (o.ho) f.hos[String(o.ho)] = true;
       if (o.category) f.cats[o.category] = (f.cats[o.category] || 0) + 1;
       if (o.customer) f.customers[o.customer] = true;
       if (o.po) {
@@ -1708,7 +1739,6 @@
     var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     var zhM = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
     var names = lang === "zh" ? zhM : enM;
-    var palette = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#f43f5e","#0ea5e9","#ec4899","#14b8a6","#eab308","#6366f1"];
     var year = "2026";
     var ftyKeys = {};
     var months = [];
@@ -1724,8 +1754,7 @@
       }
     }
     var ftyList = Object.keys(ftyKeys).sort();
-    var colorOf = {};
-    ftyList.forEach(function (k, i) { colorOf[k] = palette[i % palette.length]; });
+    var colorOf = ftyColorOf(ftyKeys);
     var w = 720, h = 360, padL = 36, padR = 12, padT = 28, padB = 36;
     var innerW = w - padL - padR, innerH = h - padT - padB;
     var slot = innerW / 12;
@@ -1929,7 +1958,6 @@
     var enM = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     var zhM = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
     var names = lang === "zh" ? zhM : enM;
-    var palette = ["#3b82f6","#8b5cf6","#10b981","#f59e0b","#f43f5e","#0ea5e9","#ec4899","#14b8a6","#eab308","#6366f1"];
     var year = "2026";
     var ftyKeys = {};
     var months = [];
@@ -1945,8 +1973,7 @@
       }
     }
     var ftyList = Object.keys(ftyKeys).sort();
-    var colorOf = {};
-    ftyList.forEach(function (k, i) { colorOf[k] = palette[i % palette.length]; });
+    var colorOf = ftyColorOf(ftyKeys);
     var nM = 12;
     var w = 760, h = 420, padL = 28, padR = 12, padT = 28, padB = 36;
     var innerW = w - padL - padR, innerH = h - padT - padB;
@@ -2508,14 +2535,33 @@
   var asiaMap = null;
   function asiaMapHtml() {
     return "<div class='card'><h2>" + ico("factories") + " " + t("mapTitle") + "</h2>" +
-      "<div class='pad'><div id='asiaMap' class='asia-map'></div>" +
-      "<p class='sub' id='asiaMapLegend' style='margin-top:8px'></p></div></div>";
+      "<div class='pad' style='padding:0 0 12px'><div class='map-desk'>" +
+      "<div class='fty-ho-rail'><div class='rail-h'>HO by factory</div><div id='ftyHoRail'></div></div>" +
+      "<div id='asiaMap' class='asia-map'></div></div>" +
+      "<p class='sub' id='asiaMapLegend' style='margin:8px 16px 0'></p></div></div>";
   }
   function paintAsiaMap(s) {
     var el = document.getElementById("asiaMap");
     if (!el) return;
     if (asiaMap) { asiaMap.remove(); asiaMap = null; }
     el.innerHTML = "";
+    var colorOf = ftyColorOf(s.ftyMap);
+    var ranked = Object.keys(s.ftyMap).sort(function (a, b) {
+      return ftyHoN(s.ftyMap[b]) - ftyHoN(s.ftyMap[a]);
+    });
+    var maxHo = 1;
+    ranked.forEach(function (k) { var n = ftyHoN(s.ftyMap[k]); if (n > maxHo) maxHo = n; });
+    var rail = document.getElementById("ftyHoRail");
+    if (rail) {
+      rail.innerHTML = ranked.map(function (k) {
+        var f = s.ftyMap[k];
+        var n = ftyHoN(f);
+        var w = Math.max(6, Math.round(100 * n / maxHo));
+        var lab = (f.code || k) + " " + ftyNick(k, f.name);
+        return "<div class='fty-ho-row'><div class='lab'><span>" + esc(lab) + "</span><b>" + n +
+          "</b></div><div class='track'><i style='width:" + w + "%;background:" + colorOf[k] + "'></i></div></div>";
+      }).join("");
+    }
     if (!window.L) {
       el.innerHTML = "<p class='empty'>Map zoom needs vendor/leaflet.js next to this page.</p>";
       return;
@@ -2523,6 +2569,7 @@
     var pins = [], unknown = [];
     Object.keys(s.ftyMap).forEach(function (k) {
       var f = s.ftyMap[k];
+      f._key = k;
       if (f.lat != null && f.lon != null) pins.push(f);
       else unknown.push(f);
     });
@@ -2535,7 +2582,7 @@
     }).setView([16.5, 106.5], 5.4);
     if (window.ASIA) {
       L.geoJSON(window.ASIA, {
-        style: { color: "#c4bdae", weight: 0.8, fillColor: "#e8e4d8", fillOpacity: 1 }
+        style: { color: "#334155", weight: 0.8, fillColor: "#1e293b", fillOpacity: 1 }
       }).addTo(asiaMap);
     }
     [
@@ -2558,19 +2605,21 @@
       }).addTo(asiaMap);
     });
     pins.forEach(function (f) {
-      var r = Math.max(7, Math.min(16, 6 + Math.sqrt(f.lines)));
+      var col = colorOf[f._key] || "#7C3AED";
+      var n = ftyHoN(f);
+      var r = Math.max(7, Math.min(16, 6 + Math.sqrt(n)));
       L.circleMarker([f.lat, f.lon], {
-        radius: r, color: "#fff", weight: 2, fillColor: "#7C3AED", fillOpacity: 0.88
+        radius: r, color: "#0b1220", weight: 2, fillColor: col, fillOpacity: 0.95
       }).addTo(asiaMap).bindPopup(
         "<b>" + esc(f.code || "") + " · " + esc(f.name || "") + "</b><br>" +
-        esc(f.province) + ", Vietnam<br>" + f.lines + " lines · " + Object.keys(f.pos).length + " PO"
+        esc(f.province) + ", Vietnam<br>" + n + " HO · " + Object.keys(f.pos).length + " PO"
       );
       L.marker([f.lat, f.lon], {
         icon: L.divIcon({
           className: "map-pin",
-          html: esc(f.code || ""),
-          iconSize: [48, 14],
-          iconAnchor: [24, -10]
+          html: "<b>" + esc(f.code || "") + "</b><small>" + esc(ftyNick(f._key, f.name)) + "</small>",
+          iconSize: [88, 28],
+          iconAnchor: [44, -8]
         }),
         interactive: false
       }).addTo(asiaMap);
@@ -2587,7 +2636,7 @@
     bits.push(Object.keys(prov).length + " provinces");
     if (unknown.length) bits.push(unknown.length + " factory not pinned");
     var leg = document.getElementById("asiaMapLegend");
-    if (leg) leg.textContent = bits.join(" · ") + " · + / − to zoom";
+    if (leg) leg.textContent = bits.join(" · ") + " · bar = HO · pin colour = factory";
     setTimeout(function () { if (asiaMap) asiaMap.invalidateSize(); }, 80);
   }
 
