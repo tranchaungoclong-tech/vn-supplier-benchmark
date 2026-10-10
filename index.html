@@ -720,6 +720,7 @@
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
       factoryMaster: "Factory master",
       poByMonth: "PO released by month",
+      purchaseByCat: "Total purchase by category",
       cmpBtn: "Compare period", cmpTitle: "Compare period",
       cmpSub: "Δ = A against B. B is the earlier period.",
       cmpWeek: "Week vs week", cmpMonth: "Month vs month",
@@ -802,6 +803,7 @@
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
       factoryMaster: "工厂主档",
       poByMonth: "每月下单 PO",
+      purchaseByCat: "按品类采购合计",
       cmpBtn: "对比周期", cmpTitle: "对比周期",
       cmpSub: "Δ = A 对比 B。B 是上一期。",
       cmpWeek: "周 vs 周", cmpMonth: "月 vs 月",
@@ -1993,12 +1995,28 @@
       return { label: lab, n: byMonth[mo], color: COLORS[i % COLORS.length], key: mo };
     });
     var total = parts.reduce(function (a, p) { return a + p.n; }, 0);
-    return "<div class='card'><h2>" + ico("customers") + " " + t("poByMonth") +
-      " <span>" + total + " PO</span></h2><div class='pad'>" +
-      "<div style='display:flex;justify-content:flex-end;margin-bottom:8px'>" +
+    var catSeen = {};
+    var byCat = {};
+    rows.forEach(function (o) {
+      var id = o.ho ? String(o.ho) : ("NOHO|" + (o.po || "") + "|" + (o.factoryCode || ""));
+      if (catSeen[id]) return;
+      catSeen[id] = true;
+      var c = o.category || "(blank)";
+      byCat[c] = (byCat[c] || 0) + 1;
+    });
+    var catParts = Object.keys(byCat).sort(function (a, b) { return byCat[b] - byCat[a]; }).map(function (c, i) {
+      var lab = c.indexOf("→") > 0 ? c.split("→").pop() : c;
+      return { label: lab, n: byCat[c], color: COLORS[(i + 3) % COLORS.length] };
+    });
+    var catTotal = catParts.reduce(function (a, p) { return a + p.n; }, 0);
+    return "<div style='display:flex;justify-content:flex-end;margin-bottom:8px'>" +
       "<button type='button' id='cmpBtn' style='border:1.5px solid #06b6d4;color:#0891b2;background:#fff;border-radius:10px;padding:8px 16px;font-weight:700;cursor:pointer'>⧉ " +
       t("cmpBtn") + "</button></div>" +
-      donut(parts, String(total), "PO") + "</div></div>";
+      "<div class='grid2'>" +
+      "<div class='card'><h2>" + ico("customers") + " " + t("poByMonth") +
+      " <span>" + total + " PO</span></h2><div class='pad'>" + donut(parts, String(total), "PO") + "</div></div>" +
+      "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCat") +
+      " <span>" + catTotal + " HO</span></h2><div class='pad'>" + donut(catParts, String(catTotal), "HO") + "</div></div></div>";
   }
 
   function compareBuckets(rows, mode) {
