@@ -275,22 +275,22 @@
     display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
   }
   .cc-chip {
-    display: flex; align-items: center; gap: 10px;
-    background: #f8fafc; border: 1px solid #e8eef6; border-radius: 12px;
-    padding: 10px 14px; flex: 1 1 240px; min-width: 0;
+    display: flex; align-items: center; gap: 8px;
+    background: #f8fafc; border: 1px solid #e8eef6; border-radius: 10px;
+    padding: 6px 10px; flex: 0 1 auto; width: auto; max-width: 280px;
   }
-  .cc-chip .flag { width: 22px; height: 22px; flex: 0 0 22px; }
+  .cc-chip .flag { width: 18px; height: 18px; flex: 0 0 18px; }
   .cc-chip .who { min-width: 0; }
-  .cc-chip .who .cc { font-weight: 800; font-size: 13px; line-height: 1.15; }
-  .cc-chip .who .names { color: #64748b; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cc-chip b { font-size: 22px; letter-spacing: -.04em; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .cc-chip .who .cc { font-weight: 800; font-size: 12px; line-height: 1.15; }
+  .cc-chip .who .names { color: #64748b; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cc-chip b { font-size: 16px; letter-spacing: -.04em; margin-left: 8px; font-variant-numeric: tabular-nums; }
   .cc-stat {
-    min-width: 86px; border: 1px solid #e8eef6; border-radius: 12px;
-    padding: 8px 14px; display: flex; flex-direction: column; justify-content: center;
+    min-width: 72px; border: 1px solid #e8eef6; border-radius: 10px;
+    padding: 6px 10px; display: flex; flex-direction: column; justify-content: center;
   }
-  .cc-stat small { font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
-  .cc-stat b { font-size: 22px; letter-spacing: -.04em; line-height: 1.15; }
-  .cc-stat .delta { font-size: 11px; color: #64748b; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cc-stat small { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+  .cc-stat b { font-size: 16px; letter-spacing: -.04em; line-height: 1.15; }
+  .cc-stat .delta { font-size: 10.5px; color: #64748b; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bu-cat-row { display: grid; grid-template-columns: .78fr 1.42fr; gap: 14px; margin-bottom: 14px; align-items: stretch; }
   .bu-cat-row .bu-mosaic { grid-template-columns: 1fr 1fr; }
   .bu-cat-row .bu-mosaic .cell { min-height: 78px; }
@@ -2407,8 +2407,8 @@
       return "<div class='cc-chip'><div class='flag'>" + FLAG[cc] + "</div><div class='who'><div class='cc'>" +
         esc(cc) + "</div><div class='names'>" + esc(x.names.join(" · ")) + "</div></div><b>" + x.n + "</b></div>";
     }).join("");
-    return "<div class='card' style='margin-bottom:14px'><h2>" + ico("customers") + " " + t("byCountry") +
-      "</h2><div class='pad'><div class='cc-strip'>" + countryHtml +
+    return "<div class='card' style='margin-bottom:14px'><h2 style='padding:10px 14px 6px'>" + ico("customers") + " " + t("byCountry") +
+      "</h2><div class='pad' style='padding:0 14px 12px'><div class='cc-strip'>" + countryHtml +
       "<div class='cc-stat'><small>" + t("totalCust") + "</small><b>" + custKeys.length + "</b></div>" +
       "<div class='cc-stat'><small>" + t("newCust") + "</small><b>" + newKeys.length +
       "</b><div class='delta'>" + esc(newKeys.join(" · ") || "–") + "</div></div>" +
