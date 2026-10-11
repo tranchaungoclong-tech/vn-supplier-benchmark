@@ -271,29 +271,38 @@
   .kpi.click:hover { filter: brightness(1.06); }
   .kpi .ico-tile { background: rgba(255,255,255,.18); color: #fff; }
   .cust-bar { display: none; }
-  .cust-head-row { display: grid; grid-template-columns: 1.4fr .8fr; gap: 22px; align-items: start; }
-  .cust-col .col-title {
-    margin: 0 0 8px; font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+  .cc-strip {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
   }
-  .cc-bar { display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: #eef2f7; margin-bottom: 10px; }
-  .cc-bar i { display: block; height: 100%; }
-  .cc-list { display: flex; flex-direction: column; gap: 0; }
-  .cc-row {
-    display: grid; grid-template-columns: 22px 52px 48px 1fr; gap: 8px;
-    align-items: center; padding: 7px 0; border-bottom: 1px solid #f1f5f9; font-size: 12.5px;
+  .cc-chip {
+    display: flex; align-items: center; gap: 10px;
+    background: #f8fafc; border: 1px solid #e8eef6; border-radius: 12px;
+    padding: 10px 14px; flex: 1 1 240px; min-width: 0;
   }
-  .cc-row:last-child { border-bottom: 0; }
-  .cc-row .flag { width: 22px; height: 22px; }
-  .cc-row .cc { font-weight: 800; }
-  .cc-row .pct { font-weight: 800; font-variant-numeric: tabular-nums; }
-  .cc-row .names { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .stat-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: 1px solid #e8eef6; }
-  .stat-pair .cell { padding: 8px 4px 2px; }
-  .stat-pair .cell + .cell { border-left: 1px solid #e8eef6; padding-left: 14px; }
-  .stat-pair .lab { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
-  .stat-pair b { display: block; font-size: 28px; letter-spacing: -.04em; line-height: 1.1; margin: 4px 0 2px; }
-  .stat-pair .delta { font-size: 11.5px; color: #64748b; }
-  @media (max-width: 900px) { .cust-head-row, .stat-pair { grid-template-columns: 1fr; } .stat-pair .cell + .cell { border-left: 0; padding-left: 4px; border-top: 1px solid #e8eef6; } }
+  .cc-chip .flag { width: 22px; height: 22px; flex: 0 0 22px; }
+  .cc-chip .who { min-width: 0; }
+  .cc-chip .who .cc { font-weight: 800; font-size: 13px; line-height: 1.15; }
+  .cc-chip .who .names { color: #64748b; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cc-chip b { font-size: 22px; letter-spacing: -.04em; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .cc-stat {
+    min-width: 86px; border: 1px solid #e8eef6; border-radius: 12px;
+    padding: 8px 14px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .cc-stat small { font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
+  .cc-stat b { font-size: 22px; letter-spacing: -.04em; line-height: 1.15; }
+  .cc-stat .delta { font-size: 11px; color: #64748b; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bu-cat-row { display: grid; grid-template-columns: .78fr 1.42fr; gap: 14px; margin-bottom: 14px; align-items: stretch; }
+  .bu-cat-row .bu-mosaic { grid-template-columns: 1fr 1fr; }
+  .bu-cat-row .bu-mosaic .cell { min-height: 78px; }
+  .bu-cat-row .cat-tree { min-height: 100%; }
+  @media (max-width: 1100px) {
+    .bu-cat-row { grid-template-columns: 1fr; }
+    .bu-cat-row .bu-mosaic { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .bu-cat-row .bu-mosaic { grid-template-columns: 1fr 1fr; }
+    .cc-stat { flex: 1 1 40%; }
+  }
   .cmp-chip {
     border: 1px solid var(--line); background: #fff; color: #334155;
     border-radius: 999px; padding: 7px 14px; font-weight: 650; margin: 0 6px 6px 0;
@@ -629,7 +638,7 @@
   }
 
   @media (max-width: 1180px) {
-    .kpis, .layout, .grid2, .donut-grid, .cust-bento, .map-desk { grid-template-columns: 1fr; }
+    .kpis, .layout, .grid2, .donut-grid, .cust-bento, .map-desk, .bu-cat-row { grid-template-columns: 1fr; }
     .cust-bento .span2 { grid-column: auto; }
     .fty-dash { grid-template-columns: 1fr 1fr; }
     .app { grid-template-columns: 1fr; }
@@ -2345,30 +2354,18 @@
       Canada: "<svg viewBox='0 0 36 36'><circle cx='18' cy='18' r='17' fill='#dc2626'/><path d='M18 9l1.4 4 4.2-.6-2.4 3.4 3.2 2.6-4.2-.2L18 22l-2.2-3.8-4.2.2 3.2-2.6-2.4-3.4 4.2.6z' fill='#fff'/></svg>",
       "Not mapped": "<svg viewBox='0 0 36 36'><circle cx='18' cy='18' r='17' fill='#475569'/><circle cx='18' cy='18' r='6' fill='none' stroke='#fff' stroke-width='2'/></svg>"
     };
-    var TINT = { USA: "#5B8DEF", UK: "#D96B6B", Canada: "#D96B6B", "Not mapped": "#94a3b8" };
-    var barHtml = countryOrder.filter(function (cc) { return byCountry[cc]; }).map(function (cc) {
-      var pct = (100 * byCountry[cc].n / custKeys.length).toFixed(1);
-      return "<i style='width:" + pct + "%;background:" + TINT[cc] + "' title='" + esc(cc) + "'></i>";
-    }).join("");
     var countryHtml = countryOrder.filter(function (cc) { return byCountry[cc]; }).map(function (cc) {
       var x = byCountry[cc];
-      var pct = Math.round(100 * x.n / custKeys.length);
-      return "<div class='cc-row'><div class='flag'>" + FLAG[cc] + "</div><div class='cc'>" + esc(cc) +
-        "</div><div class='pct'>" + pct + "%</div><div class='names'>" + x.n + " · " + esc(x.names.join(", ")) +
-        "</div></div>";
+      return "<div class='cc-chip'><div class='flag'>" + FLAG[cc] + "</div><div class='who'><div class='cc'>" +
+        esc(cc) + "</div><div class='names'>" + esc(x.names.join(" · ")) + "</div></div><b>" + x.n + "</b></div>";
     }).join("");
-    var inkHtml =
-      "<div class='stat-pair'><div class='cell'><div class='lab'>" + t("totalCust") + "</div><b>" + custKeys.length +
-      "</b><div class='delta'>" + newKeys.length + " " + t("newOf") + "</div></div>" +
-      "<div class='cell'><div class='lab'>" + t("newCust") + "</div><b>" + newKeys.length +
-      "</b><div class='delta'>" + esc(newKeys.join(", ") || "–") + "</div></div></div>";
-    return "<div class='card' style='margin-bottom:14px'><div class='pad' style='padding-top:14px'><div class='cust-head-row'>" +
-      "<div class='cust-col'><div class='col-title'>" + ico("customers") + " " + t("byCountry") +
-      "</div><div class='cc-bar'>" + barHtml + "</div><div class='cc-list'>" + countryHtml + "</div></div>" +
-      "<div class='cust-col'><div class='col-title'>" + ico("customers") + " " + t("navCustomers") +
-      "</div>" + inkHtml + "</div>" +
+    return "<div class='card' style='margin-bottom:14px'><h2>" + ico("customers") + " " + t("byCountry") +
+      "</h2><div class='pad'><div class='cc-strip'>" + countryHtml +
+      "<div class='cc-stat'><small>" + t("totalCust") + "</small><b>" + custKeys.length + "</b></div>" +
+      "<div class='cc-stat'><small>" + t("newCust") + "</small><b>" + newKeys.length +
+      "</b><div class='delta'>" + esc(newKeys.join(" · ") || "–") + "</div></div>" +
       "</div></div></div>" +
-      yearPurchaseBu() +
+      yearPurchaseBuCat() +
       "<div class='cust-bento'>" +
       yearPurchaseDonuts() +
       "<div class='card'><h2>" + ico("trend") + " " + t("hoByMonth") +
@@ -2383,19 +2380,22 @@
   function yearSpan() {
     return "2026 · " + money(yearPurchaseTotal());
   }
-  function yearPurchaseBu() {
+  function yearPurchaseBuCat() {
+    var span = yearSpan();
     var bu = groupPurchase(function (r) { return r.bu; });
-    return "<div class='card' style='margin-bottom:14px'><h2>" + ico("po") + " " + t("purchaseByBu") +
-      " <span>" + yearSpan() + "</span></h2><div class='pad'>" + spendMosaic(bu) + "</div></div>";
+    var cat = groupPurchase(function (r) { return r.cat; });
+    return "<div class='bu-cat-row'>" +
+      "<div class='card'><h2>" + ico("po") + " " + t("purchaseByBu") +
+      " <span>" + span + "</span></h2><div class='pad'>" + spendMosaic(bu) + "</div></div>" +
+      "<div class='card'><h2>" + ico("quality") + " " + t("purchaseByCat") +
+      " <span>" + span + "</span></h2><div class='pad'>" + spendCatTable(cat) + "</div></div>" +
+      "</div>";
   }
   function yearPurchaseDonuts() {
     var span = yearSpan();
     var cust = groupPurchase(function (r) { return r.client; });
-    var cat = groupPurchase(function (r) { return r.cat; });
     var fty = groupPurchase(function (r) { return r.fty; });
-    return "<div class='card span2'><h2>" + ico("quality") + " " + t("purchaseByCat") +
-      " <span>" + span + "</span></h2><div class='pad'>" + spendCatTable(cat) + "</div></div>" +
-      "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
+    return "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendShare(cust) + "</div></div>" +
       "<div class='card'><h2>" + ico("factories") + " " + t("purchaseByFty") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendLolli(fty) + "</div></div>";
