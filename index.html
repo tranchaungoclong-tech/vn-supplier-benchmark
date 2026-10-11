@@ -919,7 +919,7 @@
       poByMonth: "PO released by month",
       hoByMonth: "HO by month",
       purchaseByCat: "Total purchase by category",
-      purchaseByCust: "Total purchase by customer",
+      purchaseByCust: "Total amount by Customer",
       purchaseByFty: "Total purchase by factory",
       purchaseByBu: "Total purchase by BU",
       totalCust: "Total customers", newCust: "New customers",
@@ -1013,7 +1013,7 @@
       poByMonth: "每月下单 PO",
       hoByMonth: "每月 HO",
       purchaseByCat: "按品类采购合计",
-      purchaseByCust: "按客户采购合计",
+      purchaseByCust: "按客户金额合计",
       purchaseByFty: "按工厂采购合计",
       purchaseByBu: "按 BU 采购合计",
       totalCust: "客户总数", newCust: "新客户",
@@ -2430,22 +2430,23 @@
   }
   function yearPurchaseBuCat() {
     var span = yearSpan();
-    var bu = groupPurchase(function (r) { return r.bu; });
+    var BRIGHT = ["#3b82f6", "#22c55e", "#f59e0b", "#f43f5e", "#8b5cf6", "#06b6d4", "#84cc16", "#e11d48", "#0ea5e9", "#a855f7", "#14b8a6", "#f97316"];
+    var cust = groupPurchase(function (r) { return r.client; }).map(function (p, i) {
+      p.color = BRIGHT[i % BRIGHT.length];
+      return p;
+    });
     var cat = groupPurchase(function (r) { return r.cat; });
     return "<div class='bu-cat-row'>" +
-      "<div class='card'><h2>" + ico("po") + " " + t("purchaseByBu") +
-      " <span>" + span + "</span></h2><div class='pad'>" + spendDonut(bu, "2026") + "</div></div>" +
+      "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
+      " <span>" + span + "</span></h2><div class='pad'>" + spendDonut(cust, "2026") + "</div></div>" +
       "<div class='card'><h2>" + ico("quality") + " " + t("purchaseByCat") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendCatTable(cat) + "</div></div>" +
       "</div>";
   }
   function yearPurchaseDonuts() {
     var span = yearSpan();
-    var cust = groupPurchase(function (r) { return r.client; });
     var fty = groupPurchase(function (r) { return r.fty; });
-    return "<div class='card'><h2>" + ico("customers") + " " + t("purchaseByCust") +
-      " <span>" + span + "</span></h2><div class='pad'>" + spendShare(cust) + "</div></div>" +
-      "<div class='card'><h2>" + ico("factories") + " " + t("purchaseByFty") +
+    return "<div class='card span2'><h2>" + ico("factories") + " " + t("purchaseByFty") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendLolli(fty) + "</div></div>";
   }
 
