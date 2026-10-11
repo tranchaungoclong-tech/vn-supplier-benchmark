@@ -2380,14 +2380,10 @@
     var custRec = {};
     rows.forEach(function (o) {
       var k = o.endCustomer || o.customer || "?";
-      if (!custRec[k]) custRec[k] = { neu: 0, rep: 0, ho: {} };
-      var cat = o.orderCategory || "";
-      if (/new/i.test(cat)) custRec[k].neu++;
-      else if (/repeat/i.test(cat)) custRec[k].rep++;
+      if (!custRec[k]) custRec[k] = { ho: {} };
       if (o.ho) custRec[k].ho[o.ho] = 1;
     });
     var custKeys = Object.keys(custRec);
-    var newKeys = custKeys.filter(function (k) { return custRec[k].rep === 0; });
     var byCountry = {};
     custKeys.forEach(function (k) {
       var cc = COUNTRY[k] || "Not mapped";
@@ -2409,9 +2405,6 @@
     }).join("");
     return "<div class='card' style='margin-bottom:14px'><h2 style='padding:10px 14px 6px'>" + ico("customers") + " " + t("byCountry") +
       "</h2><div class='pad' style='padding:0 14px 12px'><div class='cc-strip'>" + countryHtml +
-      "<div class='cc-stat'><small>" + t("totalCust") + "</small><b>" + custKeys.length + "</b></div>" +
-      "<div class='cc-stat'><small>" + t("newCust") + "</small><b>" + newKeys.length +
-      "</b><div class='delta'>" + esc(newKeys.join(" · ") || "–") + "</div></div>" +
       "</div></div></div>" +
       yearPurchaseBuCat() +
       "<div class='cust-bento'>" +
