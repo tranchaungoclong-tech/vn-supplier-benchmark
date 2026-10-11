@@ -295,6 +295,30 @@
   .bu-cat-row .bu-mosaic { grid-template-columns: 1fr 1fr; }
   .bu-cat-row .bu-mosaic .cell { min-height: 78px; }
   .bu-cat-row .cat-tree { min-height: 100%; }
+  .bu-donut {
+    display: grid; grid-template-columns: 1fr 118px; gap: 10px; align-items: center;
+  }
+  .bu-donut .ring { position: relative; width: 100%; max-width: 240px; margin: 0 auto; }
+  .bu-donut .ring svg { width: 100%; height: auto; display: block; }
+  .bu-donut .hole {
+    position: absolute; inset: 28%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; pointer-events: none;
+  }
+  .bu-donut .hole b { font-size: 16px; letter-spacing: -.04em; line-height: 1.1; }
+  .bu-donut .hole small { font-size: 10.5px; color: #64748b; font-weight: 700; }
+  .bu-donut .leg { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .bu-donut .leg .row {
+    display: grid; grid-template-columns: 10px 1fr auto; gap: 6px; align-items: center;
+    font-size: 11.5px;
+  }
+  .bu-donut .leg i { width: 10px; height: 10px; border-radius: 50%; }
+  .bu-donut .leg .lab { font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bu-donut .leg .pct { color: #64748b; font-variant-numeric: tabular-nums; font-weight: 700; }
+  @media (max-width: 640px) {
+    .bu-donut { grid-template-columns: 1fr; }
+    .bu-donut .leg { flex-direction: row; flex-wrap: wrap; }
+    .bu-donut .leg .row { grid-template-columns: 10px auto auto; }
+  }
   @media (max-width: 1100px) {
     .bu-cat-row { grid-template-columns: 1fr; }
     .bu-cat-row .bu-mosaic { grid-template-columns: repeat(3, 1fr); }
@@ -1171,6 +1195,30 @@
         "<small>" + esc(p.label) + "</small><b>" + moneyShort(p.n) + "</b><em>" + pct + "%</em>" +
         "<div class='pct-bar'><i style='width:" + pct + "%'></i></div></div>";
     }).join("") + "</div>";
+  }
+  function spendDonut(parts, holeLabel) {
+    var tot = parts.reduce(function (a, p) { return a + p.n; }, 0) || 1;
+    var cx = 120, cy = 120, r = 78, sw = 34;
+    var c = 2 * Math.PI * r;
+    var acc = 0;
+    var arcs = parts.map(function (p) {
+      var frac = p.n / tot;
+      var dash = (frac * c).toFixed(2);
+      var gap = (c - frac * c).toFixed(2);
+      var rot = -90 + acc * 360;
+      acc += frac;
+      return "<circle cx='" + cx + "' cy='" + cy + "' r='" + r + "' fill='none' stroke='" + p.color +
+        "' stroke-width='" + sw + "' stroke-dasharray='" + dash + " " + gap +
+        "' transform='rotate(" + rot.toFixed(2) + " " + cx + " " + cy + ")'></circle>";
+    }).join("");
+    var legend = parts.map(function (p) {
+      var pct = Math.round(100 * p.n / tot);
+      return "<div class='row'><i style='background:" + p.color + "'></i><span class='lab'>" +
+        esc(p.label) + "</span><span class='pct'>" + pct + "%</span></div>";
+    }).join("");
+    return "<div class='bu-donut'><div class='ring'><svg viewBox='0 0 240 240'>" + arcs +
+      "</svg><div class='hole'><b>" + moneyShort(tot) + "</b><small>" + esc(holeLabel || "2026") +
+      "</small></div></div><div class='leg'>" + legend + "</div></div>";
   }
   var PATHS = {
     dash: '<rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/>',
@@ -2386,7 +2434,7 @@
     var cat = groupPurchase(function (r) { return r.cat; });
     return "<div class='bu-cat-row'>" +
       "<div class='card'><h2>" + ico("po") + " " + t("purchaseByBu") +
-      " <span>" + span + "</span></h2><div class='pad'>" + spendMosaic(bu) + "</div></div>" +
+      " <span>" + span + "</span></h2><div class='pad'>" + spendDonut(bu, "2026") + "</div></div>" +
       "<div class='card'><h2>" + ico("quality") + " " + t("purchaseByCat") +
       " <span>" + span + "</span></h2><div class='pad'>" + spendCatTable(cat) + "</div></div>" +
       "</div>";
