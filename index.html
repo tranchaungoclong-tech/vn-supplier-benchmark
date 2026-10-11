@@ -884,6 +884,7 @@
       colMonth: "Month", colHo: "HO", colLines: "Lines", colQty: "Qty (pcs)",
       factoryMaster: "Factory master",
       poByMonth: "PO released by month",
+      hoByMonth: "HO by month",
       purchaseByCat: "Total purchase by category",
       purchaseByCust: "Total purchase by customer",
       purchaseByFty: "Total purchase by factory",
@@ -977,6 +978,7 @@
       colMonth: "月份", colHo: "HO", colLines: "行数", colQty: "数量 (pcs)",
       factoryMaster: "工厂主档",
       poByMonth: "每月下单 PO",
+      hoByMonth: "每月 HO",
       purchaseByCat: "按品类采购合计",
       purchaseByCust: "按客户采购合计",
       purchaseByFty: "按工厂采购合计",
@@ -2278,8 +2280,8 @@
     var seen = {};
     var byMonth = {};
     rows.forEach(function (o) {
-      var k = (o.po || "") + "|" + (o.factoryCode || o.sheet || "");
-      if (!o.po || seen[k]) return;
+      var k = o.ho ? String(o.ho) : ("NOHO|" + (o.po || "") + "|" + (o.factoryCode || o.sheet || ""));
+      if (seen[k]) return;
       seen[k] = true;
       var mo = (o.customerDue || "").slice(0, 7) || "(none)";
       byMonth[mo] = (byMonth[mo] || 0) + 1;
@@ -2369,8 +2371,8 @@
       yearPurchaseBu() +
       "<div class='cust-bento'>" +
       yearPurchaseDonuts() +
-      "<div class='card'><h2>" + ico("trend") + " " + t("poByMonth") +
-      " <span>" + total + " PO</span></h2><div class='pad'>" + monthBars(parts) + "</div></div>" +
+      "<div class='card'><h2>" + ico("trend") + " " + t("hoByMonth") +
+      " <span>" + total + " HO</span></h2><div class='pad'>" + monthBars(parts) + "</div></div>" +
       "<div class='card'><h2>" + ico("customers") + " " + t("hoByCat") +
       " <span>" + catTotal + " HO</span></h2><div class='pad'><table class='grid'><thead><tr><th>" +
       t("colCat") + "</th><th>HO</th><th>" + t("colBuyer") + "</th></tr></thead><tbody>" +
