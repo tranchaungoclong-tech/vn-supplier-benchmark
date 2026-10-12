@@ -91,6 +91,7 @@
   .nav-ico.pink { background: #ec4899; }
   .nav-ico.teal { background: #14b8a6; }
   .nav-ico.indigo { background: #6366f1; }
+  .nav-ico.slate { background: #64748b; }
   .nav .sec { margin: 14px 8px 6px; font-size: 11px; color: #94a3b8; letter-spacing: .08em; text-transform: uppercase; }
   .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
   .ico-tile {
@@ -729,6 +730,7 @@
       <button data-view="costing"><span class="nav-ico teal solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/></svg></span> <span data-i18n="navCosting">Costing</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <button data-view="designer"><span class="nav-ico indigo solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/></svg></span> <span data-i18n="navDesigner">Designer</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <button data-view="quality"><span class="nav-ico green solid"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/></svg></span> <span data-i18n="navQuality">Quality library</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
+      <button data-view="presentation"><span class="nav-ico slate"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></span> <span data-i18n="navPresentation">Presentation</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <div class="sec" data-i18n="navBook">Book</div>
       <button data-view="orders"><span class="nav-ico sky"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span> <span data-i18n="navOrders">Order book</span></button>
       <button data-view="factories"><span class="nav-ico amber solid"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="10" width="4" height="10" rx="1"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
@@ -868,7 +870,7 @@
 
   var I18N = {
     en: {
-      navDash: "Dashboard", navMerch: "Merchandiser", navCosting: "Costing", navDesigner: "Designer", navQuality: "Quality library", navBook: "Book",
+      navDash: "Dashboard", navMerch: "Merchandiser", navCosting: "Costing", navDesigner: "Designer", navQuality: "Quality library", navPresentation: "Presentation", navBook: "Book",
       comingSoon: "Coming soon",
       navOrders: "Order book", navFactories: "Factories", navCustomers: "Customers",
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
@@ -950,19 +952,21 @@
       mapNote: "Pins = province he named 4 Oct. All 10 factories Vietnam. Same province (Binh Duong ×3) are offset so they do not sit on one dot.",
       costingNote: "SAMPLE. No costing Excel yet. Do not invent FOB / MOQ / $ from tracking 9-24.",
       designerNote: "SAMPLE. No artwork / spec pack file yet. Do not invent drawings from tracking 9-24.",
+      presentationNote: "Coming soon. No presentation pack yet. Do not invent slides from tracking 9-24.",
       titles: {
         dash: ["VN Supplier Benchmark", "VN-handled orders, customers, factories — numbers from ORDER TRACKING LIST 9-24."],
         merch: ["Merchandiser", "Factory master by category and customer book. Same 9-24 file."],
         costing: ["Costing", "SAMPLE until a costing Excel. Tracking 9-24 has no FOB / $."],
         designer: ["Designer", "SAMPLE until artwork / spec pack. Tracking 9-24 has no drawings."],
         quality: ["Quality library", "QA test + inspection plan cells from tracking — not the live QA Board sheet."],
+        presentation: ["Presentation", "Coming soon until a presentation pack is provided."],
         orders: ["Order book", "Every SKU / port split in the current filter."],
         factories: ["Factories", ""],
         customers: ["Customers", ""]
       }
     },
     zh: {
-      navDash: "仪表盘", navMerch: "跟单", navCosting: "核价", navDesigner: "设计", navQuality: "质量库", navBook: "台账",
+      navDash: "仪表盘", navMerch: "跟单", navCosting: "核价", navDesigner: "设计", navQuality: "质量库", navPresentation: "演示", navBook: "台账",
       comingSoon: "即将上线",
       navOrders: "订单台账", navFactories: "工厂", navCustomers: "客户",
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
@@ -1044,12 +1048,14 @@
       mapNote: "针脚 = 4 Oct 他给的省份。10 家工厂都在越南。同省（平阳 ×3）错开，避免叠点。",
       costingNote: "SAMPLE。还没有核价 Excel。不要从 tracking 9-24 编 FOB / MOQ / $。",
       designerNote: "SAMPLE。还没有图纸 / spec pack。不要从 tracking 9-24 编图。",
+      presentationNote: "即将上线。还没有演示包。不要从 tracking 9-24 编幻灯片。",
       titles: {
         dash: ["VN Supplier Benchmark", "越南跟进的订单 / 客户 / 工厂 — 数字仅来自 ORDER TRACKING LIST 9-24。"],
         merch: ["跟单", "按品类的工厂主档和客户台账。同一份 9-24 文件。"],
         costing: ["核价", "SAMPLE，等核价 Excel。tracking 9-24 没有 FOB / $。"],
         designer: ["设计", "SAMPLE，等图纸 / spec pack。tracking 9-24 没有图。"],
         quality: ["质量库", "跟踪表里的 QA / 验货单元格 — 不是线上 QA Board。"],
+        presentation: ["演示", "即将上线，等演示包。"],
         orders: ["订单台账", "当前筛选下的每一行 SKU / 港口。"],
         factories: ["工厂", ""],
         customers: ["客户", ""]
@@ -1236,7 +1242,8 @@
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
     inspect: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     costing: '<path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/>',
-    designer: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/>'
+    designer: '<path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/>',
+    presentation: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>'
   };
   function soHtml(v) {
     if (v == null || v === "") return "–";
@@ -2685,7 +2692,7 @@
     var titles = (I18N[lang] && I18N[lang].titles) || I18N.en.titles;
     var pack = titles[view] || titles.dash || [view, ""];
     var icoName = PATHS[view] ? view : "dash";
-    var tint = view === "costing" ? "green" : view === "designer" ? "violet" : view === "quality" ? "green" : view === "factories" ? "amber" : view === "customers" ? "rose" : "blue";
+    var tint = view === "costing" ? "green" : view === "designer" ? "violet" : view === "quality" ? "green" : view === "presentation" ? "amber" : view === "factories" ? "amber" : view === "customers" ? "rose" : "blue";
     var sub = pack[1] ? "<p>" + esc(pack[1]) + "</p>" : "";
     var asof = view === "customers"
       ? "<button type='button' class='btn cmp' id='cmpBtn'>" + t("cmpBtn") + "</button>"
@@ -2697,7 +2704,7 @@
   function sampleDesk(kind) {
     var titles = (I18N[lang] && I18N[lang].titles) || I18N.en.titles;
     var pack = titles[kind] || [kind, ""];
-    var note = t(kind === "designer" ? "designerNote" : "costingNote");
+    var note = t(kind === "designer" ? "designerNote" : kind === "presentation" ? "presentationNote" : "costingNote");
     return "<div class='card'><h2>" + ico(kind) + " " + esc(pack[0]) +
       " <span>SAMPLE</span></h2><div class='pad'><p class='sub' style='margin:0 0 10px'>" +
       esc(pack[1]) + "</p><p class='empty' style='padding:12px 0'>" + esc(note) + "</p></div></div>";
@@ -2758,6 +2765,7 @@
     else if (view === "merch") html = merchDesk(rows, s);
     else if (view === "costing") html = sampleDesk("costing");
     else if (view === "designer") html = sampleDesk("designer");
+    else if (view === "presentation") html = sampleDesk("presentation");
     else if (view === "quality") html = quality(rows, s);
     else if (view === "orders") html = kpiRow(s) + tableCard(rows, s, "page");
     else if (view === "factories") html = factoriesView(rows, s);
