@@ -526,7 +526,7 @@
     var jobs = [];
     for (var p = 1; p <= doc.numPages; p++) {
       var page = await doc.getPage(p);
-      var vp = page.getViewport({ scale: 1.35 });
+      var vp = page.getViewport({ scale: 1.15 });
       var canvas = document.createElement("canvas");
       canvas.width = vp.width;
       canvas.height = vp.height;
@@ -542,9 +542,9 @@
         labels: labels
       });
     }
-    for (var i = 0; i < jobs.length; i += 2) {
-      var pair = jobs.slice(i, i + 2).map(function (j) { return explodeIntoPhotos(j.photo, j.labels); });
-      await Promise.all(pair);
+    for (var i = 0; i < jobs.length; i += 3) {
+      var batch = jobs.slice(i, i + 3).map(function (j) { return explodeIntoPhotos(j.photo, j.labels); });
+      await Promise.all(batch);
     }
   }
 
@@ -992,8 +992,8 @@
     try {
       setPipe(2, "run");
       setStatus("Agent looking at the page…");
-      var small = shrinkCanvas(canvas, 900);
-      var payload = JSON.stringify({ image: small.toDataURL("image/jpeg", 0.58) });
+      var small = shrinkCanvas(canvas, 720);
+      var payload = JSON.stringify({ image: small.toDataURL("image/jpeg", 0.5) });
       var r = await fetch(VISION_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -1277,7 +1277,6 @@
     var pixelBoxes = findObjectBoxes(data, w, h, work);
     var agentCut = await detectVisionCut(canvas, work);
     var aiBoxes = [];
-    if (agentCut && agentCut.kind === "lifestyle") return [];
     if (agentCut && agentCut.boxes && agentCut.boxes.length) aiBoxes = agentCut.boxes;
     else aiBoxes = await detectCocoBoxes(canvas, work);
     if (agentCut && agentCut.kind === "catalog" && aiBoxes.length >= 2) {
