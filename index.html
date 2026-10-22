@@ -131,9 +131,16 @@
   .h1-row { display: flex; align-items: center; gap: 10px; }
   .h1-row .ico-tile { width: 40px; height: 40px; border-radius: 12px; }
   .h1-row .ico-tile svg { width: 20px; height: 20px; }
+  .page-num {
+    width: 40px; height: 40px; border-radius: 50%; flex: 0 0 auto;
+    display: grid; place-items: center;
+    background: #3b82f6; color: #fff;
+    font-size: 13px; font-weight: 800; letter-spacing: .04em;
+  }
   .page-head { margin: 0 0 14px; }
   .page-head.h1-row { justify-content: flex-start; }
   .page-head h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
+  .page-head.pres-head h1 { font-size: 18px; font-weight: 800; }
   .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   .page-head .asof { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
   .page-head .btn.cmp {
@@ -141,6 +148,10 @@
     font-weight: 750; box-shadow: 0 8px 18px rgba(195,61,39,.28);
   }
   .page-head .btn.cmp:hover { background: #a83220; border-color: #a83220; }
+  .import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .btn.import { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 700; cursor: pointer; }
+  .btn.import:hover { background: #1d4ed8; }
+  .import-note { color: var(--muted); font-size: 12px; }
   .card h2 .ico { color: var(--blue-deep); margin-right: 2px; }
 
   .main { min-width: 0; }
@@ -649,15 +660,58 @@
   }
   .pres-stage {
     background: #fff; border: 1.5px solid var(--line); border-radius: 16px;
-    padding: 14px; min-height: 168px;
+    padding: 14px; min-height: 0;
   }
   .pres-stage.red { border-color: #e8b4aa; }
   .pres-stage.green { border-color: #b7d4c4; }
   .pres-stage.blue { border-color: #bfdbfe; }
   .pres-stage h3 {
+    display: flex; align-items: center; gap: 8px;
     margin: 0 0 10px; font-size: 11.5px; letter-spacing: .1em;
     text-transform: uppercase; color: #64748b; font-weight: 800;
   }
+  .pres-step {
+    display: inline-grid; place-items: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #fff; box-shadow: 0 2px 6px rgba(15,23,42,.14);
+    flex: 0 0 26px;
+  }
+  .pres-step b {
+    width: 20px; height: 20px; border-radius: 50%;
+    display: grid; place-items: center;
+    color: #fff; font-size: 10px; font-weight: 800;
+  }
+  .pres-step.n1 b { background: #3b82f6; }
+  .pres-step.n2 b { background: #22c55e; }
+  .pres-step.n3 b { background: #f59e0b; }
+  .crop-note { grid-column: 1 / -1; margin: 0 0 4px; color: #64748b; font-size: 12.5px; }
+  .crop-card {
+    background: #fff; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden;
+  }
+  .crop-stage {
+    position: relative; aspect-ratio: 16 / 9; background: #111; overflow: hidden; user-select: none;
+  }
+  .crop-stage img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+  .crop-box {
+    position: absolute; border: 2px solid #C33D27; box-shadow: 0 0 0 9999px rgba(0,0,0,.38);
+    cursor: move;
+  }
+  .crop-h {
+    position: absolute; width: 14px; height: 14px; background: #C33D27;
+    border: 2px solid #fff; border-radius: 2px; box-sizing: border-box;
+  }
+  .crop-h.nw { left: -7px; top: -7px; cursor: nwse-resize; }
+  .crop-h.ne { right: -7px; top: -7px; cursor: nesw-resize; }
+  .crop-h.sw { left: -7px; bottom: -7px; cursor: nesw-resize; }
+  .crop-h.se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+  .crop-card .cap { padding: 8px 10px; font-size: 11.5px; color: #64748b; }
+  .wm-preview {
+    position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none;
+  }
+  .wm-preview b {
+    font-size: 42px; letter-spacing: .12em; color: rgba(195,61,39,.38); font-weight: 800;
+  }
+  .grid-hint { font-size: 11.5px; color: #64748b; margin-top: 4px; min-height: 1.2em; }
   .pres-arrow { display: grid; place-items: center; color: #C33D27; font-size: 20px; font-weight: 800; }
   .pres-drop {
     border: 1.5px dashed #cbd5e1; border-radius: 12px; background: #f8fafc;
@@ -695,6 +749,78 @@
   .pres-status { font-size: 12.5px; color: #64748b; margin-top: 8px; min-height: 1.2em; }
   .pres-status.err { color: #C33D27; }
   .pres-status.ok { color: #047857; }
+  .pres-langs { display: flex; gap: 12px; font-size: 12.5px; }
+  .pres-langs label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .pipe {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    background: #fff; border: 1px solid var(--line);
+    border-radius: 10px; padding: 8px 10px; margin: 8px 0 0;
+  }
+  .pipe h4 {
+    grid-column: 1 / -1; margin: 0 0 2px;
+    color: #334155; font-size: 11.5px; font-weight: 800;
+  }
+  .pipe-row {
+    display: flex; align-items: center; gap: 7px;
+    background: #f8fafc; color: #334155;
+    border: 1px solid var(--line);
+    border-radius: 8px; padding: 5px 8px;
+    font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pipe-row.off { opacity: .45; }
+  .pipe-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #cbd5e1; flex: 0 0 10px;
+  }
+  .pipe-row.on .pipe-dot { background: #22c55e; }
+  .pipe-row.run .pipe-dot { animation: pipeBlink .7s linear infinite; }
+  @keyframes pipeBlink {
+    0% { background: #22c55e; }
+    25% { background: #ef4444; }
+    50% { background: #a855f7; }
+    75% { background: #f59e0b; }
+    100% { background: #22c55e; }
+  }
+  .pres-cond.two {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; align-items: start;
+  }
+  .pres-cond.two .span2 { grid-column: 1 / -1; }
+  .pres-cond.two label { margin: 0 0 4px; }
+  .pres-mini { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .pres-mini button {
+    border: 0; cursor: pointer; border-radius: 8px; padding: 8px 6px;
+    background: #eef2f7; color: #334155; font: inherit; font-weight: 700; font-size: 12px;
+  }
+  .pres-mini button:hover { background: #e2e8f0; }
+  .pres-preview { margin-top: 10px; }
+  .pres-preview .pad { padding: 10px 12px 12px; }
+  .pres-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .pres-meta input {
+    width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 8px;
+    padding: 7px 10px; font: inherit;
+  }
+  .pres-minis {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px;
+  }
+  .mini {
+    background: #fff; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden;
+    cursor: grab;
+  }
+  .mini.off { opacity: .38; }
+  .mini.over { border-color: #C33D27; }
+  .mini img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #f8fafc; display: block; }
+  .mini-bar { display: flex; align-items: center; gap: 4px; padding: 4px 6px 6px; }
+  .mini-bar input[type=checkbox] { accent-color: #C33D27; }
+  .mini-bar input[type=text] {
+    flex: 1; min-width: 0; border: 0; background: transparent; font-size: 11px; padding: 0;
+  }
+  .mini-bar .drag { color: #94a3b8; font-size: 12px; cursor: grab; }
+  .pres-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+  .pres-chips .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: 999px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
+  .pres-chips .chip.on { background: #C33D27; color: #fff; border-color: #C33D27; }
   .pres-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
   .pres-thumbs .thumb {
     width: auto; height: auto; aspect-ratio: 16 / 9; border-radius: 10px;
@@ -710,6 +836,77 @@
     .pres-flow { grid-template-columns: 1fr; }
     .pres-arrow { transform: rotate(90deg); height: 24px; }
   }
+  .studio-board {
+    display: grid; grid-template-columns: 1.05fr 1fr; gap: 14px; margin-bottom: 14px;
+  }
+  .studio-zone {
+    background: #fffdf8; border: 1.5px solid #e6d8c6; border-radius: 16px; padding: 14px 16px;
+    min-height: 220px;
+  }
+  .studio-zone h3 {
+    margin: 0 0 12px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: #864; font-weight: 800; display: flex; align-items: center; gap: 8px;
+  }
+  .studio-n {
+    width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    color: #fff; font-size: 11px; font-weight: 800;
+  }
+  .studio-n.n1 { background: #3b82f6; }
+  .studio-n.n2 { background: #22c55e; }
+  .studio-n.n3 { background: #f59e0b; }
+  .studio-n.n4 { background: #C33D27; }
+  .studio-zone .fld { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; margin-bottom: 8px; }
+  .studio-zone .tiny { color: #864; font-size: 11.5px; }
+  .studio-zone select, .studio-zone input[type=text] {
+    width: 100%; border: 1px solid #e6d8c6; background: #fff; border-radius: 8px;
+    padding: 7px 10px; font: inherit; color: inherit;
+  }
+  .studio-zone .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .studio-zone .langs { display: flex; gap: 12px; font-size: 13px; margin: 4px 0 10px; }
+  .studio-zone .langs label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .studio-zone .ghost, .studio-zone .sub {
+    border: 0; cursor: pointer; border-radius: 10px; font: inherit; font-weight: 700;
+  }
+  .studio-zone .ghost { background: #f3ebe0; color: #3a2a1c; padding: 8px 12px; font-size: 13px; }
+  .studio-zone .sub { background: #efe6d8; color: #3a2a1c; padding: 8px 10px; font-size: 13px; width: 100%; }
+  .studio-zone .drop {
+    border: 1.5px dashed #cbb8a4; border-radius: 12px; background: #fbf6ee;
+    min-height: 84px; padding: 12px; cursor: pointer;
+    display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  }
+  .studio-zone .drop:hover, .studio-zone .drop.on { border-color: #C33D27; background: #fff4ef; }
+  .studio-zone .drop b { font-size: 14px; }
+  .studio-zone .drop span { color: #864; font-size: 12.5px; }
+  .studio-zone input[type=file] { display: none; }
+  .studio-zone .files { margin-top: 8px; }
+  .studio-zone .files .row {
+    display: flex; justify-content: space-between; gap: 8px;
+    font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid #f0e6d8;
+  }
+  .studio-zone .files .row button { border: 0; background: none; color: #C33D27; cursor: pointer; font-weight: 700; }
+  .studio-zone .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .studio-zone .chip {
+    border: 1px solid #e6d8c6; background: #fff; border-radius: 999px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
+  .studio-zone .chip.on { background: #C33D27; color: #fff; border-color: #C33D27; }
+  .studio-zone .checks { display: grid; gap: 6px; font-size: 13.5px; }
+  .studio-zone .checks label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .studio-zone .plist { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow: auto; }
+  .studio-zone .pcard {
+    display: grid; grid-template-columns: 18px 72px 1fr auto; gap: 8px; align-items: center;
+    border: 1px solid #e6d8c6; border-radius: 10px; padding: 6px; background: #fff;
+  }
+  .studio-zone .pcard img { width: 72px; height: 48px; object-fit: contain; background: #f3ebe0; border-radius: 6px; }
+  .studio-zone .pcard input[type=text] { padding: 4px 6px; font-size: 12px; }
+  .studio-zone .pcard .drag { cursor: grab; color: #864; font-size: 14px; }
+  .studio-zone .soon { font-size: 11.5px; color: #864; background: #f6eee3; border-radius: 8px; padding: 8px 10px; }
+  .studio-zone .issues { font-size: 12.5px; margin: 8px 0; color: #886644; }
+  .studio-zone .issues b.ok { color: #4e9a78; }
+  .studio-zone .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .studio-zone .hist { font-size: 12px; color: #864; margin-top: 8px; }
+  .studio-zone .preview-col { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow: auto; }
+  @media (max-width: 980px) { .studio-board { grid-template-columns: 1fr; } }
   .thumb {
     width: 44px; height: 44px; border-radius: 8px; object-fit: cover; display: block;
     background: #f1f5f9; border: 1px solid var(--line); cursor: zoom-in;
@@ -793,15 +990,15 @@
     </div>
     <nav class="nav">
       <button class="active" data-view="dash"><span class="nav-ico blue solid"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span> <span data-i18n="navDash">Dashboard</span></button>
+      <div class="sec" data-i18n="navBook">Book</div>
+      <button data-view="orders"><span class="nav-ico sky"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span> <span data-i18n="navOrders">Order book</span></button>
+      <button data-view="factories"><span class="nav-ico amber solid"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="10" width="4" height="10" rx="1"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
+      <button data-view="customers"><span class="nav-ico rose"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
       <button data-view="merch"><span class="nav-ico violet"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 10h8M8 14h5"/></svg></span> <span data-i18n="navMerch">Merchandiser</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <button data-view="costing"><span class="nav-ico teal solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 3h8v2.2H8V5zm0 5h2.2v2.2H8V10zm4 0h2.2v2.2H12V10zm4 0h2.2v2.2H16V10zM8 14.2h2.2v2.2H8v-2.2zm4 0h8v2.2h-8v-2.2z"/></svg></span> <span data-i18n="navCosting">Costing</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <button data-view="designer"><span class="nav-ico indigo solid"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2a10 10 0 1 0 7 17.3c1 .1 1.6-.9.8-1.7-.9-.9-.2-2.4 1-2.4h.2A10 10 0 0 0 12 2zM8.2 9.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM12 7.3A1.15 1.15 0 1 0 12 5a1.15 1.15 0 0 0 0 2.3zm3.6 2.2a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3zM9.4 13.6a1.15 1.15 0 1 0 0-2.3 1.15 1.15 0 0 0 0 2.3z"/></svg></span> <span data-i18n="navDesigner">Designer</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <button data-view="quality"><span class="nav-ico green solid"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.4 7.7 7 9 3.6-1.3 7-4 7-9V6l-7-3z"/></svg></span> <span data-i18n="navQuality">Quality library</span> <span class="soon" data-i18n="comingSoon">Coming soon</span></button>
       <button data-view="presentation"><span class="nav-ico slate"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></span> <span data-i18n="navPresentation">Presentation</span></button>
-      <div class="sec" data-i18n="navBook">Book</div>
-      <button data-view="orders"><span class="nav-ico sky"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span> <span data-i18n="navOrders">Order book</span></button>
-      <button data-view="factories"><span class="nav-ico amber solid"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="10" width="4" height="10" rx="1"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
-      <button data-view="customers"><span class="nav-ico rose"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
     </nav>
   </aside>
 
@@ -845,7 +1042,7 @@
           <button class="act" type="button" data-jump="orders"><span class="act-ico violet"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span> <span data-i18n="actOrders">Order book</span></button>
           <button class="act" type="button" data-jump="factories"><span class="act-ico sky"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l5 3V10l5 3V5l6 3v13"/><path d="M9 21v-4M15 21v-4"/></svg></span> <span data-i18n="navFactories">Factories</span></button>
           <button class="act" type="button" data-jump="customers"><span class="act-ico pink"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span data-i18n="navCustomers">Customers</span></button>
-          <button class="act" type="button" id="btnMap"><span class="act-ico slate"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></span> Map</button>
+          <button class="act" type="button" id="btnMap"><span class="act-ico slate"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15M15 6v15"/></svg></span> <span data-i18n="actMap">Map</span></button>
           <button class="act" type="button" id="btnExport"><span class="act-ico blue"><svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/></svg></span> <span data-i18n="actExport">Export Excel</span></button>
         </div>
       </div>
@@ -896,6 +1093,7 @@
   </div>
 </div>
 
+<script src="vendor/exceljs.min.js"></script>
 <script src="vendor/leaflet.js"></script>
 <script src="asia.js"></script>
 <script src="orders.js"></script>
@@ -903,7 +1101,7 @@
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/pptxgen.bundle.js"></script>
-<script src="proposal-app.js"></script>
+<script src="proposal-app.js?v=v077f"></script>
 <script>
 (function () {
   var DATA = window.ORDERS;
@@ -945,7 +1143,7 @@
       comingSoon: "Coming soon",
       navOrders: "Order book", navFactories: "Factories", navCustomers: "Customers",
       asOf: "as of", search: "Search PO, factory, customer, SKU…",
-      actHome: "Home", actOrders: "Order book", actExport: "Export Excel", actQuality: "Quality", actMerch: "Merchandiser", actCosting: "Costing", actDesigner: "Designer",
+      actHome: "Home", actOrders: "Order book", actExport: "Export Excel", actQuality: "Quality", actMerch: "Merchandiser", actCosting: "Costing", actDesigner: "Designer", actMap: "Map",
       allFactories: "All factories", allCustomers: "All customers", allCategories: "All categories",
       allLocations: "All locations", locVN: "Vietnam", locKH: "Cambodia", locTH: "Thailand",
       allPeriods: "All periods",
@@ -965,6 +1163,27 @@
       delayMix: "Upcoming", catMix: "Category", custMix: "Customers", ftyFilter: "Factories in filter",
       tapHint: "Tap a row",
       ship7: "1–7 days", ship14: "8–14 days", ship21: "15–21 days", ship30: "22–30 days",
+      colPoItem: "PO / item", colCustomer: "Customer", colCustDue: "Cust. due", colSo: "SO cfm", colQty: "Qty", colItem: "Item",
+      dueVs: "customer due vs", linesWord: "lines", noHoWin: "No HO in this window.", noHoFilter: "No HO in this filter.",
+      poShip: "PO / ship", oneHo: "One HO can have several PO and due dates.",
+      shipDate: "ship date", pcs: "pcs",
+      notDueYet: "Not due yet", dueToday: "Due today", dLate: "d late",
+      countryMissing: "country not reported", notReportedCtry: "not reported", notMapped: "Not mapped",
+      datedOther: "Dated / other",
+      hoKpiNote: "Current filter · tracking 9-24. One HO can have several PO. Big number is HO, not PO.",
+      spendEmpty: "Total / Total qty empty in ORDER TRACKING LIST 9-24. $ not reported — not 0.",
+      catKpiNote: "categories · HO count · tracking 9-24. Tap a row for HO.",
+      ftyKpiNote: "factories · tracking 9-24. Tap a row for HO.",
+      delayBarNote: "Lines vs customer due", tapBar: "Tap a bar for the PO list. Factory delivery time is not used.",
+      custBarNote: "Distinct HO per customer · tracking 9-24. Tap a bar for the HO list. Not lines, not PO.",
+      ftyChipNote: "Distinct HO per factory · tracking 9-24. Tap a chip for HO / PO / ship dates. Not lines.",
+      noEarly: "No ship-early date in tracking.",
+      monthSpend: "$ not reported — HO count for this order month.",
+      mapFactories: "factory", mapProvinces: "provinces", mapUnpinned: "factory not pinned",
+      mapLegend: "bar = HO · pin colour = factory",
+      importNone: "No PO / HO rows in", importFail: "Cannot read", importReading: "Reading",
+      exportFail: "Excel export failed. Stay on this page and try again.",
+      sideNorth: "North", sideMiddle: "Middle", sideSouth: "South",
       qtyMonth: "Order qty by month", pcsNot: "pcs — not $",
       hoMonth: "Total HO per month", hoNote: "Distinct HO · Customer delivery time · tracking 9-24. Not $. Jan–Dec always shown. Empty month = 0.",
       purchaseValue: "Monthly Purchase Value",
@@ -1024,13 +1243,25 @@
       costingNote: "SAMPLE. No costing Excel yet. Do not invent FOB / MOQ / $ from tracking 9-24.",
       designerNote: "SAMPLE. No artwork / spec pack file yet. Do not invent drawings from tracking 9-24.",
       presentationNote: "Drop a factory PDF / PPT. Photos are fitted into an Alpha 16:9 PPT you can send the customer.",
+      pipeTitle: "Working",
+      pipe1: "Read photo",
+      pipe2: "Cut SKU / size / $",
+      pipe3: "Group by category",
+      pipe4: "Build PPT",
+      pipeWait: "Drop a factory PDF / PPT first.",
+      pipeOff: "AI reader off. Open 4181 on this PC.",
+      expPdf: "PDF",
+      expPng: "Pages",
+      expLink: "Link",
+      contactPh: "Last page · Alpha contact / QR",
+      previewHint: "Tick off · drag to reorder · edit factory / customer / season here.",
       titles: {
-        dash: ["VN Supplier Benchmark", "VN-handled orders, customers, factories — numbers from ORDER TRACKING LIST 9-24."],
+        dash: ["VN Supplier Benchmark", ""],
         merch: ["Merchandiser", "Factory master by category and customer book. Same 9-24 file."],
         costing: ["Costing", "SAMPLE until a costing Excel. Tracking 9-24 has no FOB / $."],
         designer: ["Designer", "SAMPLE until artwork / spec pack. Tracking 9-24 has no drawings."],
         quality: ["Quality library", "QA test + inspection plan cells from tracking — not the live QA Board sheet."],
-        presentation: ["Presentation", "Factory proposal in → customer PPT out. Photos from the factory file, sized to Alpha slides."],
+        presentation: ["Presentation - Factory proposal in → customer PPT", ""],
         orders: ["Order book", "Every SKU / port split in the current filter."],
         factories: ["Factories", ""],
         customers: ["Customers", ""]
@@ -1041,7 +1272,7 @@
       comingSoon: "即将上线",
       navOrders: "订单台账", navFactories: "工厂", navCustomers: "客户",
       asOf: "截至", search: "搜索 PO / 工厂 / 客户 / 货号…",
-      actHome: "首页", actOrders: "订单台账", actExport: "导出 Excel", actQuality: "质量", actMerch: "跟单", actCosting: "核价", actDesigner: "设计",
+      actHome: "首页", actOrders: "订单台账", actExport: "导出 Excel", actQuality: "质量", actMerch: "跟单", actCosting: "核价", actDesigner: "设计", actMap: "地图",
       allFactories: "全部工厂", allCustomers: "全部客户", allCategories: "全部品类",
       allLocations: "全部地点", locVN: "越南", locKH: "柬埔寨", locTH: "泰国",
       allPeriods: "全部期间",
@@ -1061,24 +1292,45 @@
       delayMix: "即将出货", catMix: "品类", custMix: "客户", ftyFilter: "筛选内工厂",
       tapHint: "点一行查看",
       ship7: "1–7 天", ship14: "8–14 天", ship21: "15–21 天", ship30: "22–30 天",
+      colPoItem: "PO / 货号", colCustomer: "客户", colCustDue: "客户交期", colSo: "SO 确认", colQty: "数量", colItem: "货号",
+      dueVs: "客户交期对比", linesWord: "行", noHoWin: "这个窗口没有 HO。", noHoFilter: "当前筛选没有 HO。",
+      poShip: "PO / 出货", oneHo: "一个 HO 可以有多个 PO 和交期。",
+      shipDate: "个出货日", pcs: "件",
+      notDueYet: "未到期", dueToday: "今天到期", dLate: "天逾期",
+      countryMissing: "国家未报", notReportedCtry: "未报", notMapped: "未归类",
+      datedOther: "已排期 / 其他",
+      hoKpiNote: "当前筛选 · tracking 9-24。一个 HO 可有多个 PO。大数字是 HO，不是 PO。",
+      spendEmpty: "跟踪表 Total / Total qty 为空。金额未报 — 不是 0。",
+      catKpiNote: "个品类 · HO 数 · tracking 9-24。点一行看 HO。",
+      ftyKpiNote: "家工厂 · tracking 9-24。点一行看 HO。",
+      delayBarNote: "行数对比客户交期", tapBar: "点色条看 PO。不用工厂交期。",
+      custBarNote: "每客户去重 HO · tracking 9-24。点色条看 HO。不是行，不是 PO。",
+      ftyChipNote: "每工厂去重 HO · tracking 9-24。点色块看 HO / PO / 交期。不是行。",
+      noEarly: "跟踪表没有实际出货日。",
+      monthSpend: "金额未报 — 这个下单月的 HO 数。",
+      mapFactories: "家工厂", mapProvinces: "个省", mapUnpinned: "家工厂未钉点",
+      mapLegend: "条 = HO · 针颜色 = 工厂",
+      importNone: "没有 PO / HO 行：", importFail: "读不了", importReading: "正在读",
+      exportFail: "导出 Excel 失败。留在这页再试一次。",
+      sideNorth: "北部", sideMiddle: "中部", sideSouth: "南部",
       qtyMonth: "月订货数量", pcsNot: "件数 — 不是金额",
       hoMonth: "每月 HO 总数", hoNote: "按客户交期去重 HO · tracking 9-24。不是金额。1–12 月都显示。空月 = 0。",
-      purchaseValue: "Monthly Purchase Value",
+      purchaseValue: "月采购额",
       purchaseNote: "跟踪表无金额。一张图：按工厂叠 HO × 客户交期月。空月 = 0。点色块看该厂该月 HO。",
       purchaseUnit: "HO",
       purchaseY: "HO",
-      deliveryTime: "Delivery Time",
+      deliveryTime: "交期",
       deliveryNote: "对比客户交期。On time = 未到期。Late = 已过客户交期。本表无实际出货日 — 没有 Early。按 HO 去重。点色块看该厂。",
       dOnTime: "未到期",
       dLate: "逾期",
       dNoDue: "无交期",
-      defectTitle: "Supplier Defect Rate & Defect Type",
+      defectTitle: "供应商不良率及不良类型",
       defectNote: "仅示意版式。不是跟踪表数字。等单独的不良 Excel（月 / 季 / 年）。这些 % 不是实绩。",
-      dRejected: "Rejected",
-      dImpact: "Impact",
-      dNoImpact: "No impact",
+      dRejected: "拒收",
+      dImpact: "影响",
+      dNoImpact: "无影响",
       defectRate: "不良率",
-      qualityPerf: "Quality Performance",
+      qualityPerf: "质量表现",
       qpComplaints: "投诉 (示意)",
       qpLate: "逾期交期",
       qpAvg: "平均不良 (示意)",
@@ -1120,13 +1372,25 @@
       costingNote: "SAMPLE。还没有核价 Excel。不要从 tracking 9-24 编 FOB / MOQ / $。",
       designerNote: "SAMPLE。还没有图纸 / spec pack。不要从 tracking 9-24 编图。",
       presentationNote: "放入工厂 PDF / PPT。照片套进 Alpha 16:9 PPT，发给客户。",
+      pipeTitle: "处理中",
+      pipe1: "读图",
+      pipe2: "裁切 SKU / 尺寸 / 价",
+      pipe3: "按品类分组",
+      pipe4: "生成 PPT",
+      pipeWait: "先放入工厂 PDF / PPT。",
+      pipeOff: "本机 AI 未开。先开 4181。",
+      expPdf: "PDF",
+      expPng: "分页图",
+      expLink: "链接",
+      contactPh: "末页 · Alpha 联系 / QR",
+      previewHint: "取消勾选 · 拖动换位 · 在此改工厂 / 客户 / 季节。",
       titles: {
-        dash: ["VN Supplier Benchmark", "越南跟进的订单 / 客户 / 工厂 — 数字仅来自 ORDER TRACKING LIST 9-24。"],
+        dash: ["VN Supplier Benchmark", ""],
         merch: ["跟单", "按品类的工厂主档和客户台账。同一份 9-24 文件。"],
         costing: ["核价", "SAMPLE，等核价 Excel。tracking 9-24 没有 FOB / $。"],
         designer: ["设计", "SAMPLE，等图纸 / spec pack。tracking 9-24 没有图。"],
         quality: ["质量库", "跟踪表里的 QA / 验货单元格 — 不是线上 QA Board。"],
-        presentation: ["演示", "工厂提案进 → 客户 PPT 出。照片来自工厂文件，套进 Alpha 页。"],
+        presentation: ["演示 - 工厂提案进 → 客户 PPT", ""],
         orders: ["订单台账", "当前筛选下的每一行 SKU / 港口。"],
         factories: ["工厂", ""],
         customers: ["客户", ""]
@@ -1344,11 +1608,11 @@
     var hos = {};
     list.forEach(function (o) { if (o.ho) hos[o.ho] = true; });
     title.textContent = t(key === "d7" ? "ship7" : key === "d14" ? "ship14" : key === "d21" ? "ship21" : "ship30");
-    sub.textContent = Object.keys(hos).length + " HO · " + list.length + " lines · customer due vs " + AS;
+    sub.textContent = Object.keys(hos).length + " HO · " + list.length + " " + t("linesWord") + " · " + t("dueVs") + " " + AS;
     if (!list.length) {
-      body.innerHTML = "<p class='empty'>No HO in this window.</p>";
+      body.innerHTML = "<p class='empty'>" + esc(t("noHoWin")) + "</p>";
     } else {
-      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>PO / item</span><span>Customer</span><span>Cust. due</span><span>SO cfm</span><span>Qty</span></div>" +
+      body.innerHTML = "<div class='pop-row head'><span>HO</span><span>" + esc(t("colPoItem")) + "</span><span>" + esc(t("colCustomer")) + "</span><span>" + esc(t("colCustDue")) + "</span><span>" + esc(t("colSo")) + "</span><span>" + esc(t("colQty")) + "</span></div>" +
         list.map(function (o) {
           var pic = (o.ho && HO_IMAGES[o.ho])
             ? "<img class='thumb' src='" + esc(HO_IMAGES[o.ho]) + "' alt='' data-full='" + esc(HO_IMAGES[o.ho]) + "' loading='lazy' />"
@@ -1405,9 +1669,9 @@
     var nPo = 0;
     hos.forEach(function (id) { nPo += byHo[id].ships.length; });
     title.textContent = heading;
-    sub.textContent = hos.length + " HO · " + nPo + " PO / ship · " + list.length + " lines · tracking 9-24. One HO can have several PO and due dates." + (extraNote ? " " + extraNote : "");
+    sub.textContent = hos.length + " HO · " + nPo + " " + t("poShip") + " · " + list.length + " " + t("linesWord") + " · " + t("oneHo") + (extraNote ? " " + extraNote : "");
     if (!hos.length) {
-      body.innerHTML = "<p class='empty'>No HO in this filter.</p>";
+      body.innerHTML = "<p class='empty'>" + esc(t("noHoFilter")) + "</p>";
     } else {
       body.innerHTML = hos.map(function (id) {
         var h = byHo[id];
@@ -1416,7 +1680,7 @@
           : "<div class='thumb-empty'>—</div>";
         var dues = [];
         h.ships.forEach(function (s) { if (s.due && dues.indexOf(s.due) < 0) dues.push(s.due); });
-        var ships = "<div class='ship-row head'><span>PO</span><span>Item</span><span>Cust. due</span><span>SO cfm</span><span>Qty</span></div>" +
+        var ships = "<div class='ship-row head'><span>PO</span><span>" + esc(t("colItem")) + "</span><span>" + esc(t("colCustDue")) + "</span><span>" + esc(t("colSo")) + "</span><span>" + esc(t("colQty")) + "</span></div>" +
           h.ships.map(function (s) {
             return "<div class='ship-row'><span class='po'>" + esc(s.po || "–") + "</span><span>" +
               esc(s.item || h.item) + (s.code ? "<div class='sub'>" + esc(s.code) + (s.cust ? " · " + esc(s.cust) : "") + "</div>" : (s.cust ? "<div class='sub'>" + esc(s.cust) + "</div>" : "")) +
@@ -1426,7 +1690,7 @@
         return "<div class='ho-block'><div class='ho-block-head'>" + pic +
           "<div class='meta'><div class='po'>HO " + esc(h.ho || "–") + "</div><div class='sub'>" +
           esc(h.item) + " · " + esc(h.fty) + "<br>" + h.ships.length + " PO · " +
-          dues.length + " ship date · " + fmt(h.qty) + " pcs</div></div></div>" + ships + "</div>";
+          dues.length + " " + t("shipDate") + " · " + fmt(h.qty) + " " + t("pcs") + "</div></div></div>" + ships + "</div>";
       }).join("");
     }
     pop.classList.add("on");
@@ -1478,7 +1742,7 @@
   function ftyPlace(o) {
     var loc = FTY_LOC[o.factoryCode] || FTY_LOC[o.sheet];
     if (loc) return loc.province + ", Vietnam";
-    return o.country ? COUNTRY_EN[o.country] || o.country : "country not reported";
+    return o.country ? COUNTRY_EN[o.country] || o.country : t("countryMissing");
   }
   function shortFty(o) {
     var n = (o.factoryName || o.supplierRaw || "")
@@ -1506,11 +1770,11 @@
     if (!due) return { key: "none", label: "No date", cls: "tag", days: null };
     var d = daysBetween(due, AS);
     if (d == null) return { key: "none", label: "No date", cls: "tag", days: null };
-    if (d < 0) return { key: "easy", label: "Not due yet", cls: "tag easy", days: d };
-    if (d === 0) return { key: "easy", label: "Due today", cls: "tag easy", days: d };
+    if (d < 0) return { key: "easy", label: t("notDueYet"), cls: "tag easy", days: d };
+    if (d === 0) return { key: "easy", label: t("dueToday"), cls: "tag easy", days: d };
     if (d <= 7) return { key: "med", label: d + "d late", cls: "tag med", days: d };
     if (d <= 21) return { key: "hard", label: d + "d late", cls: "tag hard", days: d };
-    return { key: "vhard", label: d + "d late", cls: "tag vhard", days: d };
+    return { key: "vhard", label: d + t("dLate"), cls: "tag vhard", days: d };
   }
   function inspectKind(s) {
     var ins = String(s || "").toLowerCase();
@@ -1584,9 +1848,9 @@
     }
     var html = item("", t("allLocations"));
     var SIDES = [
-      { key: "North side", set: { "Ha Noi": 1, "Ninh Binh": 1, "Vinh Phuc": 1 } },
-      { key: "Middle side", set: {} },
-      { key: "South side", set: null }
+      { key: "North side", label: t("sideNorth"), set: { "Ha Noi": 1, "Ninh Binh": 1, "Vinh Phuc": 1 } },
+      { key: "Middle side", label: t("sideMiddle"), set: {} },
+      { key: "South side", label: t("sideSouth"), set: null }
     ];
     LOC_COUNTRIES.forEach(function (c) {
       var sub = "";
@@ -1599,7 +1863,7 @@
             var inSide = side.set ? !!side.set[p] : !north;
             if (inSide) kids += item("P:" + c.code + ":" + p, p);
           });
-          sub += "<div class='period-year'>" + item("S:" + c.code + ":" + side.key, side.key) +
+          sub += "<div class='period-year'>" + item("S:" + c.code + ":" + side.key, side.label) +
             (kids ? "<div class='period-sub'>" + kids + "</div>" : "") + "</div>";
         });
       } else {
@@ -1781,7 +2045,7 @@
       if (!ftyMap[fk]) {
         var loc = FTY_LOC[o.factoryCode] || FTY_LOC[fk];
         ftyMap[fk] = {
-          code: o.factoryCode, name: o.factoryName, country: loc ? "VN" : (o.country || "not reported"),
+          code: o.factoryCode, name: o.factoryName, country: loc ? "VN" : (o.country || t("notReportedCtry")),
           province: loc ? loc.province : "",
           lat: loc ? loc.lat : null,
           lon: loc ? loc.lon : null,
@@ -2216,13 +2480,13 @@
     else setPopBack(false);
     var rows = filtered();
     if (kind === "ho") {
-      renderHoPop("HO", rows, "Current filter · tracking 9-24. One HO can have several PO. Big number is HO, not PO.");
+      renderHoPop("HO", rows, t("hoKpiNote"));
       return;
     }
     if (kind === "spend") {
       var pop = document.getElementById("delayPop");
       document.getElementById("delayPopTitle").textContent = t("kpiSpend");
-      document.getElementById("delayPopSub").textContent = "Total / Total qty empty in ORDER TRACKING LIST 9-24. $ not reported — not 0.";
+      document.getElementById("delayPopSub").textContent = t("spendEmpty");
       document.getElementById("delayPopBody").innerHTML = "<p class='empty'>No amount in this tracking file. Send a file with $ if this card should list spend.</p>";
       pop.classList.add("on");
       return;
@@ -2236,7 +2500,7 @@
       }).join("");
       var pop = document.getElementById("delayPop");
       document.getElementById("delayPopTitle").textContent = t("kpiCat") + (sm.catList[0] ? ": " + shortCat(sm.catList[0].name) : "");
-      document.getElementById("delayPopSub").textContent = sm.catList.length + " categories · HO count · tracking 9-24. Tap a row for HO.";
+      document.getElementById("delayPopSub").textContent = sm.catList.length + " " + t("catKpiNote");
       document.getElementById("delayPopBody").innerHTML = blocks || "<p class='empty'>No category in this filter.</p>";
       pop.classList.add("on");
       return;
@@ -2257,7 +2521,7 @@
       }).join("");
       var pop = document.getElementById("delayPop");
       document.getElementById("delayPopTitle").textContent = t("kpiFty");
-      document.getElementById("delayPopSub").textContent = Object.keys(sm.ftyMap).length + " factories · tracking 9-24. Tap a row for HO.";
+      document.getElementById("delayPopSub").textContent = Object.keys(sm.ftyMap).length + " " + t("ftyKpiNote");
       document.getElementById("delayPopBody").innerHTML = blocks || "<p class='empty'>No factories in this filter.</p>";
       pop.classList.add("on");
       return;
@@ -2368,8 +2632,8 @@
       var colors = ["#3b82f6", "#a855f7", "#10b981", "#f59e0b", "#ec4899", "#06b6d4", "#f43f5e", "#6366f1", "#14b8a6", "#eab308", "#0ea5e9"];
       return { cust: k, label: k, n: Object.keys(custHo[k]).length, color: colors[i % colors.length] };
     });
-    var delayNote = "Lines vs customer due " + AS + " · tracking 9-24. Tap a bar for the PO list. Factory delivery time is not used.";
-    var custNote = "Distinct HO per customer · tracking 9-24. Tap a bar for the HO list. Not lines, not PO.";
+    var delayNote = t("delayBarNote") + " " + AS + " · " + t("tapBar");
+    var custNote = t("custBarNote");
     if (lang === "zh") {
       delayNote = "行数对比客户交期 " + AS + " · tracking 9-24。点柱看 PO。工厂交期不计入逾期。";
       custNote = "按客户去重 HO · tracking 9-24。点柱看 HO。不是行数，不是 PO。";
@@ -2391,7 +2655,7 @@
       return "<span class='topic click' data-fty='" + encodeURIComponent(k) + "'><i class='sw' style='background:" + colors[i % colors.length] + "'></i>" +
         esc(f.code || k) + " · " + nHo + " HO</span>";
     }).join("");
-    var ftyNote = "Distinct HO per factory · tracking 9-24. Tap a chip for HO / PO / ship dates. Not lines.";
+    var ftyNote = t("ftyChipNote");
     if (lang === "zh") ftyNote = "按工厂去重 HO · tracking 9-24。点标签看 HO / PO / 交期。不是行数。";
     var score = s.pos ? Math.round(100 * s.late / s.pos) : 0;
     return kpiRow(s) +
@@ -2464,12 +2728,12 @@
     var custKeys = Object.keys(custRec);
     var byCountry = {};
     custKeys.forEach(function (k) {
-      var cc = COUNTRY[k] || "Not mapped";
+      var cc = COUNTRY[k] || t("notMapped");
       if (!byCountry[cc]) byCountry[cc] = { n: 0, names: [] };
       byCountry[cc].n++;
       byCountry[cc].names.push(k);
     });
-    var countryOrder = ["USA", "UK", "Canada", "Not mapped"];
+    var countryOrder = ["USA", "UK", "Canada", t("notMapped")];
     var FLAG = {
       USA: "<svg viewBox='0 0 36 36'><circle cx='18' cy='18' r='17' fill='#1d4ed8'/><path d='M4 18h28M18 2v32' stroke='#fff' stroke-width='5'/><path d='M4 18h28M18 2v32' stroke='#b91c1c' stroke-width='2.4'/></svg>",
       UK: "<svg viewBox='0 0 36 36'><circle cx='18' cy='18' r='17' fill='#1d4ed8'/><path d='M4 18h28M18 2v32' stroke='#fff' stroke-width='6'/><path d='M4 18h28M18 2v32' stroke='#b91c1c' stroke-width='2.6'/><path d='M7 7l22 22M29 7L7 29' stroke='#fff' stroke-width='3.4'/></svg>",
@@ -2624,7 +2888,7 @@
       { label: "Pending", n: s.inspect.pending, color: "#f59e0b" },
       { label: "Passed", n: s.inspect.passed, color: "#22c55e" },
       { label: "3rd party", n: s.inspect["3rd"], color: "#a855f7" },
-      { label: "Dated / other", n: s.inspect.dated, color: "#06b6d4" }
+      { label: t("datedOther"), n: s.inspect.dated, color: "#06b6d4" }
     ];
     var qRows = rows.filter(function (o) {
       return inspectKind(o.inspect) !== "blank" || qaKind(o.qa) !== "blank";
@@ -2749,13 +3013,13 @@
     } else {
       asiaMap.fitBounds([[-8, 70], [50, 145]], { padding: [12, 12] });
     }
-    var bits = ["Vietnam · " + pins.length + " factory"];
+    var bits = ["Vietnam · " + pins.length + " " + t("mapFactories")];
     var prov = {};
     pins.forEach(function (f) { if (f.province) prov[f.province] = (prov[f.province] || 0) + 1; });
-    bits.push(Object.keys(prov).length + " provinces");
-    if (unknown.length) bits.push(unknown.length + " factory not pinned");
+    bits.push(Object.keys(prov).length + " " + t("mapProvinces"));
+    if (unknown.length) bits.push(unknown.length + " " + t("mapUnpinned"));
     var leg = document.getElementById("asiaMapLegend");
-    if (leg) leg.textContent = bits.join(" · ") + " · bar = HO · pin colour = factory";
+    if (leg) leg.textContent = bits.join(" · ") + " · " + t("mapLegend");
     setTimeout(function () { if (asiaMap) asiaMap.invalidateSize(); }, 80);
   }
 
@@ -2767,7 +3031,11 @@
     var sub = pack[1] ? "<p>" + esc(pack[1]) + "</p>" : "";
     var asof = view === "customers"
       ? "<button type='button' class='btn cmp' id='cmpBtn'>" + t("cmpBtn") + "</button>"
-      : "<span class='asof'>" + t("asOf") + " " + AS + "</span>";
+      : view === "presentation" ? "" : "<span class='asof'>" + t("asOf") + " " + AS + "</span>";
+    if (view === "presentation") {
+      return "<div class='page-head h1-row pres-head'><span class='page-num'>01</span>" +
+        "<div><h1>" + esc(pack[0]) + "</h1></div></div>";
+    }
     return "<div class='page-head h1-row'>" + tile(icoName, tint) +
       "<div><h1>" + esc(pack[0]) + "</h1>" + sub + "</div>" + asof + "</div>";
   }
@@ -2792,25 +3060,123 @@
       "<label class='pres-drop drop' id='srcDrop'><b>Import PDF, PPT, images</b>" +
       "<span>Drag / copy. Photos come from this file.</span>" +
       "<input id='srcFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
-      "<div class='pres-files files' id='srcList'></div></section>" +
+      "<div class='pres-files files' id='srcList'></div>" +
+      "<div class='pipe' id='pipeBox'>" +
+      "<h4>" + esc(t("pipeTitle")) + "</h4>" +
+      "<div class='pipe-row off' id='pipe1'><span class='pipe-dot'></span><span>" + esc(t("pipe1")) + "</span></div>" +
+      "<div class='pipe-row off' id='pipe2'><span class='pipe-dot'></span><span>" + esc(t("pipe2")) + "</span></div>" +
+      "<div class='pipe-row off' id='pipe3'><span class='pipe-dot'></span><span>" + esc(t("pipe3")) + "</span></div>" +
+      "<div class='pipe-row off' id='pipe4'><span class='pipe-dot'></span><span>" + esc(t("pipe4")) + "</span></div>" +
+      "</div></section>" +
       "<div class='pres-arrow'>→</div>" +
       "<section class='pres-stage blue'><h3>3 · Condition · Generate</h3>" +
-      "<div class='pres-cond cond'><div><span class='pres-tiny tiny'>Photos per slide</span>" +
+      "<div class='pres-cond two'>" +
+      "<div><span class='pres-tiny tiny'>Photos per slide</span>" +
       "<select id='perSlide'><option value='1'>1 photo · full frame</option>" +
       "<option value='2'>2 photos · side by side</option>" +
       "<option value='4' selected>4 photos · 2×2</option>" +
-      "<option value='6'>6 photos · 2×3</option></select></div>" +
+      "<option value='6'>6 photos · 2×3</option>" +
+      "<option value='custom'>Custom · type 4x4</option>" +
+      "<option value='original'>Keep original layout</option></select>" +
+      "<div id='customGridWrap' style='display:none'><input id='customGrid' type='text' value='4x4' maxlength='7' placeholder='4x4' />" +
+      "<div class='grid-hint' id='gridHint'></div></div></div>" +
+      "<div><span class='pres-tiny tiny'>Group</span>" +
+      "<select id='groupBy'><option value='auto' selected>By category</option>" +
+      "<option value='file'>By factory file</option><option value='none'>No group</option></select></div>" +
+      "<div><label><input type='checkbox' id='aiOn' checked /> AI cut SKU (this PC)</label>" +
       "<label><input type='checkbox' id='logoOn' checked /> Alpha logo on each slide</label>" +
       "<label><input type='checkbox' id='wmOn' /> Alpha watermark</label>" +
       "<label><input type='checkbox' id='titleOn' checked /> Title on each page</label>" +
-      "<input id='deckTitle' type='text' value='Product proposal' maxlength='80' />" +
-      "<div class='pair'><input id='factoryName' type='text' placeholder='Factory name' />" +
-      "<input id='customerName' type='text' placeholder='Customer / season' /></div></div>" +
-      "<button class='pres-go go' id='go' disabled>Generate · Download PPTX</button>" +
-      "<div class='pres-status status' id='status'>Drop a factory PDF / PPT first.</div>" +
+      "<label><input type='checkbox' id='contactOn' checked /> Last-page contact</label></div>" +
+      "<div><input id='factoryName' type='text' placeholder='Factory name' />" +
+      "<input id='customerName' type='text' placeholder='Customer / season' style='margin-top:6px' />" +
+      "<input id='seasonName' type='text' placeholder='Season' style='display:none' />" +
+      "<input id='contactLine' type='text' placeholder='" + esc(t("contactPh")) + "' style='margin-top:6px' /></div>" +
+      "<input class='span2' id='deckTitle' type='text' value='Product proposal' maxlength='80' />" +
+      "<div class='span2'><span class='pres-tiny'>Language</span>" +
+      "<div class='pres-langs'><label><input type='checkbox' id='langEN' checked /> EN</label>" +
+      "<label><input type='checkbox' id='langVN' /> VN</label>" +
+      "<label><input type='checkbox' id='langCN' /> 中文</label></div></div>" +
+      "</div>" +
+      "<button class='pres-go go' id='go' type='button'>Generate · Download PPTX</button>" +
+      "<div class='pres-mini'><button type='button' id='exportPdf'>" + esc(t("expPdf")) + "</button>" +
+      "<button type='button' id='exportPng'>" + esc(t("expPng")) + "</button>" +
+      "<button type='button' id='exportLink'>" + esc(t("expLink")) + "</button></div>" +
+      "<div class='pres-status status' id='status'>" + esc(t("pipeWait")) + "</div>" +
       "</section></div>" +
-      "<div class='card'><h2>" + ico("po") + " Preview</h2><div class='pad'>" +
-      "<div class='pres-thumbs thumbs' id='thumbs'></div></div></div>";
+      "<div class='card pres-preview' id='previewCard'><h2>" + ico("po") + " Preview</h2><div class='pad'>" +
+      "<p class='sub' style='margin:0'>" + esc(t("previewHint")) + "</p>" +
+      "<div class='pres-meta'>" +
+      "<input id='pvFactory' type='text' placeholder='Factory name' />" +
+      "<input id='pvCustomer' type='text' placeholder='Customer' />" +
+      "<input id='pvSeason' type='text' placeholder='Season' />" +
+      "</div>" +
+      "<div class='pres-chips chips' id='catChips'></div>" +
+      "<div class='pres-minis thumbs' id='thumbs'></div>" +
+      "<div id='photoList' style='display:none'></div></div></div>";
+  }
+  function presentationDeskLegacy() {
+    return "<div class='studio-board'>" +
+      "<section class='studio-zone'><h3><span class='studio-n n1'>1</span> Cấu hình &amp; mẫu</h3>" +
+      "<label class='fld'><span class='tiny'>Bộ thương hiệu</span><select id='brandPack'>" +
+      "<option value='alpha' selected>Alpha Fashion</option>" +
+      "<option value='factory'>Nhà máy (chữ nhà máy — chưa có logo riêng)</option>" +
+      "<option value='customer'>Khách hàng lớn (chờ file nhận diện)</option></select></label>" +
+      "<label class='fld'><span class='tiny'>Loại đề xuất</span><select id='proposalKind'>" +
+      "<option value='product' selected>Đề xuất sản phẩm</option>" +
+      "<option value='quote'>Báo giá năng lực sản xuất</option>" +
+      "<option value='season'>Hợp tác mùa SS27 / FW</option>" +
+      "<option value='factory'>Giới thiệu nhà máy</option>" +
+      "<option value='multi'>Tổng hợp nhiều nhà máy</option></select></label>" +
+      "<label class='fld'><span class='tiny'>Tiêu đề</span><input id='deckTitle' type='text' value='Product proposal' maxlength='80' /></label>" +
+      "<div class='row2'><label class='fld'><span class='tiny'>Khách</span><input id='customerName' type='text' placeholder='Customer' /></label>" +
+      "<label class='fld'><span class='tiny'>Mùa / năm</span><input id='seasonName' type='text' placeholder='SS27' /></label></div>" +
+      "<div class='row2'><label class='fld'><span class='tiny'>Nhà máy</span><input id='factoryName' type='text' placeholder='Factory name' /></label>" +
+      "<label class='fld'><span class='tiny'>Người phụ trách</span><input id='ownerName' type='text' placeholder='Philip' /></label></div>" +
+      "<div class='tiny'>Ngôn ngữ</div><div class='langs'><label><input type='checkbox' id='langVN' /> VN</label>" +
+      "<label><input type='checkbox' id='langEN' checked /> EN</label><label><input type='checkbox' id='langCN' /> CN</label></div>" +
+      "<div class='tiny'>Ảnh / trang</div><select id='perSlide'><option value='1'>1 ảnh · full frame</option>" +
+      "<option value='2'>2 ảnh</option><option value='4' selected>4 ảnh · 2×2</option><option value='6'>6 ảnh · 2×3</option>" +
+      "<option value='custom'>Custom · gõ 4x4</option><option value='original'>Giữ layout gốc</option></select>" +
+      "<div id='customGridWrap' style='display:none;margin-top:8px'><input id='customGrid' type='text' value='4x4' maxlength='7' placeholder='4x4' />" +
+      "<div class='grid-hint' id='gridHint'></div></div>" +
+      "<div class='checks' style='margin-top:10px'><label><input type='checkbox' id='aiOn' checked /> Agent cắt SKU nguyên (Alpha Code trên máy)</label>" +
+      "<label><input type='checkbox' id='logoOn' checked /> Chữ Alpha fashion (không round A)</label>" +
+      "<label><input type='checkbox' id='wmOn' /> Watermark ALPHA FASHION</label>" +
+      "<label><input type='checkbox' id='titleOn' checked /> Tiêu đề trên mỗi trang</label>" +
+      "<label><input type='checkbox' id='introOn' checked /> Trang giới thiệu nhà máy (chỉ từ chữ trong file)</label>" +
+      "<label><input type='checkbox' id='contactOn' checked /> Trang cuối liên hệ</label></div>" +
+      "<button class='ghost' id='saveCfg' type='button' style='margin-top:10px'>Lưu cấu hình lại</button></section>" +
+      "<section class='studio-zone'><h3><span class='studio-n n3'>3</span> Xem trước &amp; sửa</h3>" +
+      "<div class='tiny'>Tick bỏ ảnh · kéo đổi vị trí · sửa tên / giá / ghi chú trên thẻ</div>" +
+      "<div class='plist' id='photoList'></div><div class='preview-col pres-thumbs thumbs' id='thumbs'></div></section>" +
+      "<section class='studio-zone'><h3><span class='studio-n n2'>2</span> Nội dung nguồn</h3>" +
+      "<label class='drop' id='srcDrop'><b>Kéo thả PDF / PPT / ảnh vào đây</b>" +
+      "<span>Cách A — tách ảnh + tên SP + mã + vật liệu (giá / MOQ nếu có trong file)</span>" +
+      "<input id='srcFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
+      "<div class='files' id='srcList'></div>" +
+      "<div class='row2' style='margin-top:8px'><button class='sub' id='fromStock' type='button'>Chọn từ kho catalogue</button>" +
+      "<button class='sub' id='trendBtn' type='button'>Buyer Trend → Factory item</button></div>" +
+      "<p class='soon' id='stockNote'>Kho catalogue trống. Thả file nhà máy trước — không bịa SKU. Buyer Trend chờ file trend.</p>" +
+      "<div class='tiny' style='margin-top:10px'>Nhóm ảnh theo</div>" +
+      "<select id='groupBy'><option value='auto' selected>Tự động (danh mục)</option>" +
+      "<option value='file'>Theo file / nhà máy</option><option value='none'>Không nhóm</option></select>" +
+      "<div class='chips' id='catChips'></div>" +
+      "<div class='fld' style='margin-top:8px'><span class='tiny'>Trang cuối · liên hệ (không lấy phone nhà máy trong ảnh)</span>" +
+      "<input id='contactLine' type='text' placeholder='Alpha Fashion · buyer contact' /></div>" +
+      "<label class='drop' id='tplDrop' style='min-height:64px;margin-top:8px'><b>Optional template PPT</b>" +
+      "<span>Để trống = khung Alpha 16:9</span><input id='tplFile' type='file' accept='.pptx,.ppt,.pdf,image/*' /></label>" +
+      "<div class='files' id='tplList'></div></section>" +
+      "<section class='studio-zone'><h3><span class='studio-n n4'>4</span> Kiểm tra &amp; xuất</h3>" +
+      "<div class='issues' id='issues'>Chưa có file.</div>" +
+      "<button class='sub' id='checkBtn' type='button'>Kiểm tra tự động</button>" +
+      "<button class='pres-go go' id='go' disabled style='margin-top:10px'>Generate · PPTX</button>" +
+      "<div class='export-grid'><button class='sub' id='exportPdf' type='button'>PDF gửi khách</button>" +
+      "<button class='sub' id='exportPng' type='button'>Ảnh từng trang</button>" +
+      "<button class='sub' id='exportLink' type='button'>Link xem</button>" +
+      "<button class='sub' id='saveHist' type='button'>Lưu lịch sử</button></div>" +
+      "<div class='pres-status status' id='status'>Drop a factory PDF / PPT first.</div>" +
+      "<div class='hist' id='histBox'></div></section></div>";
   }
 
   function factoriesView(rows, s) {
@@ -2843,6 +3209,207 @@
   }
 
   var painted = false;
+  function cellVal(cell) {
+    var v = cell && cell.value;
+    if (v == null || v === "") return null;
+    if (typeof v === "object") {
+      if (v instanceof Date) return v;
+      if (v.result !== undefined && v.result !== null) v = v.result;
+      else if (v.richText) v = v.richText.map(function (t) { return t.text; }).join("");
+      else if (v.text) v = v.text;
+      else if (v.hyperlink) v = v.text || v.hyperlink;
+      else if (v.formula && v.result == null) return null;
+    }
+    if (typeof v === "string") {
+      v = v.replace(/\r\n/g, "\n").trim();
+      if (!v) return null;
+    }
+    return v;
+  }
+  function asDate(v) {
+    if (v == null || v === "") return null;
+    if (v instanceof Date && !isNaN(v.getTime())) {
+      var y = v.getFullYear();
+      if (y < 1990 || y > 2100) return null;
+      return y + "-" + String(v.getMonth() + 1).padStart(2, "0") + "-" + String(v.getDate()).padStart(2, "0");
+    }
+    if (typeof v === "number" && v > 30000 && v < 60000) {
+      var d = new Date(Math.round((v - 25569) * 86400 * 1000));
+      if (isNaN(d.getTime())) return null;
+      return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+    }
+    var s = String(v).trim(), m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[1] + "-" + m[2] + "-" + m[3];
+    m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (m) {
+      var yy = +m[3]; if (yy < 100) yy += 2000;
+      var dd = new Date(yy, +m[1] - 1, +m[2]);
+      if (isNaN(dd.getTime())) return null;
+      return yy + "-" + String(dd.getMonth() + 1).padStart(2, "0") + "-" + String(dd.getDate()).padStart(2, "0");
+    }
+    return null;
+  }
+  function numCell(v) {
+    if (v == null || v === "") return null;
+    if (typeof v === "number" && isFinite(v)) return v;
+    var n = Number(String(v).replace(/[, ]/g, ""));
+    return isFinite(n) ? n : null;
+  }
+  function asCellText(v) {
+    if (v == null || v === "") return "";
+    if (v instanceof Date && !isNaN(v.getTime())) return asDate(v) || "";
+    if (typeof v === "number" && isFinite(v)) return String(v);
+    return String(v);
+  }
+  function guessCountry(supplier) {
+    var s = String(supplier || "").toUpperCase();
+    if (/VIETNAM|VIET NAM|VIỆT|越南/.test(s) ||
+        /NGUYEN PHAT|MANH LONG|VIET THANH|MADE BY VIET|FULL MANNER|PRESTIGE PHARM|LILY \(VIETNAM\)|EVERGREEN TREE/.test(s)) return "VN";
+    if (/INDIA/.test(s)) return "IN";
+    if (/CAMBODIA|CAMPUCHIA/.test(s)) return "KH";
+    if (/THAILAND/.test(s)) return "TH";
+    if (/CHINA|中国|GUANGZHOU|DONGGUAN|SHENZHEN/.test(s)) return "CN";
+    return null;
+  }
+  function parseCodeName(supplier) {
+    var s = String(supplier || "").trim();
+    var m = s.match(/^([A-Z]?\d{3,4})\s*:\s*(.+)$/i);
+    if (m) return { code: m[1].toUpperCase(), name: m[2].trim() };
+    return { code: "", name: s };
+  }
+  function ordersFromWorkbook(wb, fileName) {
+    var orders = [];
+    wb.worksheets.forEach(function (ws) {
+      var header = [];
+      var hrow = ws.getRow(1);
+      var maxC = Math.max(ws.columnCount || 0, 50);
+      for (var c = 1; c <= maxC; c++) {
+        var hv = cellVal(hrow.getCell(c));
+        header[c] = hv ? String(hv).replace(/\s+/g, " ").trim() : "";
+      }
+      function idx(pred) {
+        for (var i = 1; i < header.length; i++) if (header[i] && pred(header[i])) return i;
+        return 0;
+      }
+      var I = {
+        po: idx(function (h) { return h === "PO"; }),
+        ho: idx(function (h) { return h === "HO"; }),
+        code: idx(function (h) { return /^Product code$/i.test(h); }),
+        qty: idx(function (h) { return /Purchase quantity/i.test(h); }),
+        total: idx(function (h) { return /^(Total|Total qty)$/i.test(h); }),
+        orderDate: idx(function (h) { return h === "Order date"; }),
+        orderCat: idx(function (h) { return h === "Order category"; }),
+        cust: idx(function (h) { return h === "Customer"; }),
+        sub: idx(function (h) { return h === "Customer sub items"; }),
+        prod: idx(function (h) { return h === "Product Name"; }),
+        desc: idx(function (h) { return /English description/i.test(h); }),
+        supplier: idx(function (h) { return h === "Supplier"; }),
+        port: idx(function (h) { return /Destination Port/i.test(h); }),
+        custDel: idx(function (h) { return h === "Customer delivery time"; }),
+        origDel: idx(function (h) { return h.indexOf("原始交期") >= 0; }),
+        ftyDel: idx(function (h) { return h === "Factory delivery time"; }),
+        so: idx(function (h) { return /^(SO cfm|CRD)$/i.test(h); }),
+        qa: idx(function (h) { return /QA test/i.test(h); }),
+        inspect: idx(function (h) { return /Inspection plan/i.test(h); }),
+        status: idx(function (h) { return /Status remark/i.test(h) || h === "Status Remark"; }),
+        concern: idx(function (h) { return /Concern/i.test(h); }),
+        endCust: idx(function (h) { return h === "End customers"; }),
+        salesperson: idx(function (h) { return h === "Salesperson"; }),
+        tracker: idx(function (h) { return h === "Tracker"; })
+      };
+      if (!I.supplier && !I.po && !I.ho) return;
+      for (var r = 2; r <= (ws.rowCount || 0); r++) {
+        var row = ws.getRow(r);
+        function get(k) { return I[k] ? cellVal(row.getCell(I[k])) : null; }
+        var po = get("po"), supplier = get("supplier"), qty = numCell(get("qty"));
+        if (!po && !supplier && qty == null) continue;
+        if (!supplier && !po) continue;
+        var parsed = parseCodeName(supplier);
+        if (!parsed.name && !parsed.code) continue;
+        orders.push({
+          sheet: ws.name,
+          po: po != null ? String(po) : "",
+          ho: get("ho") != null ? String(get("ho")) : "",
+          productCode: get("code") != null ? String(get("code")) : "",
+          qty: qty,
+          amount: numCell(get("total")),
+          orderDate: asDate(get("orderDate")),
+          orderCategory: get("orderCat") != null ? String(get("orderCat")) : "",
+          customer: get("cust") != null ? String(get("cust")) : "",
+          endCustomer: get("endCust") != null ? String(get("endCust")) : "",
+          category: get("sub") != null ? String(get("sub")) : "",
+          productName: get("prod") != null ? String(get("prod")) : "",
+          item: get("desc") != null ? String(get("desc")).split("\n")[0] : "",
+          supplierRaw: supplier != null ? String(supplier) : "",
+          factoryCode: parsed.code,
+          factoryName: parsed.name,
+          port: get("port") != null ? String(get("port")) : "",
+          customerDue: asDate(get("custDel")),
+          originalDue: asDate(get("origDel")),
+          factoryDue: asDate(get("ftyDel")),
+          soCfm: asCellText(get("so")),
+          qa: get("qa") != null ? String(get("qa")) : "",
+          inspect: get("inspect") != null ? String(get("inspect")) : "",
+          statusRemark: get("status") != null ? String(get("status")) : "",
+          concern: get("concern") != null ? String(get("concern")) : "",
+          salesperson: get("salesperson") != null ? String(get("salesperson")) : "",
+          tracker: get("tracker") != null ? String(get("tracker")) : "",
+          country: guessCountry(supplier)
+        });
+      }
+    });
+    var today = new Date();
+    var asOf = today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0") + "-" + String(today.getDate()).padStart(2, "0");
+    return {
+      source: fileName.replace(/\.xlsx$/i, ""),
+      asOf: asOf,
+      note: "Imported on this browser. Blank Total stays not reported, not 0.",
+      orders: orders
+    };
+  }
+  function importTracking(file) {
+    var note = document.getElementById("importNote");
+    if (note) note.textContent = t("importReading") + " " + file.name + "…";
+    var reader = new FileReader();
+    reader.onload = function () {
+      var wb = new ExcelJS.Workbook();
+      wb.xlsx.load(reader.result).then(function () {
+        var next = ordersFromWorkbook(wb, file.name);
+        if (!next.orders.length) {
+          if (note) note.textContent = t("importNone") + " " + file.name;
+          return;
+        }
+        DATA = next;
+        window.ORDERS = next;
+        AS = next.asOf;
+        ORDERS = next.orders;
+        try { localStorage.setItem("vn-bench-orders", JSON.stringify(next)); } catch (e) {}
+        setView(view);
+      }).catch(function () {
+        if (note) note.textContent = t("importFail") + " " + file.name;
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  try {
+    var saved = localStorage.getItem("vn-bench-orders");
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      if (parsed && parsed.orders && parsed.orders.length) {
+        DATA = parsed;
+        window.ORDERS = parsed;
+        AS = parsed.asOf || AS;
+        ORDERS = parsed.orders;
+      }
+    }
+  } catch (e) {}
+  document.addEventListener("change", function (ev) {
+    var t = ev.target;
+    if (!t || t.id !== "importXlsx" || !t.files || !t.files[0]) return;
+    importTracking(t.files[0]);
+    t.value = "";
+  });
+
   function setView(name) {
     if (painted && name === view) {
       document.querySelectorAll(".nav button").forEach(function (b) {
@@ -2973,7 +3540,7 @@
         return b !== "easy" && b !== "none";
       });
       var labDt = fkDt + " · " + (kind === "on" ? t("dOnTime") : kind === "none" ? t("dNoDue") : t("dLate"));
-      renderHoPop(labDt, listDt, "Customer due vs " + AS + ". No ship-early date in tracking.");
+      renderHoPop(labDt, listDt, t("dueVs") + " " + AS + ". " + t("noEarly"));
       return;
     }
     if (ftyEl && ftyEl.getAttribute("data-month")) {
@@ -3006,7 +3573,7 @@
       var list2 = filtered().filter(function (o) {
         return o.customerDue && o.customerDue.slice(0, 7) === mk2;
       });
-      renderHoPop("Monthly Purchase Value · " + mk2, list2, "$ not reported — HO count for this order month.");
+      renderHoPop(t("purchaseValue") + " · " + mk2, list2, t("monthSpend"));
       return;
     }
     var t = e.target.closest("[data-tab]");
@@ -3181,7 +3748,7 @@
       a.download = "supplier-benchmark-9-24.xlsx";
       a.click();
     }).catch(function () {
-      alert("Excel export failed. Stay on this page and try again.");
+      alert(t("exportFail"));
     }).then(function () { btn.disabled = false; });
   });
 
