@@ -1108,6 +1108,52 @@
   function findSafeGutters(data, w, rect, vertical, boxes) {
     return filterGutters(findGutters(data, w, rect, vertical), vertical, rect, boxes);
   }
+  function columnCuts(data, w, rect) {
+    var len = rect.w;
+    if (len < 160) return [];
+    var sm = [];
+    var i;
+    for (i = 0; i < len; i++) sm.push(paperLine(data, w, rect, i, true));
+    for (i = 1; i < len - 1; i++) sm[i] = (sm[i - 1] + sm[i] + sm[i + 1]) / 3;
+    var edge = Math.max(12, Math.floor(len * 0.06));
+    var minGap = Math.max(70, Math.floor(len * 0.16));
+    var cuts = [];
+    i = edge;
+    while (i < len - edge) {
+      if (sm[i] < 0.42) { i++; continue; }
+      var a = i, peak = sm[i];
+      while (i < len - edge && sm[i] >= 0.42) { if (sm[i] > peak) peak = sm[i]; i++; }
+      if (i - a >= 3 && peak >= 0.5 && (!cuts.length || (a + i) / 2 - cuts[cuts.length - 1] >= minGap)) {
+        cuts.push(Math.round((a + i) / 2));
+      }
+    }
+    return cuts;
+  }
+  function breakWideBoxes(data, w, boxes, work) {
+    var out = [];
+    (boxes || []).forEach(function (b) {
+      if (b.w < work.w * 0.45 || b.w < b.h * 1.25) { out.push(b); return; }
+      var cuts = columnCuts(data, w, b);
+      if (cuts.length < 1) { out.push(b); return; }
+      var xs = [b.x].concat(cuts.map(function (c) { return b.x + c; })).concat([b.x + b.w]);
+      var made = 0;
+      for (var i = 0; i < xs.length - 1; i++) {
+        var cell = { x: xs[i], y: b.y, w: xs[i + 1] - xs[i], h: b.h };
+        if (cell.w < 60 || cellIsJunk(data, w, cell)) continue;
+        cell.item = b.item || "";
+        cell.name = b.name || "";
+        cell.material = b.material || "";
+        cell.size = b.size || "";
+        cell.price = b.price || "";
+        cell.moq = b.moq || "";
+        cell.lead = b.lead || "";
+        out.push(cell);
+        made++;
+      }
+      if (made < 2) out.push(b);
+    });
+    return out;
+  }
   function contentBox(data, w, h) {
     var minX = w, minY = h, maxX = 0, maxY = 0, x, y, p;
     for (y = 0; y < h; y += 2) {
@@ -1279,7 +1325,9 @@
     var aiBoxes = [];
     if (agentCut && agentCut.boxes && agentCut.boxes.length) aiBoxes = agentCut.boxes;
     else aiBoxes = await detectCocoBoxes(canvas, work);
-    if (agentCut && agentCut.kind === "catalog" && aiBoxes.length >= 2) {
+    aiBoxes = breakWideBoxes(data, w, aiBoxes, work);
+    var pageWide = aiBoxes.filter(function (b) { return b.w > work.w * 0.55; }).length;
+    if (aiBoxes.length >= 2 && !pageWide) {
       var agentCells = [];
       var listedAgent = collectSpecs(pageLabels);
       aiBoxes.sort(function (a, b) {
@@ -1764,7 +1812,15 @@
       if (!map[k]) { map[k] = []; order.push(k); }
       map[k].push(p);
     });
-    return order.map(function (k) { return { key: k, items: map[k] }; });
+    var per = currentGrid().per || 4;
+    var out = [];
+    order.forEach(function (k) {
+      var items = map[k];
+      for (var i = 0; i < items.length; i += per) {
+        out.push({ key: k, items: items.slice(i, i + per) });
+      }
+    });
+    return out;
   }
   function salesCopy(p) {
     var L = deckLang();
