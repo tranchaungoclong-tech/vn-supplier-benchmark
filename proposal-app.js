@@ -568,7 +568,7 @@
     var jobs = [];
     for (var p = 1; p <= doc.numPages; p++) {
       var page = await doc.getPage(p);
-      var vp = page.getViewport({ scale: 2 });
+      var vp = page.getViewport({ scale: 2.4 });
       var canvas = document.createElement("canvas");
       canvas.width = vp.width;
       canvas.height = vp.height;
@@ -583,7 +583,7 @@
       } catch (e) { labels = []; }
       harvestFacts(labels, file.name);
       jobs.push({
-        photo: await photoFromData(file.name + " p" + p, canvas.toDataURL("image/jpeg", 0.95), file.name),
+        photo: await photoFromData(file.name + " p" + p, canvas.toDataURL("image/png"), file.name),
         labels: labels
       });
     }
@@ -627,7 +627,7 @@
     var c = document.createElement("canvas");
     c.width = Math.round(sw); c.height = Math.round(sh);
     c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
-    return c.toDataURL("image/jpeg", 0.9);
+    return c.toDataURL("image/png");
   }
   function isLogoPic(name, wIn, hIn, pxW, pxH) {
     var n = (name || "").toLowerCase();
@@ -681,10 +681,7 @@
         var ph = await photoFromData(file.name + " s" + (s + 1) + " · " + (cells.length + 1), cropped, file.name);
         if (isLogoPic(nm, wIn, hIn, ph.nw, ph.nh)) continue;
         if (ph.nw < 140 || ph.nh < 140) continue;
-        cells.push(ph);
-      }
-      for (var c = 0; c < cells.length; c++) {
-        await explodeIntoPhotos(cells[c], slideText);
+        photos.push(ph);
         got++;
       }
     }
@@ -961,6 +958,7 @@
   var visionOk = st.visionOk;
   var VISION_URL = "http://127.0.0.1:4181/cut";
   var VISION_FALLBACK = "http://127.0.0.1:4181/vision";
+  var VISION_CLOUD = "https://alpha-proposal-cut.tranchaungoclong.workers.dev/cut";
   function loadScript(src) {
     return new Promise(function (res, rej) {
       if (document.querySelector('script[src="' + src + '"]')) { res(); return; }
@@ -997,6 +995,12 @@
     } catch (e) {
       visionOk = false;
     }
+    if (visionOk) return true;
+    try {
+      var c = await fetch(VISION_CLOUD.replace(/\/cut$/, "/health"));
+      var cj = await c.json();
+      visionOk = !!(c.ok && cj && cj.ok);
+    } catch (e) {}
     return visionOk;
   }
   function shrinkCanvas(src, maxEdge) {
@@ -1035,23 +1039,22 @@
     try {
       setPipe(2, "run");
       setStatus("Agent looking at the page…");
-      var small = shrinkCanvas(canvas, 1100);
-      var payload = JSON.stringify({ image: small.toDataURL("image/jpeg", 0.82) });
-      var r = await fetch(VISION_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: payload
-      });
-      var j = await r.json();
-      if (!r.ok) {
-        r = await fetch(VISION_FALLBACK, {
+      var small = shrinkCanvas(canvas, 1400);
+      var payload = JSON.stringify({ image: small.toDataURL("image/jpeg", 0.9) });
+      async function postCut(url) {
+        var rr = await fetch(url, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: payload
         });
-        j = await r.json();
-        if (!r.ok) throw new Error(j.error || "vision failed");
+        var jj = await rr.json().catch(function () { return {}; });
+        return { ok: rr.ok, j: jj };
       }
+      var r = await postCut(VISION_URL);
+      if (!r.ok) r = await postCut(VISION_FALLBACK);
+      if (!r.ok) r = await postCut(VISION_CLOUD);
+      if (!r.ok) throw new Error((r.j && r.j.error) || "vision failed");
+      var j = r.j;
       var kind = j.kind || (j.boxes && j.boxes.length ? "catalog" : "lifestyle");
       return { kind: kind, boxes: mapVisionBoxes(j, canvas, small, work), reason: j.reason || "" };
     } catch (e) {
@@ -1465,7 +1468,7 @@
         var acut = cropCanvas(canvas, ab);
         agentCells.push(await photoFromData(
           photo.name + " · " + (aspec.item || String(agentCells.length + 1)),
-          acut.toDataURL("image/jpeg", 0.95),
+          acut.toDataURL("image/png"),
           photo.src,
           aspec
         ));
@@ -1536,7 +1539,7 @@
       spec.lookbook = fromLook;
       var cut = cropCanvas(canvas, rc);
       var label = spec.item || String(cells.length + 1);
-      cells.push(await photoFromData(photo.name + " · " + label, cut.toDataURL("image/jpeg", 0.95), photo.src, spec));
+      cells.push(await photoFromData(photo.name + " · " + label, cut.toDataURL("image/png"), photo.src, spec));
     }
     return cells.length >= 2 ? cells : [];
   }
@@ -1862,7 +1865,9 @@
         xctx.imageSmoothingEnabled = true;
         xctx.imageSmoothingQuality = "high";
         xctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-        res(canvas.toDataURL("image/jpeg", 0.95));
+        var full = !photo.crop || (photo.crop.x === 0 && photo.crop.y === 0 && photo.crop.w === 1 && photo.crop.h === 1);
+        if (full && /^data:image\//i.test(photo.data || "")) { res(photo.data); return; }
+        res(canvas.toDataURL("image/png"));
       };
       img.src = photo.data;
     });
