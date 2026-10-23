@@ -140,28 +140,76 @@
   .page-num.n02 { background: #7c3aed; }
   .page-num.n03 { background: #16a34a; }
   .pres-tabs {
-    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 0 0 12px;
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+    margin: 2px 0 18px; perspective: 920px;
   }
   .pres-tab {
-    display: flex; align-items: center; gap: 10px;
-    background: #fff; border: 1.5px solid #7dd3fc; border-radius: 14px;
-    padding: 10px 12px; cursor: pointer; text-align: left;
-    font: inherit; color: inherit;
+    position: relative; isolation: isolate;
+    display: flex; align-items: center; gap: 14px;
+    min-height: 92px; padding: 16px 16px 18px;
+    border: 0; border-radius: 18px; cursor: pointer; text-align: left;
+    font: inherit; color: #fff;
+    transform: rotateX(9deg);
+    transform-style: preserve-3d;
+    transition: transform .22s ease, filter .22s ease, box-shadow .22s ease;
   }
-  .pres-tab:hover { border-color: #38bdf8; background: #f0f9ff; }
-  .pres-tab.on { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.16); }
+  .pres-tab::before {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(165deg, rgba(255,255,255,.34) 0%, transparent 46%, rgba(0,0,0,.22) 100%);
+  }
+  .pres-tab::after {
+    content: ""; position: absolute; left: 10px; right: 10px; bottom: -8px; height: 12px;
+    border-radius: 0 0 16px 16px; z-index: -1; transform: translateZ(-12px);
+  }
+  .pres-tab:nth-child(1) {
+    background: linear-gradient(148deg, #4f8fe8 0%, #1d4ed8 48%, #163a8a 100%);
+    box-shadow: 0 16px 28px rgba(22,58,138,.34), inset 0 1px 0 rgba(255,255,255,.38);
+    animation: presPop .5s .04s both;
+  }
+  .pres-tab:nth-child(1)::after { background: #10275e; }
+  .pres-tab:nth-child(2) {
+    background: linear-gradient(148deg, #c45a9a 0%, #8b1e6a 48%, #4a0f3c 100%);
+    box-shadow: 0 16px 28px rgba(74,15,60,.34), inset 0 1px 0 rgba(255,255,255,.32);
+    animation: presPop .5s .12s both;
+  }
+  .pres-tab:nth-child(2)::after { background: #2e0826; }
+  .pres-tab:nth-child(3) {
+    background: linear-gradient(148deg, #3ec89a 0%, #0f8a68 48%, #0b5340 100%);
+    box-shadow: 0 16px 28px rgba(11,83,64,.34), inset 0 1px 0 rgba(255,255,255,.32);
+    animation: presPop .5s .2s both;
+  }
+  .pres-tab:nth-child(3)::after { background: #07382c; }
+  @keyframes presPop {
+    from { opacity: 0; transform: rotateX(22deg) translateY(16px); }
+    to { opacity: 1; transform: rotateX(9deg) translateY(0); }
+  }
+  .pres-tab:hover {
+    transform: rotateX(2deg) translateY(-7px);
+    filter: saturate(1.08) brightness(1.05);
+  }
+  .pres-tab.on {
+    animation: none;
+    transform: rotateX(0) translateY(-10px) scale(1.035);
+    filter: saturate(1.12);
+    z-index: 1;
+  }
+  .pres-tab:active { transform: rotateX(6deg) translateY(-2px) scale(.99); }
   .pres-tab .n {
-    width: 40px; height: 40px; border-radius: 50%; flex: 0 0 40px;
+    width: 48px; height: 48px; border-radius: 50%; flex: 0 0 48px;
     display: grid; place-items: center;
-    color: #fff; font-size: 13px; font-weight: 800; letter-spacing: .04em;
+    color: #fff; font-size: 14px; font-weight: 800; letter-spacing: .06em;
+    background: rgba(0,0,0,.22);
+    box-shadow: inset 0 3px 7px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.28);
   }
-  .pres-tab .n.n01 { background: #2563eb; }
-  .pres-tab .n.n02 { background: #7c3aed; }
-  .pres-tab .n.n03 { background: #16a34a; }
-  .pres-tab b { font-size: 14.5px; font-weight: 800; line-height: 1.25; }
+  .pres-tab .n.n01, .pres-tab .n.n02, .pres-tab .n.n03 { background: rgba(0,0,0,.22); }
+  .pres-tab b {
+    font-size: 15.5px; font-weight: 800; line-height: 1.22;
+    text-shadow: 0 1px 0 rgba(0,0,0,.28);
+  }
   .pres-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 14px; }
   .pres-stat {
     background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 18px rgba(15,23,42,.05);
   }
   .pres-stat .k { font-size: 11px; color: #64748b; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
   .pres-stat .v { font-size: 20px; font-weight: 800; margin-top: 4px; line-height: 1.2; }
@@ -874,7 +922,9 @@
   @media (max-width: 1100px) {
     .pres-flow { grid-template-columns: 1fr; }
     .pres-arrow { transform: rotate(90deg); height: 24px; }
-    .pres-tabs { grid-template-columns: 1fr; }
+    .pres-tabs { grid-template-columns: 1fr; perspective: none; }
+    .pres-tab, .pres-tab.on, .pres-tab:hover { transform: none; }
+    .pres-tab.on { box-shadow: 0 18px 32px rgba(15,23,42,.22), inset 0 1px 0 rgba(255,255,255,.4); }
     .pres-stats { grid-template-columns: 1fr; }
   }
   .studio-board {
@@ -1142,7 +1192,7 @@
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/pptxgen.bundle.js"></script>
-<script src="proposal-app.js?v=v083"></script>
+<script src="proposal-app.js?v=v085"></script>
 <script>
 (function () {
   var DATA = window.ORDERS;

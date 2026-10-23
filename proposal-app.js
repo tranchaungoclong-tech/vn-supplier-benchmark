@@ -568,11 +568,14 @@
     var jobs = [];
     for (var p = 1; p <= doc.numPages; p++) {
       var page = await doc.getPage(p);
-      var vp = page.getViewport({ scale: 1.15 });
+      var vp = page.getViewport({ scale: 2 });
       var canvas = document.createElement("canvas");
       canvas.width = vp.width;
       canvas.height = vp.height;
-      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+      var rctx = canvas.getContext("2d");
+      rctx.imageSmoothingEnabled = true;
+      rctx.imageSmoothingQuality = "high";
+      await page.render({ canvasContext: rctx, viewport: vp }).promise;
       var labels = [];
       try {
         var tc = await page.getTextContent();
@@ -580,7 +583,7 @@
       } catch (e) { labels = []; }
       harvestFacts(labels, file.name);
       jobs.push({
-        photo: await photoFromData(file.name + " p" + p, canvas.toDataURL("image/jpeg", 0.86), file.name),
+        photo: await photoFromData(file.name + " p" + p, canvas.toDataURL("image/jpeg", 0.95), file.name),
         labels: labels
       });
     }
@@ -1032,8 +1035,8 @@
     try {
       setPipe(2, "run");
       setStatus("Agent looking at the page…");
-      var small = shrinkCanvas(canvas, 720);
-      var payload = JSON.stringify({ image: small.toDataURL("image/jpeg", 0.5) });
+      var small = shrinkCanvas(canvas, 1100);
+      var payload = JSON.stringify({ image: small.toDataURL("image/jpeg", 0.82) });
       var r = await fetch(VISION_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -1227,6 +1230,31 @@
       return p.w < work.w * 0.92 || p.h < work.h * 0.92;
     });
   }
+  async function splitFatBox(canvas, data, w, h, box, work) {
+    var cream = paperFrac(data, w, box);
+    if (cream < 0.18) return [box];
+    var area = (box.w * box.h) / Math.max(1, work.w * work.h);
+    var fat = area > 0.16 || box.w > work.w * 0.3 || box.h > work.h * 0.3;
+    if (!fat) return [box];
+    var paper = splitBoxOnPaper(data, w, box, work);
+    if (paper.length >= 2) {
+      var flat = [];
+      for (var i = 0; i < paper.length; i++) {
+        var more = await splitFatBox(canvas, data, w, h, paper[i], work);
+        more.forEach(function (p) { flat.push(p); });
+      }
+      return flat.length >= 2 ? flat : [box];
+    }
+    return [box];
+  }
+  async function explodeGroups(canvas, data, w, h, boxes, work) {
+    var out = [];
+    for (var i = 0; i < (boxes || []).length; i++) {
+      var parts = await splitFatBox(canvas, data, w, h, boxes[i], work);
+      parts.forEach(function (p) { out.push(p); });
+    }
+    return out.length ? out : boxes;
+  }
   function contentBox(data, w, h) {
     var minX = w, minY = h, maxX = 0, maxY = 0, x, y, p;
     for (y = 0; y < h; y += 2) {
@@ -1399,9 +1427,10 @@
     if (agentCut && agentCut.boxes && agentCut.boxes.length) aiBoxes = agentCut.boxes;
     else aiBoxes = await detectCocoBoxes(canvas, work);
     aiBoxes = breakWideBoxes(data, w, aiBoxes, work);
+    aiBoxes = await explodeGroups(canvas, data, w, h, aiBoxes, work);
     var gridCells = paperGridCells(data, w, work);
     if (gridCells && gridCells.length >= 2 && gridCells.length > aiBoxes.length) {
-      aiBoxes = gridCells;
+      aiBoxes = await explodeGroups(canvas, data, w, h, gridCells, work);
     }
     var pageWide = aiBoxes.filter(function (b) { return b.w > work.w * 0.55; }).length;
     if (aiBoxes.length >= 2 && !pageWide) {
@@ -1436,7 +1465,7 @@
         var acut = cropCanvas(canvas, ab);
         agentCells.push(await photoFromData(
           photo.name + " · " + (aspec.item || String(agentCells.length + 1)),
-          acut.toDataURL("image/jpeg", 0.9),
+          acut.toDataURL("image/jpeg", 0.95),
           photo.src,
           aspec
         ));
@@ -1448,31 +1477,7 @@
     });
     var studio = hasStudioFloor(data, w, work);
     var cream = paperFrac(data, w, work);
-    if (studio && cream < 0.22 && objects.length <= 3) return [];
-    if (objects.length >= 2 && wellSeparated(objects) && (cream > 0.12 || !studio)) {
-      objects.sort(function (a, b) {
-        if (Math.abs(a.y - b.y) > 40) return a.y - b.y;
-        return a.x - b.x;
-      });
-      var objCells = [];
-      var listedObj = collectSpecs(pageLabels);
-      for (var oi = 0; oi < objects.length; oi++) {
-        var ob = padBox(objects[oi], 6, work);
-        if (cellIsJunk(data, w, ob)) continue;
-        var ospec = specForRect(pageLabels, ob);
-        if (!ospec.item && listedObj[objCells.length]) ospec = listedObj[objCells.length];
-        ospec = ospec || {};
-        ospec.lookbook = true;
-        var ocut = cropCanvas(canvas, ob);
-        objCells.push(await photoFromData(
-          photo.name + " · " + (ospec.item || String(objCells.length + 1)),
-          ocut.toDataURL("image/jpeg", 0.9),
-          photo.src,
-          ospec
-        ));
-      }
-      if (objCells.length >= 2) return objCells;
-    }
+    if (studio && cream < 0.28) return [];
     function pieces(rect, depth) {
       if (depth > 3 || rect.w < 140 || rect.h < 110) return [rect];
       var v = findSafeGutters(data, w, rect, true, objects);
@@ -1531,7 +1536,7 @@
       spec.lookbook = fromLook;
       var cut = cropCanvas(canvas, rc);
       var label = spec.item || String(cells.length + 1);
-      cells.push(await photoFromData(photo.name + " · " + label, cut.toDataURL("image/jpeg", 0.9), photo.src, spec));
+      cells.push(await photoFromData(photo.name + " · " + label, cut.toDataURL("image/jpeg", 0.95), photo.src, spec));
     }
     return cells.length >= 2 ? cells : [];
   }
@@ -1853,8 +1858,11 @@
         var canvas = document.createElement("canvas");
         canvas.width = Math.round(sw);
         canvas.height = Math.round(sh);
-        canvas.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-        res(canvas.toDataURL("image/jpeg", 0.9));
+        var xctx = canvas.getContext("2d");
+        xctx.imageSmoothingEnabled = true;
+        xctx.imageSmoothingQuality = "high";
+        xctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+        res(canvas.toDataURL("image/jpeg", 0.95));
       };
       img.src = photo.data;
     });
