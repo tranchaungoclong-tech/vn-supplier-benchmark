@@ -137,6 +137,45 @@
     background: #3b82f6; color: #fff;
     font-size: 13px; font-weight: 800; letter-spacing: .04em;
   }
+  .page-num.n02 { background: #7c3aed; }
+  .page-num.n03 { background: #16a34a; }
+  .pres-tabs {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 0 0 12px;
+  }
+  .pres-tab {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1.5px solid #7dd3fc; border-radius: 14px;
+    padding: 10px 12px; cursor: pointer; text-align: left;
+    font: inherit; color: inherit;
+  }
+  .pres-tab:hover { border-color: #38bdf8; background: #f0f9ff; }
+  .pres-tab.on { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.16); }
+  .pres-tab .n {
+    width: 40px; height: 40px; border-radius: 50%; flex: 0 0 40px;
+    display: grid; place-items: center;
+    color: #fff; font-size: 13px; font-weight: 800; letter-spacing: .04em;
+  }
+  .pres-tab .n.n01 { background: #2563eb; }
+  .pres-tab .n.n02 { background: #7c3aed; }
+  .pres-tab .n.n03 { background: #16a34a; }
+  .pres-tab b { font-size: 14.5px; font-weight: 800; line-height: 1.25; }
+  .pres-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 14px; }
+  .pres-stat {
+    background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  }
+  .pres-stat .k { font-size: 11px; color: #64748b; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .pres-stat .v { font-size: 20px; font-weight: 800; margin-top: 4px; line-height: 1.2; }
+  .pres-stat .s { font-size: 12px; color: #64748b; margin-top: 3px; }
+  .pres-list { display: grid; gap: 6px; max-height: 180px; overflow: auto; margin-top: 8px; }
+  .pres-list button {
+    text-align: left; border: 1px solid var(--line); background: #fff; border-radius: 8px;
+    padding: 7px 10px; cursor: pointer; font: inherit; font-size: 12.5px;
+  }
+  .pres-list button:hover, .pres-list button.on { border-color: #C33D27; background: #fff7f5; }
+  .pres-ghost {
+    margin-top: 8px; border: 1px solid var(--line); background: #fff; border-radius: 8px;
+    padding: 7px 10px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 700;
+  }
   .page-head { margin: 0 0 14px; }
   .page-head.h1-row { justify-content: flex-start; }
   .page-head h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; line-height: 1.2; }
@@ -835,6 +874,8 @@
   @media (max-width: 1100px) {
     .pres-flow { grid-template-columns: 1fr; }
     .pres-arrow { transform: rotate(90deg); height: 24px; }
+    .pres-tabs { grid-template-columns: 1fr; }
+    .pres-stats { grid-template-columns: 1fr; }
   }
   .studio-board {
     display: grid; grid-template-columns: 1.05fr 1fr; gap: 14px; margin-bottom: 14px;
@@ -1101,7 +1142,7 @@
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/pptxgen.bundle.js"></script>
-<script src="proposal-app.js?v=v081"></script>
+<script src="proposal-app.js?v=v083"></script>
 <script>
 (function () {
   var DATA = window.ORDERS;
@@ -1130,6 +1171,7 @@
     { code: "TH", key: "locTH" }
   ];
   var view = "dash";
+  var presPage = "01";
   var page = 1;
   var pageSize = 10;
   var keepBook = false;
@@ -1255,6 +1297,19 @@
       expLink: "Link",
       contactPh: "Last page · Alpha contact / QR",
       previewHint: "Tick off · drag to reorder · edit factory / customer / season here.",
+      presTab1: "Factory proposal in → customer PPT",
+      presTab2: "Trending - Pick similar item",
+      presTab3: "Factory PPT presentation",
+      statMonth: "Proposals this month",
+      statMonthSub: "from Generate on this PC — not invented",
+      statCat: "Catalogue used most",
+      statCatSub: "which product group pulls",
+      statEmpty: "none yet",
+      folderPh: "D:\\… factory catalogue folder",
+      folderBtn: "Load folder on this PC",
+      stockUse: "Use catalogue in stock",
+      stockSave: "Save this file to stock",
+      pickSimilar: "Pick similar to trend",
       titles: {
         dash: ["VN Supplier Benchmark", ""],
         merch: ["Merchandiser", "Factory master by category and customer book. Same 9-24 file."],
@@ -1384,6 +1439,19 @@
       expLink: "链接",
       contactPh: "末页 · Alpha 联系 / QR",
       previewHint: "取消勾选 · 拖动换位 · 在此改工厂 / 客户 / 季节。",
+      presTab1: "工厂提案进 → 客户 PPT",
+      presTab2: "趋势 · 挑选相近货",
+      presTab3: "工厂 PPT 演示",
+      statMonth: "本月提案数",
+      statMonthSub: "来自本机 Generate — 不编造",
+      statCat: "用得最多的目录",
+      statCatSub: "哪类货更吸客",
+      statEmpty: "还没有",
+      folderPh: "D:\\… 工厂目录文件夹",
+      folderBtn: "读取本机文件夹",
+      stockUse: "用库存目录",
+      stockSave: "把此文件存入库存",
+      pickSimilar: "按趋势挑选相近货",
       titles: {
         dash: ["VN Supplier Benchmark", ""],
         merch: ["跟单", "按品类的工厂主档和客户台账。同一份 9-24 文件。"],
@@ -3032,10 +3100,7 @@
     var asof = view === "customers"
       ? "<button type='button' class='btn cmp' id='cmpBtn'>" + t("cmpBtn") + "</button>"
       : view === "presentation" ? "" : "<span class='asof'>" + t("asOf") + " " + AS + "</span>";
-    if (view === "presentation") {
-      return "<div class='page-head h1-row pres-head'><span class='page-num'>01</span>" +
-        "<div><h1>" + esc(pack[0]) + "</h1></div></div>";
-    }
+    if (view === "presentation") return "";
     return "<div class='page-head h1-row'>" + tile(icoName, tint) +
       "<div><h1>" + esc(pack[0]) + "</h1>" + sub + "</div>" + asof + "</div>";
   }
@@ -3048,7 +3113,47 @@
       " <span>SAMPLE</span></h2><div class='pad'><p class='sub' style='margin:0 0 10px'>" +
       esc(pack[1]) + "</p><p class='empty' style='padding:12px 0'>" + esc(note) + "</p></div></div>";
   }
+  function presTabsHtml() {
+    var tabs = [
+      { id: "01", cls: "n01", label: t("presTab1") },
+      { id: "02", cls: "n02", label: t("presTab2") },
+      { id: "03", cls: "n03", label: t("presTab3") }
+    ];
+    return "<div class='pres-tabs'>" + tabs.map(function (x) {
+      return "<button type='button' class='pres-tab" + (presPage === x.id ? " on" : "") + "' data-pres='" + x.id + "'>" +
+        "<span class='n " + x.cls + "'>" + x.id + "</span><b>" + esc(x.label) + "</b></button>";
+    }).join("") + "</div>";
+  }
+  function presStatsHtml() {
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem("alphaProposalHist") || "[]"); } catch (e) { list = []; }
+    var now = new Date();
+    var ym = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+    var monthN = 0;
+    var cats = {};
+    list.forEach(function (h) {
+      var when = String(h.when || "");
+      if (when.slice(0, 7) === ym) monthN++;
+      var key = (h.cat || h.title || "").trim() || "Other";
+      cats[key] = (cats[key] || 0) + 1;
+    });
+    var top = "";
+    var topN = 0;
+    Object.keys(cats).forEach(function (k) {
+      if (cats[k] > topN) { topN = cats[k]; top = k; }
+    });
+    var monthV = monthN ? String(monthN) : t("statEmpty");
+    var catV = top ? (top + " · " + topN) : t("statEmpty");
+    return "<div class='pres-stats'>" +
+      "<div class='pres-stat'><div class='k'>" + esc(t("statMonth")) + "</div><div class='v'>" + esc(monthV) + "</div><div class='s'>" + esc(t("statMonthSub")) + "</div></div>" +
+      "<div class='pres-stat'><div class='k'>" + esc(t("statCat")) + "</div><div class='v'>" + esc(catV) + "</div><div class='s'>" + esc(t("statCatSub")) + "</div></div>" +
+      "</div>";
+  }
   function presentationDesk() {
+    var body = presPage === "02" ? trendingDesk() : presPage === "03" ? factoryPptDesk() : proposalDeskBody();
+    return presTabsHtml() + presStatsHtml() + body;
+  }
+  function proposalDeskBody() {
     return "<div class='pres-flow'>" +
       "<section class='pres-stage red'><h3>1 · Template</h3>" +
       "<label class='pres-drop drop' id='tplDrop'><b>Optional template PPT / PDF</b>" +
@@ -3111,6 +3216,126 @@
       "<input id='pvCustomer' type='text' placeholder='Customer' />" +
       "<input id='pvSeason' type='text' placeholder='Season' />" +
       "</div>" +
+      "<div class='pres-chips chips' id='catChips'></div>" +
+      "<div class='pres-minis thumbs' id='thumbs'></div>" +
+      "<div id='photoList' style='display:none'></div></div></div>";
+  }
+  function trendingDesk() {
+    return "<div class='pres-flow'>" +
+      "<section class='pres-stage red'><h3>1 · Trend file</h3>" +
+      "<label class='pres-drop drop' id='trendDrop'><b>Drop buyer trend PDF / PPT</b>" +
+      "<span>Match tokens only. No invented SKU.</span>" +
+      "<input id='trendFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
+      "<div class='pres-files files' id='trendList'></div>" +
+      "<button class='pres-ghost' type='button' id='trendBtn'>" + esc(t("pickSimilar")) + "</button>" +
+      "<div class='tiny' id='matchBox' style='margin-top:8px'></div></section>" +
+      "<div class='pres-arrow'>→</div>" +
+      "<section class='pres-stage green'><h3>2 · Factory catalogue</h3>" +
+      "<label class='pres-drop drop' id='srcDrop'><b>Import PDF, PPT, images</b>" +
+      "<span>Or pick a catalogue already in stock.</span>" +
+      "<input id='srcFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
+      "<div class='pres-files files' id='srcList'></div>" +
+      "<input id='folderPath' type='text' placeholder='" + esc(t("folderPh")) + "' style='width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit' />" +
+      "<button class='pres-ghost' type='button' id='folderBtn'>" + esc(t("folderBtn")) + "</button>" +
+      "<div class='pres-list' id='stockList'></div>" +
+      "<button class='pres-ghost' type='button' id='fromStock'>" + esc(t("stockUse")) + "</button>" +
+      "<button class='pres-ghost' type='button' id='saveStock'>" + esc(t("stockSave")) + "</button>" +
+      "<p class='soon' id='stockNote' style='margin:8px 0 0'></p>" +
+      "<div class='pipe' id='pipeBox'>" +
+      "<h4>" + esc(t("pipeTitle")) + "</h4>" +
+      "<div class='pipe-row off' id='pipe1'><span class='pipe-dot'></span><span>" + esc(t("pipe1")) + "</span></div>" +
+      "<div class='pipe-row off' id='pipe2'><span class='pipe-dot'></span><span>" + esc(t("pipe2")) + "</span></div>" +
+      "<div class='pipe-row off' id='pipe3'><span class='pipe-dot'></span><span>" + esc(t("pipe3")) + "</span></div>" +
+      "<div class='pipe-row off' id='pipe4'><span class='pipe-dot'></span><span>" + esc(t("pipe4")) + "</span></div>" +
+      "</div></section>" +
+      "<div class='pres-arrow'>→</div>" +
+      "<section class='pres-stage blue'><h3>3 · Condition · Generate</h3>" +
+      "<div class='pres-cond two'>" +
+      "<div><span class='pres-tiny tiny'>Photos per slide</span>" +
+      "<select id='perSlide'><option value='1'>1 photo · full frame</option>" +
+      "<option value='2'>2 photos · side by side</option>" +
+      "<option value='4' selected>4 photos · 2×2</option>" +
+      "<option value='6'>6 photos · 2×3</option>" +
+      "<option value='custom'>Custom · type 4x4</option>" +
+      "<option value='original'>Keep original layout</option></select>" +
+      "<div id='customGridWrap' style='display:none'><input id='customGrid' type='text' value='4x4' maxlength='7' placeholder='4x4' />" +
+      "<div class='grid-hint' id='gridHint'></div></div></div>" +
+      "<div><span class='pres-tiny tiny'>Group</span>" +
+      "<select id='groupBy'><option value='auto' selected>By category</option>" +
+      "<option value='file'>By factory file</option><option value='none'>No group</option></select></div>" +
+      "<div><label><input type='checkbox' id='aiOn' checked /> AI cut SKU (this PC)</label>" +
+      "<label><input type='checkbox' id='logoOn' checked /> Alpha logo on each slide</label>" +
+      "<label><input type='checkbox' id='titleOn' checked /> Title on each page</label></div>" +
+      "<div><input id='factoryName' type='text' placeholder='Factory name' />" +
+      "<input id='customerName' type='text' placeholder='Customer / season' style='margin-top:6px' /></div>" +
+      "<input class='span2' id='deckTitle' type='text' value='Product proposal' maxlength='80' />" +
+      "<input id='seasonName' type='text' style='display:none' />" +
+      "<input id='contactLine' type='text' style='display:none' />" +
+      "<div class='span2'><span class='pres-tiny'>Language</span>" +
+      "<div class='pres-langs'><label><input type='checkbox' id='langEN' checked /> EN</label>" +
+      "<label><input type='checkbox' id='langVN' /> VN</label>" +
+      "<label><input type='checkbox' id='langCN' /> 中文</label></div></div>" +
+      "</div>" +
+      "<button class='pres-go go' id='go' type='button'>Generate · Download PPTX</button>" +
+      "<div class='pres-status status' id='status'>" + esc(t("pipeWait")) + "</div>" +
+      "</section></div>" +
+      "<div class='card pres-preview' id='previewCard'><h2>" + ico("po") + " Preview</h2><div class='pad'>" +
+      "<p class='sub' style='margin:0'>" + esc(t("previewHint")) + "</p>" +
+      "<div class='pres-chips chips' id='catChips'></div>" +
+      "<div class='pres-minis thumbs' id='thumbs'></div>" +
+      "<div id='photoList' style='display:none'></div></div></div>";
+  }
+  function factoryPptDesk() {
+    return "<div class='pres-flow'>" +
+      "<section class='pres-stage red'><h3>1 · Factory PPT format</h3>" +
+      "<label class='pres-drop drop' id='tplDrop'><b>Drop the old factory PPT / PDF</b>" +
+      "<span>Format only. Empty = Alpha 16:9 frame.</span>" +
+      "<input id='tplFile' type='file' accept='.pptx,.ppt,.pdf,image/*' /></label>" +
+      "<div class='pres-files files' id='tplList'></div></section>" +
+      "<div class='pres-arrow'>→</div>" +
+      "<section class='pres-stage green'><h3>2 · Factory profile</h3>" +
+      "<label class='pres-drop drop' id='srcDrop'><b>Profile + photos (PDF / PPT / images)</b>" +
+      "<span>Printed fields only: people, cert, lead time, customers, revenue.</span>" +
+      "<input id='srcFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
+      "<div class='pres-files files' id='srcList'></div>" +
+      "<input id='folderPath' type='text' placeholder='" + esc(t("folderPh")) + "' style='width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit' />" +
+      "<button class='pres-ghost' type='button' id='folderBtn'>" + esc(t("folderBtn")) + "</button>" +
+      "<div class='pres-list' id='stockList'></div>" +
+      "<button class='pres-ghost' type='button' id='fromStock'>" + esc(t("stockUse")) + "</button>" +
+      "<button class='pres-ghost' type='button' id='saveStock'>" + esc(t("stockSave")) + "</button>" +
+      "<p class='soon' id='stockNote' style='margin:8px 0 0'></p>" +
+      "<div class='pipe' id='pipeBox'>" +
+      "<h4>" + esc(t("pipeTitle")) + "</h4>" +
+      "<div class='pipe-row off' id='pipe1'><span class='pipe-dot'></span><span>" + esc(t("pipe1")) + "</span></div>" +
+      "<div class='pipe-row off' id='pipe2'><span class='pipe-dot'></span><span>Pull printed profile</span></div>" +
+      "<div class='pipe-row off' id='pipe3'><span class='pipe-dot'></span><span>Sort slides</span></div>" +
+      "<div class='pipe-row off' id='pipe4'><span class='pipe-dot'></span><span>Build factory PPT</span></div>" +
+      "</div></section>" +
+      "<div class='pres-arrow'>→</div>" +
+      "<section class='pres-stage blue'><h3>3 · Condition · Generate</h3>" +
+      "<div class='pres-cond two'>" +
+      "<div><input id='factoryName' type='text' placeholder='Factory name' />" +
+      "<input id='customerName' type='text' placeholder='Send to customer' style='margin-top:6px' /></div>" +
+      "<div><label><input type='checkbox' id='logoOn' checked /> Alpha logo</label>" +
+      "<label><input type='checkbox' id='titleOn' checked /> Title on each page</label>" +
+      "<label><input type='checkbox' id='contactOn' checked /> Last-page contact</label>" +
+      "<label><input type='checkbox' id='introOn' checked /> Keep empty slide if field not in file</label></div>" +
+      "<input class='span2' id='deckTitle' type='text' value='Factory presentation' maxlength='80' />" +
+      "<input id='seasonName' type='text' style='display:none' />" +
+      "<input id='contactLine' type='text' placeholder='" + esc(t("contactPh")) + "' class='span2' />" +
+      "<select id='perSlide' style='display:none'><option value='4' selected>4</option></select>" +
+      "<select id='groupBy' style='display:none'><option value='auto' selected>auto</option></select>" +
+      "<input type='checkbox' id='aiOn' checked style='display:none' />" +
+      "<div class='span2'><span class='pres-tiny'>Language</span>" +
+      "<div class='pres-langs'><label><input type='checkbox' id='langEN' checked /> EN</label>" +
+      "<label><input type='checkbox' id='langVN' /> VN</label>" +
+      "<label><input type='checkbox' id='langCN' /> 中文</label></div></div>" +
+      "</div>" +
+      "<button class='pres-go go' id='go' type='button'>Generate factory PPTX</button>" +
+      "<div class='pres-status status' id='status'>" + esc(t("pipeWait")) + "</div>" +
+      "</section></div>" +
+      "<div class='card pres-preview' id='previewCard'><h2>" + ico("po") + " Preview</h2><div class='pad'>" +
+      "<p class='sub' style='margin:0'>Photos + printed profile lines from the file. Blank if not in file.</p>" +
       "<div class='pres-chips chips' id='catChips'></div>" +
       "<div class='pres-minis thumbs' id='thumbs'></div>" +
       "<div id='photoList' style='display:none'></div></div></div>";
@@ -3441,7 +3666,15 @@
     else if (view === "factories") html = factoriesView(rows, s);
     else html = customersView(rows, s);
     document.getElementById("view").innerHTML = pageHead() + html;
-    if (view === "presentation" && window.ProposalDesk && ProposalDesk.bind) ProposalDesk.bind();
+    if (view === "presentation") {
+      document.querySelectorAll("[data-pres]").forEach(function (b) {
+        b.onclick = function () {
+          presPage = b.getAttribute("data-pres") || "01";
+          render();
+        };
+      });
+      if (window.ProposalDesk && ProposalDesk.bind) ProposalDesk.bind({ page: presPage });
+    }
     if (document.getElementById("asiaMap")) paintAsiaMap(s);
     if (keepBook) {
       var book = document.getElementById("orderBook");

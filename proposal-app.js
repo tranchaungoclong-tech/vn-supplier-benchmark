@@ -1,26 +1,63 @@
 (function (root) {
-  function bind() {
-  bind._studio = false;
+  var CFG_KEY = "alphaProposalCfg";
+  var HIST_KEY = "alphaProposalHist";
+  var PROF_KEY = "alphaProposalProfiles";
+  var st = root.__proposalState || (root.__proposalState = {
+    tplFile: null,
+    srcFiles: [],
+    photos: [],
+    pageFacts: [],
+    hiddenCats: {},
+    ingestedKey: "",
+    lastBlob: null,
+    lastName: "",
+    logoData: null,
+    trendFiles: [],
+    trendText: "",
+    lastQa: [],
+    ingestJob: null,
+    aiModel: null,
+    aiTried: false,
+    visionOk: null
+  });
+  function bind(opts) {
+  bind._page = (opts && opts.page) || "01";
+  if (bind._studio == null) bind._studio = false;
   if (typeof pdfjsLib !== "undefined") {
     pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js";
   }
 
-  var tplFile = null;
-  var srcFiles = [];
-  var photos = [];
-  var pageFacts = [];
-  var hiddenCats = {};
-  var ingestedKey = "";
-  var lastBlob = null;
-  var lastName = "";
-  var logoData = null;
-  var CFG_KEY = "alphaProposalCfg";
-  var HIST_KEY = "alphaProposalHist";
-  var PROF_KEY = "alphaProposalProfiles";
-  var trendFiles = [];
-  var trendText = "";
-  var lastQa = [];
-  var ingestJob = null;
+  var tplFile = st.tplFile;
+  var srcFiles = st.srcFiles;
+  var photos = st.photos;
+  var pageFacts = st.pageFacts;
+  var hiddenCats = st.hiddenCats;
+  var ingestedKey = st.ingestedKey;
+  var lastBlob = st.lastBlob;
+  var lastName = st.lastName;
+  var logoData = st.logoData;
+  var trendFiles = st.trendFiles;
+  var trendText = st.trendText;
+  var lastQa = st.lastQa;
+  var ingestJob = st.ingestJob;
+  function persist() {
+    st.tplFile = tplFile;
+    st.srcFiles = srcFiles;
+    st.photos = photos;
+    st.pageFacts = pageFacts;
+    st.hiddenCats = hiddenCats;
+    st.ingestedKey = ingestedKey;
+    st.lastBlob = lastBlob;
+    st.lastName = lastName;
+    st.logoData = logoData;
+    st.trendFiles = trendFiles;
+    st.trendText = trendText;
+    st.lastQa = lastQa;
+    st.ingestJob = ingestJob;
+    st.aiModel = aiModel;
+    st.aiTried = aiTried;
+    st.visionOk = visionOk;
+  }
 
   var $ = function (id) { return document.getElementById(id); };
   var tplDrop = $("tplDrop"), srcDrop = $("srcDrop");
@@ -177,13 +214,15 @@
   bindDrop(tplDrop, tplInput, function (list) {
     if (!list || !list.length) return;
     tplFile = list[0];
+    persist();
     renderList($("tplList"), [tplFile], function () {
-      tplFile = null; $("tplList").innerHTML = "";
+      tplFile = null; persist(); $("tplList").innerHTML = "";
     });
   });
   bindDrop(srcDrop, srcInput, function (list) {
     if (!list || !list.length) return;
     srcFiles = srcFiles.concat([].slice.call(list));
+    persist();
     refreshSrc();
     ingestAll();
   });
@@ -292,6 +331,7 @@
       setStatus(err.message || String(err), "err");
     }
     ingestJob = null;
+    persist();
     if (go) go.disabled = false;
   }
 
@@ -323,10 +363,12 @@
     try {
       setPipe(4, "run");
       setStatus("Building PPTX · " + live.length + " photo(s)…");
-      await buildPptx();
+      if (bind._page === "03") await buildFactoryPptx();
+      else await buildPptx();
       setPipe(4, "done");
       setStatus("Downloaded. " + live.length + " photo(s) fitted.", "ok");
       pushHist();
+      persist();
     } catch (err) {
       setStatus(err.message || String(err), "err");
     }
@@ -735,11 +777,7 @@
       var x2 = Math.min(a.x + a.w, b.x + b.w), y2 = Math.min(a.y + a.h, b.y + b.h);
       var iw = Math.max(0, x2 - x1), ih = Math.max(0, y2 - y1);
       var inter = iw * ih;
-      if (!inter) {
-        var gx = Math.max(0, Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w)));
-        var gy = Math.max(0, Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h)));
-        return gx < 18 && gy < 18 ? 0.2 : 0;
-      }
+      if (!inter) return 0;
       return inter / (a.w * a.h + b.w * b.h - inter);
     }
     while (changed) {
@@ -881,6 +919,8 @@
     var pad = 14;
     for (var i = 0; i < boxes.length; i++) {
       var b = boxes[i];
+      if (vertical && b.w > rect.w * 0.48) continue;
+      if (!vertical && b.h > rect.h * 0.48) continue;
       if (vertical) {
         if (line > b.x + pad && line < b.x + b.w - pad) return true;
       } else if (line > b.y + pad && line < b.y + b.h - pad) return true;
@@ -900,7 +940,7 @@
         var xGap = Math.max(0, Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w)));
         var yGap = Math.max(0, Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h)));
         gap = Math.max(xGap, yGap);
-        if (gap < 16) return false;
+        if (gap < 4) return false;
       }
     }
     return true;
@@ -913,9 +953,9 @@
       h: Math.min(rect.y + rect.h, b.y + b.h + pad) - Math.max(rect.y, b.y - pad)
     };
   }
-  var aiModel = null;
-  var aiTried = false;
-  var visionOk = null;
+  var aiModel = st.aiModel;
+  var aiTried = st.aiTried;
+  var visionOk = st.visionOk;
   var VISION_URL = "http://127.0.0.1:4181/cut";
   var VISION_FALLBACK = "http://127.0.0.1:4181/vision";
   function loadScript(src) {
@@ -1108,51 +1148,84 @@
   function findSafeGutters(data, w, rect, vertical, boxes) {
     return filterGutters(findGutters(data, w, rect, vertical), vertical, rect, boxes);
   }
-  function columnCuts(data, w, rect) {
-    var len = rect.w;
-    if (len < 160) return [];
+  function paperCuts(data, w, rect, vertical) {
+    var len = vertical ? rect.w : rect.h;
+    if (len < 110) return [];
     var sm = [];
     var i;
-    for (i = 0; i < len; i++) sm.push(paperLine(data, w, rect, i, true));
+    for (i = 0; i < len; i++) sm.push(paperLine(data, w, rect, i, vertical));
     for (i = 1; i < len - 1; i++) sm[i] = (sm[i - 1] + sm[i] + sm[i + 1]) / 3;
-    var edge = Math.max(12, Math.floor(len * 0.06));
-    var minGap = Math.max(70, Math.floor(len * 0.16));
+    var edge = Math.max(10, Math.floor(len * 0.04));
+    var minGap = Math.max(48, Math.floor(len * 0.12));
     var cuts = [];
     i = edge;
     while (i < len - edge) {
-      if (sm[i] < 0.42) { i++; continue; }
+      if (sm[i] < 0.38) { i++; continue; }
       var a = i, peak = sm[i];
-      while (i < len - edge && sm[i] >= 0.42) { if (sm[i] > peak) peak = sm[i]; i++; }
-      if (i - a >= 3 && peak >= 0.5 && (!cuts.length || (a + i) / 2 - cuts[cuts.length - 1] >= minGap)) {
+      while (i < len - edge && sm[i] >= 0.38) { if (sm[i] > peak) peak = sm[i]; i++; }
+      if (i - a >= 2 && peak >= 0.46 && (!cuts.length || (a + i) / 2 - cuts[cuts.length - 1] >= minGap)) {
         cuts.push(Math.round((a + i) / 2));
       }
     }
     return cuts;
   }
+  function columnCuts(data, w, rect) {
+    return paperCuts(data, w, rect, true);
+  }
+  function copySpec(from, onto) {
+    onto.item = from.item || "";
+    onto.name = from.name || "";
+    onto.material = from.material || "";
+    onto.size = from.size || "";
+    onto.price = from.price || "";
+    onto.moq = from.moq || "";
+    onto.lead = from.lead || "";
+    return onto;
+  }
+  function splitBoxOnPaper(data, w, box, work) {
+    var v = paperCuts(data, w, box, true);
+    var hz = paperCuts(data, w, box, false);
+    if (!v.length && !hz.length) return [box];
+    var xs = [box.x].concat(v.map(function (c) { return box.x + c; })).concat([box.x + box.w]);
+    var ys = [box.y].concat(hz.map(function (c) { return box.y + c; })).concat([box.y + box.h]);
+    var out = [];
+    var r, c, cell;
+    for (r = 0; r < ys.length - 1; r++) {
+      for (c = 0; c < xs.length - 1; c++) {
+        cell = { x: xs[c], y: ys[r], w: xs[c + 1] - xs[c], h: ys[r + 1] - ys[r] };
+        if (cell.w < 50 || cell.h < 50) continue;
+        if (cellIsJunk(data, w, cell)) continue;
+        out.push(copySpec(box, cell));
+      }
+    }
+    return out.length >= 2 ? out : [box];
+  }
   function breakWideBoxes(data, w, boxes, work) {
     var out = [];
     (boxes || []).forEach(function (b) {
-      if (b.w < work.w * 0.45 || b.w < b.h * 1.25) { out.push(b); return; }
-      var cuts = columnCuts(data, w, b);
-      if (cuts.length < 1) { out.push(b); return; }
-      var xs = [b.x].concat(cuts.map(function (c) { return b.x + c; })).concat([b.x + b.w]);
-      var made = 0;
-      for (var i = 0; i < xs.length - 1; i++) {
-        var cell = { x: xs[i], y: b.y, w: xs[i + 1] - xs[i], h: b.h };
-        if (cell.w < 60 || cellIsJunk(data, w, cell)) continue;
-        cell.item = b.item || "";
-        cell.name = b.name || "";
-        cell.material = b.material || "";
-        cell.size = b.size || "";
-        cell.price = b.price || "";
-        cell.moq = b.moq || "";
-        cell.lead = b.lead || "";
-        out.push(cell);
-        made++;
-      }
-      if (made < 2) out.push(b);
+      var fat = b.w >= work.w * 0.32 || b.h >= work.h * 0.32 || b.w >= b.h * 1.15;
+      if (!fat) { out.push(b); return; }
+      var parts = splitBoxOnPaper(data, w, b, work);
+      if (parts.length < 2) { out.push(b); return; }
+      parts.forEach(function (p) {
+        if (p.w >= work.w * 0.4 || p.h >= work.h * 0.4) {
+          var again = splitBoxOnPaper(data, w, p, work);
+          again.forEach(function (q) { out.push(q); });
+        } else {
+          out.push(p);
+        }
+      });
     });
     return out;
+  }
+  function paperGridCells(data, w, work) {
+    var cream = paperFrac(data, w, work);
+    if (cream < 0.12) return null;
+    var parts = splitBoxOnPaper(data, w, work, work);
+    if (!parts || parts.length < 2) return null;
+    return parts.filter(function (p) {
+      return p.w < work.w * 0.92 || p.h < work.h * 0.92;
+    });
   }
   function contentBox(data, w, h) {
     var minX = w, minY = h, maxX = 0, maxY = 0, x, y, p;
@@ -1326,6 +1399,10 @@
     if (agentCut && agentCut.boxes && agentCut.boxes.length) aiBoxes = agentCut.boxes;
     else aiBoxes = await detectCocoBoxes(canvas, work);
     aiBoxes = breakWideBoxes(data, w, aiBoxes, work);
+    var gridCells = paperGridCells(data, w, work);
+    if (gridCells && gridCells.length >= 2 && gridCells.length > aiBoxes.length) {
+      aiBoxes = gridCells;
+    }
     var pageWide = aiBoxes.filter(function (b) { return b.w > work.w * 0.55; }).length;
     if (aiBoxes.length >= 2 && !pageWide) {
       var agentCells = [];
@@ -2030,6 +2107,143 @@
     downloadBlob(blob, lastName);
   }
 
+  function parseProfile() {
+    var blob = pageFacts.map(function (f) { return f.text; }).join(" \n ");
+    function grab(re) {
+      var m = blob.match(re);
+      if (!m) return "";
+      return stripFactoryContact(String(m[1] || m[0])).replace(/\s+/g, " ").trim().slice(0, 180);
+    }
+    return {
+      established: grab(/(?:established|founded|since)\s*((?:19|20)\d{2})/i),
+      people: grab(/(?:employees?|staff|workers?|nhân viên)[^\d]{0,16}(\d[\d,.\s]{0,12}\d|\d+)/i),
+      capacity: grab(/(?:capacity|pcs\s*\/\s*(?:month|day)|năng lực)[:\s]([^\n.]{3,60})/i),
+      cert: grab(/((?:ISO|BSCI|SEDEX|WRAP|GOTS|OEKO[- ]?TEX|SA8000)[^\n,]{0,40})/i),
+      lead: grab(/(?:lead\s*time|L\/T)[:\s]([^\n.]{2,40})/i),
+      revenue: grab(/(?:revenue|turnover|doanh thu)[:\s]([^\n.]{2,50})/i),
+      customers: grab(/(?:customers?|clients?)[:\s]([^\n.]{3,80})/i)
+    };
+  }
+  function photoKind(p) {
+    var n = ((p.name || "") + " " + (p.src || "")).toLowerCase();
+    if (/showroom|show-room|display/.test(n)) return "Showroom";
+    if (/process|line|workshop|weav|kiln|mould|sewing/.test(n)) return "Process";
+    if (/factory|building|gate|yard|office/.test(n)) return "Factory";
+    return "Product";
+  }
+  function addTextSlide(pptx, title, body) {
+    var s = pptx.addSlide();
+    s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 7.5, fill: { color: "FFF8F0" } });
+    s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.08, fill: { color: "C33D27" } });
+    s.addShape(pptx.ShapeType.rect, { x: 0.16, y: 0.15, w: 0.18, h: 0.66, fill: { color: "C00000" } });
+    s.addText(title, {
+      x: 0.44, y: 0.18, w: 12, h: 0.58,
+      fontFace: "Arial", fontSize: 22, color: "C00000", bold: true, margin: 0
+    });
+    s.addText(body || "not in file", {
+      x: 0.5, y: 1.05, w: 12.3, h: 5.6,
+      fontFace: "Arial", fontSize: 16, color: body ? "3A2A1C" : "8A7A6A", margin: 0, valign: "top"
+    });
+    if ($("logoOn") && $("logoOn").checked) addWordmark(s, 4.66, 7.18, 4.02);
+    return s;
+  }
+  async function addPhotoSection(pptx, title, items) {
+    if (!items.length) {
+      addTextSlide(pptx, title, "not in file");
+      return;
+    }
+    var g = { cols: items.length === 1 ? 1 : 2, rows: items.length <= 2 ? 1 : 2, per: Math.min(4, items.length) };
+    var chunks = chunk(items, g.per);
+    for (var ci = 0; ci < chunks.length; ci++) {
+      var grp = chunks[ci];
+      var s = pptx.addSlide();
+      s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 7.5, fill: { color: "FFF8F0" } });
+      s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.08, fill: { color: "C33D27" } });
+      s.addShape(pptx.ShapeType.rect, { x: 0.16, y: 0.15, w: 0.18, h: 0.66, fill: { color: "C00000" } });
+      s.addText(title, {
+        x: 0.44, y: 0.18, w: 12, h: 0.5,
+        fontFace: "Arial", fontSize: 22, color: "C00000", bold: true, margin: 0
+      });
+      var cols = g.cols, rows = Math.max(1, Math.ceil(grp.length / cols));
+      var gap = 0.16, areaX = 0.4, areaY = 0.85, areaW = 12.53, areaH = 6.05;
+      var cellW = (areaW - gap * (cols - 1)) / cols;
+      var cellH = (areaH - gap * (rows - 1)) / rows;
+      for (var i = 0; i < grp.length; i++) {
+        var ph = grp[i];
+        var col = i % cols;
+        var row = Math.floor(i / cols);
+        var x = areaX + col * (cellW + gap);
+        var y = areaY + row * (cellH + gap);
+        var data = await cropToDataUrl(ph);
+        var spec = specLine(ph);
+        var capH = spec ? 0.32 : 0;
+        s.addShape(pptx.ShapeType.roundRect, {
+          x: x, y: y, w: cellW, h: cellH,
+          fill: { color: "F4ECE1" }, rectRadius: 0.06
+        });
+        var fit = containRect(x + 0.04, y + 0.04, cellW - 0.08, cellH - 0.08 - capH,
+          ph.nw * (ph.crop && ph.crop.w || 1), ph.nh * (ph.crop && ph.crop.h || 1));
+        s.addImage({ data: data, x: fit.x, y: fit.y, w: fit.w, h: fit.h });
+        if (spec) {
+          s.addText(spec, {
+            x: x + 0.04, y: y + cellH - capH, w: cellW - 0.08, h: capH,
+            fontFace: "Arial", fontSize: 9, color: "5A4A3A", align: "center", margin: 0
+          });
+        }
+      }
+      if ($("logoOn") && $("logoOn").checked) addWordmark(s, 4.66, 7.18, 4.02);
+    }
+  }
+  async function buildFactoryPptx() {
+    var factory = ($("factoryName") && $("factoryName").value || "").trim() || "Factory";
+    var title = ($("deckTitle") && $("deckTitle").value || "Factory presentation").trim();
+    var live = livePhotos();
+    var prof = parseProfile();
+    var pptx = new PptxGenJS();
+    pptx.defineLayout({ name: "ALPHA16", width: 13.333, height: 7.5 });
+    pptx.layout = "ALPHA16";
+    pptx.author = "Alpha Fashion";
+    pptx.title = title;
+
+    var cover = pptx.addSlide();
+    cover.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 7.5, fill: { color: "F5F5F5" } });
+    cover.addShape(pptx.ShapeType.rect, { x: 0, y: 1.52, w: 0.32, h: 4.7, fill: { color: "B03C27" } });
+    cover.addText("ALPHA  FASHION", {
+      x: 0.7, y: 2.35, w: 12, h: 0.7,
+      fontFace: "Arial", fontSize: 36, color: "1C1410", align: "right", bold: true, margin: 0
+    });
+    cover.addText(title, {
+      x: 0.7, y: 3.15, w: 12, h: 0.55,
+      fontFace: "Arial", fontSize: 22, color: "595959", align: "right", margin: 0
+    });
+    cover.addText(factory, {
+      x: 0.7, y: 3.7, w: 12, h: 0.4,
+      fontFace: "Arial", fontSize: 16, color: "C9B8A8", align: "right", margin: 0
+    });
+
+    var overview = pageFacts.map(function (f) { return f.text; }).join("\n\n").slice(0, 1400);
+    addTextSlide(pptx, "Overview", overview || "not in file");
+    addTextSlide(pptx, "Capacity", prof.capacity || "not in file");
+    addTextSlide(pptx, "Certificates", prof.cert || "not in file");
+    addTextSlide(pptx, "People", prof.people ? (prof.people + (prof.established ? " · since " + prof.established : "")) : "not in file");
+    addTextSlide(pptx, "Lead time", prof.lead || "not in file");
+    addTextSlide(pptx, "Customers", prof.customers || "not in file");
+    addTextSlide(pptx, "Revenue", prof.revenue || "not in file");
+
+    var buckets = { Showroom: [], Factory: [], Process: [], Product: [] };
+    live.forEach(function (p) { buckets[photoKind(p)].push(p); });
+    await addPhotoSection(pptx, "Showroom", buckets.Showroom);
+    await addPhotoSection(pptx, "Factory", buckets.Factory);
+    await addPhotoSection(pptx, "Process", buckets.Process);
+    await addPhotoSection(pptx, "Product", buckets.Product);
+    addContactSlide(pptx);
+
+    var blob = await pptx.write({ outputType: "blob" });
+    lastBlob = blob;
+    lastName = "Alpha_Factory_" + factory.replace(/[^\w\-]+/g, "_") + "_" + new Date().toISOString().slice(0, 10) + ".pptx";
+    downloadBlob(blob, lastName);
+  }
+
   function downloadBlob(blob, name) {
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -2130,10 +2344,19 @@
   function pushHist() {
     var list = [];
     try { list = JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch (e) { list = []; }
+    var cats = {};
+    livePhotos().forEach(function (p) {
+      var k = p.cat || guessCat(p) || "Other";
+      cats[k] = (cats[k] || 0) + 1;
+    });
+    var top = "Other", topN = 0;
+    Object.keys(cats).forEach(function (k) { if (cats[k] > topN) { topN = cats[k]; top = k; } });
     list.unshift({
       when: new Date().toISOString().slice(0, 16).replace("T", " "),
       title: ($("deckTitle") && $("deckTitle").value) || "Proposal",
       customer: ($("customerName") && $("customerName").value) || "",
+      cat: top,
+      page: bind._page || "01",
       n: livePhotos().length
     });
     try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 20))); } catch (e) {}
@@ -2199,6 +2422,74 @@
       });
     } catch (e) { return []; }
   }
+  function dataUrlToFile(row) {
+    var m = String(row.data || "").match(/^data:([^;]+);base64,(.+)$/);
+    if (!m) return null;
+    var bin = atob(m[2]);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new File([arr], row.name, { type: row.type || m[1] });
+  }
+  async function paintStockList() {
+    var el = $("stockList");
+    if (!el) return;
+    var rows = await listStock();
+    if (!rows.length) { el.innerHTML = ""; return; }
+    el.innerHTML = rows.map(function (r, i) {
+      return "<button type='button' data-stock='" + i + "'>" + esc(r.name) + " · " + sizeOf(r.size) + "</button>";
+    }).join("");
+    el.querySelectorAll("button").forEach(function (b) {
+      b.onclick = async function () {
+        var rows2 = await listStock();
+        var r = rows2[+b.getAttribute("data-stock")];
+        if (!r) return;
+        if (srcFiles.some(function (f) { return f.name === r.name && f.size === r.size; })) {
+          soon("Already in the source list.");
+          return;
+        }
+        srcFiles.push(new File([r.blob], r.name, { type: r.type }));
+        ingestedKey = "";
+        refreshSrc();
+        ingestAll();
+      };
+    });
+  }
+  async function loadFolderFromPath() {
+    var p = ($("folderPath") && $("folderPath").value || "").trim();
+    if (!p) {
+      setStatus("Paste a D:\\ folder on this PC.", "err");
+      return;
+    }
+    setStatus("Reading folder on this PC…");
+    try {
+      var r = await fetch("http://127.0.0.1:4181/folder", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ path: p })
+      });
+      var j = await r.json();
+      if (!r.ok) throw new Error(j.error || "folder failed");
+      var added = 0;
+      (j.files || []).forEach(function (row) {
+        var f = dataUrlToFile(row);
+        if (!f) return;
+        if (srcFiles.some(function (x) { return x.name === f.name && x.size === f.size; })) return;
+        srcFiles.push(f);
+        added++;
+      });
+      if (!added) {
+        setStatus((j.n ? "Those files are already in the list." : "No PDF / PPT / photo in that folder."), j.n ? "ok" : "err");
+        return;
+      }
+      ingestedKey = "";
+      persist();
+      refreshSrc();
+      ingestAll();
+      setStatus("Loaded " + added + " file(s) from " + (j.path || p), "ok");
+    } catch (e) {
+      setStatus((e.message || String(e)) + " · 4181 must be on this PC.", "err");
+    }
+  }
   async function paintStockNote() {
     var rows = await listStock();
     var n = $("stockNote");
@@ -2208,6 +2499,7 @@
       : "Kho trống đến khi cất file nhà máy. Trend trống đến khi thả file trend.";
     if (trendFiles.length) t += " · Trend: " + trendFiles.map(function (f) { return f.name; }).join(", ");
     n.textContent = t;
+    paintStockList();
   }
   async function fromStock() {
     var rows = await listStock();
@@ -2371,6 +2663,34 @@
     paintIssues();
     paintProfiles();
     paintStockNote();
+    if ($("fromStock")) $("fromStock").onclick = fromStock;
+    if ($("saveStock")) $("saveStock").onclick = saveStock;
+    if ($("trendBtn")) $("trendBtn").onclick = matchTrend;
+    if ($("folderBtn")) $("folderBtn").onclick = loadFolderFromPath;
+    if ($("folderPath")) $("folderPath").onkeydown = function (e) {
+      if (e.key === "Enter") loadFolderFromPath();
+    };
+    paintStockList();
+    if ($("trendList")) {
+      renderList($("trendList"), trendFiles, function (i) {
+        trendFiles.splice(i, 1);
+        ingestTrend();
+        if ($("trendList")) renderList($("trendList"), trendFiles, arguments.callee);
+      });
+    }
+    var trendDrop = $("trendDrop"), trendInput = $("trendFiles");
+    if (trendDrop && trendInput && !trendDrop.getAttribute("data-bound")) {
+      trendDrop.setAttribute("data-bound", "1");
+      bindDrop(trendDrop, trendInput, function (list) {
+        if (!list || !list.length) return;
+        trendFiles = trendFiles.concat([].slice.call(list));
+        if ($("trendList")) renderList($("trendList"), trendFiles, function (i) {
+          trendFiles.splice(i, 1);
+          ingestTrend();
+        });
+        ingestTrend();
+      });
+    }
     if (bind._studio) return;
     bind._studio = true;
     if ($("saveCfg")) $("saveCfg").onclick = saveCfg;
@@ -2391,6 +2711,11 @@
     if ($("fromStock")) $("fromStock").onclick = fromStock;
     if ($("saveStock")) $("saveStock").onclick = saveStock;
     if ($("trendBtn")) $("trendBtn").onclick = matchTrend;
+    if ($("folderBtn")) $("folderBtn").onclick = loadFolderFromPath;
+    if ($("folderPath")) $("folderPath").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") loadFolderFromPath();
+    });
+    paintStockList();
     if ($("saveProfile")) $("saveProfile").onclick = saveProfile;
     if ($("profilePick")) $("profilePick").addEventListener("change", loadProfile);
     if ($("groupBy")) $("groupBy").addEventListener("change", function () {
