@@ -298,6 +298,7 @@
     pageFacts = [];
     aiTried = false;
     visionOk = null;
+    visionUrl = null;
     if (thumbs) thumbs.innerHTML = "";
     ingestJob = (async function () {
       setPipe(1, "run");
@@ -417,6 +418,26 @@
     p.cat = extra.cat || guessCat(p);
     return p;
   }
+  function harvestItem(s) {
+    var t = String(s || "");
+    var m = t.match(/\b(\d{4})\s*[-–]\s*(\d{4,})\b/);
+    if (m) return m[1] + "-" + m[2];
+    var packed = t.replace(/(\d)\s+(?=\d)/g, "$1");
+    m = packed.match(/\b(\d{4})[-–](\d{4,})\b/);
+    return m ? m[1] + "-" + m[2] : "";
+  }
+  function harvestSize(s) {
+    var bits = [];
+    String(s || "").replace(
+      /(?:[LMS]\s*:\s*)?[DLWH]\s*\d+(?:\.\d+)?(?:\s*[x×\/]\s*(?:[DLWH]\s*)?\d+(?:\.\d+)?)*(?:\s+[DLWH]\s*\d+(?:\.\d+)?)*\s*(?:cm)?/gi,
+      function (t) {
+        t = t.replace(/\s+/g, " ").trim();
+        if (t.length >= 4 && !/^\d{4}-/.test(t) && bits.indexOf(t) < 0 && bits.length < 6) bits.push(t);
+        return t;
+      }
+    );
+    return bits.join(" · ");
+  }
   function collectSpecs(labels) {
     var blob = (labels || []).map(function (l) { return l.text; }).join(" ");
     var specs = [];
@@ -435,6 +456,16 @@
       codes.forEach(function (c, i) {
         var mat = mats[i] ? mats[i].replace(/MATERIAL\s*:?\s*/i, "").trim() : "";
         specs.push({ item: c, material: mat, size: "" });
+      });
+    }
+    if (!specs.length) {
+      var seen = {};
+      String(blob).replace(/\b(\d{4})\s*[-–]\s*(\d{4,})\b/g, function (_, a, b) {
+        var item = a + "-" + b;
+        if (seen[item]) return _;
+        seen[item] = true;
+        specs.push({ item: item, material: "", size: "" });
+        return _;
       });
     }
     return specs;
@@ -493,11 +524,13 @@
     if (!s) return {};
     var item = (s.match(/ITEM\s*:?\s*([A-Z0-9][A-Z0-9.\-\/]{2,})/i) || [])[1]
       || (s.match(/\b(AG-[A-Z0-9.\-]+)\b/i) || [])[1]
+      || harvestItem(s)
       || (s.match(/\b([A-Z]{1,4}-[A-Z0-9]{3,}(?:-[A-Z0-9]+)?)\b/) || [])[1];
     var material = (s.match(/MATERIAL\s*:?\s*([A-Z][A-Z0-9\/ &\-]{1,28})/i) || [])[1];
     if (material) material = material.replace(/\s+(ITEM|SIZE|AG-).*$/i, "").trim();
     var size = (s.match(/SIZE\s*:?\s*([0-9xX×.\s\-cmCMHWlh×x\/]+)/i) || [])[1]
-      || (s.match(/(\d+(?:\.\d+)?\s*[x×]\s*\d+(?:\.\d+)?(?:\s*[x×]\s*\d+(?:\.\d+)?)?\s*cm)/i) || [])[1];
+      || (s.match(/(\d+(?:\.\d+)?\s*[x×]\s*\d+(?:\.\d+)?(?:\s*[x×]\s*\d+(?:\.\d+)?)?\s*cm)/i) || [])[1]
+      || harvestSize(s);
     if (size) size = size.replace(/\s+/g, " ").trim();
     var price = (s.match(/(?:FOB|CIF|EXW|PRICE|USD|US\$|\$)\s*:?\s*\$?\s*(\d+(?:\.\d+)?)/i) || []);
     var moq = (s.match(/MOQ\s*:?\s*(\d[\d,\s]*)/i) || [])[1];
@@ -553,11 +586,13 @@
   }
   function specForRect(labels, rect) {
     if (!labels || !labels.length) return {};
+    var placed = labels.some(function (l) { return (l.x || 0) > 2 || (l.y || 0) > 2 || (l.w || 0) > 8; });
+    if (!placed) return {};
     var blob = labels.filter(function (l) {
       var cx = l.x + l.w / 2;
       var cy = l.y + l.h / 2;
       return cx >= rect.x - 8 && cx <= rect.x + rect.w + 8
-        && cy >= rect.y - 12 && cy <= rect.y + rect.h + 48;
+        && cy >= rect.y - 12 && cy <= rect.y + rect.h + 90;
     }).map(function (l) { return l.text; }).join(" ");
     return parseSpecBlob(blob);
   }
@@ -660,7 +695,7 @@
         return _;
       });
       harvestFacts(slideText, file.name);
-      var cells = [];
+      var slidePhotos = [];
       for (var i = 0; i < pics.length; i++) {
         var pic = pics[i];
         var rid = (pic.match(/r:embed="(rId\d+)"/) || [])[1];
@@ -678,11 +713,26 @@
         var named = new Blob([blob], { type: type.indexOf("image/") === 0 ? type : "image/jpeg" });
         var data = await blobToDataUrl(named);
         var cropped = await cropBySrc(data, srcRectCrop(pic));
-        var ph = await photoFromData(file.name + " s" + (s + 1) + " · " + (cells.length + 1), cropped, file.name);
+        var ph = await photoFromData(file.name + " s" + (s + 1) + " · " + (slidePhotos.length + 1), cropped, file.name);
         if (isLogoPic(nm, wIn, hIn, ph.nw, ph.nh)) continue;
         if (ph.nw < 140 || ph.nh < 140) continue;
-        photos.push(ph);
-        got++;
+        slidePhotos.push(ph);
+      }
+      if (slidePhotos.length >= 3) {
+        var slideSpecs = collectSpecs(slideText);
+        slidePhotos.forEach(function (ph, k) {
+          var spx = slideSpecs[k] || {};
+          ph.item = ph.item || spx.item || "";
+          ph.size = ph.size || spx.size || "";
+          ph.material = ph.material || spx.material || "";
+          photos.push(ph);
+          got++;
+        });
+      } else {
+        for (var sp = 0; sp < slidePhotos.length; sp++) {
+          await explodeIntoPhotos(slidePhotos[sp], slideText);
+          got++;
+        }
       }
     }
     if (!got) await ingestPptxMediaDump(zip, file.name);
@@ -715,11 +765,25 @@
       return;
     }
     var cells = await splitCatalogPage(photo, pageLabels);
-    if (cells.length < 2) {
-      photos.push(photo);
+    if (cells.length >= 2) {
+      for (var i = 0; i < cells.length; i++) photos.push(cells[i]);
       return;
     }
-    for (var i = 0; i < cells.length; i++) photos.push(cells[i]);
+    if (cells.length === 1) {
+      var c = cells[0];
+      photo.item = photo.item || c.item;
+      photo.size = photo.size || c.size;
+      photo.material = photo.material || c.material;
+      photo.nameLabel = photo.nameLabel || c.nameLabel;
+      photo.price = photo.price || c.price;
+      photo.moq = photo.moq || c.moq;
+      photo.lead = photo.lead || c.lead;
+      if (c.nw * c.nh < photo.nw * photo.nh * 0.82) {
+        photos.push(c);
+        return;
+      }
+    }
+    photos.push(photo);
   }
   function loadImage(data) {
     return new Promise(function (res, rej) {
@@ -955,7 +1019,8 @@
   }
   var aiModel = st.aiModel;
   var aiTried = st.aiTried;
-  var visionOk = st.visionOk;
+  var visionOk = st.visionOk === true ? true : null;
+  var visionUrl = null;
   var VISION_URL = "http://127.0.0.1:4181/cut";
   var VISION_FALLBACK = "http://127.0.0.1:4181/vision";
   var VISION_CLOUD = "https://alpha-proposal-cut.tranchaungoclong.workers.dev/cut";
@@ -987,21 +1052,18 @@
     }
   }
   async function pingVision() {
-    if (visionOk !== null) return visionOk;
+    if (visionOk === true && visionUrl) return true;
     try {
       var r = await fetch("http://127.0.0.1:4181/health");
       var j = await r.json();
-      visionOk = !!(r.ok && j && j.ok);
-    } catch (e) {
-      visionOk = false;
-    }
-    if (visionOk) return true;
+      if (r.ok && j && j.ok) { visionOk = true; visionUrl = VISION_URL; return true; }
+    } catch (e) {}
     try {
       var c = await fetch(VISION_CLOUD.replace(/\/cut$/, "/health"));
       var cj = await c.json();
-      visionOk = !!(c.ok && cj && cj.ok);
+      if (c.ok && cj && cj.ok) { visionOk = true; visionUrl = VISION_CLOUD; return true; }
     } catch (e) {}
-    return visionOk;
+    return false;
   }
   function shrinkCanvas(src, maxEdge) {
     var w = src.width, h = src.height;
@@ -1022,7 +1084,7 @@
         y: b.y * small.height * sy,
         w: b.w * small.width * sx,
         h: b.h * small.height * sy
-      }, 8, work);
+      }, 18, work);
       mapped.item = b.item || "";
       mapped.name = b.name || "";
       mapped.material = b.material || "";
@@ -1042,23 +1104,31 @@
       var small = shrinkCanvas(canvas, 1400);
       var payload = JSON.stringify({ image: small.toDataURL("image/jpeg", 0.9) });
       async function postCut(url) {
-        var rr = await fetch(url, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: payload
-        });
-        var jj = await rr.json().catch(function () { return {}; });
-        return { ok: rr.ok, j: jj };
+        try {
+          var rr = await fetch(url, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: payload
+          });
+          var jj = await rr.json().catch(function () { return {}; });
+          return { ok: !!(rr.ok && jj && !jj.error && (jj.boxes || jj.kind)), j: jj };
+        } catch (e) {
+          return { ok: false, j: {} };
+        }
       }
-      var r = await postCut(VISION_URL);
-      if (!r.ok) r = await postCut(VISION_FALLBACK);
-      if (!r.ok) r = await postCut(VISION_CLOUD);
+      var r;
+      if (visionUrl === VISION_CLOUD) {
+        r = await postCut(VISION_CLOUD);
+      } else {
+        r = await postCut(VISION_URL);
+        if (!r.ok) r = await postCut(VISION_FALLBACK);
+        if (!r.ok) r = await postCut(VISION_CLOUD);
+      }
       if (!r.ok) throw new Error((r.j && r.j.error) || "vision failed");
       var j = r.j;
       var kind = j.kind || (j.boxes && j.boxes.length ? "catalog" : "lifestyle");
       return { kind: kind, boxes: mapVisionBoxes(j, canvas, small, work), reason: j.reason || "" };
     } catch (e) {
-      visionOk = false;
       return null;
     }
   }
@@ -1401,6 +1471,45 @@
     });
     return again.length ? again : [rect];
   }
+  async function photosFromBoxes(photo, canvas, data, w, boxes, pageLabels, work) {
+    var listed = collectSpecs(pageLabels);
+    var sorted = (boxes || []).slice().sort(function (a, b) {
+      if (Math.abs(a.y - b.y) > 40) return a.y - b.y;
+      return a.x - b.x;
+    });
+    var cells = [];
+    var seen = {};
+    for (var i = 0; i < sorted.length; i++) {
+      var b = sorted[i];
+      var ab = padBox(b, 18, work);
+      if (ab.w < 90 || ab.h < 90) continue;
+      if (cellIsJunk(data, w, ab)) continue;
+      var key = [Math.round(ab.x / 8), Math.round(ab.y / 8), Math.round(ab.w / 8), Math.round(ab.h / 8)].join(":");
+      if (seen[key]) continue;
+      seen[key] = true;
+      if (cellBusy(data, w, ab) < 0.02) continue;
+      var aspec = specForRect(pageLabels, ab) || {};
+      var placed = (pageLabels || []).some(function (l) { return (l.x || 0) > 2 || (l.y || 0) > 2 || (l.w || 0) > 8; });
+      var listedRow = placed ? (listed[cells.length] || {}) : {};
+      aspec.item = harvestItem(aspec.item || b.item || listedRow.item || "") || "";
+      var nm = aspec.name || b.name || "";
+      if (nm && !/\d/.test(nm) && /collection|cottage|rattan|pumpkin|decor|harvest/i.test(nm)) nm = "";
+      aspec.name = nm;
+      aspec.material = aspec.material || b.material || listedRow.material || "";
+      aspec.size = aspec.size || b.size || listedRow.size || "";
+      aspec.price = aspec.price || b.price || "";
+      aspec.moq = aspec.moq || b.moq || "";
+      aspec.lead = aspec.lead || b.lead || "";
+      aspec.lookbook = true;
+      cells.push(await photoFromData(
+        photo.name + " · " + (aspec.item || String(cells.length + 1)),
+        cropCanvas(canvas, ab).toDataURL("image/png"),
+        photo.src,
+        aspec
+      ));
+    }
+    return cells;
+  }
   async function splitCatalogPage(photo, pageLabels) {
     var img = await loadImage(photo.data);
     var canvas = document.createElement("canvas");
@@ -1425,62 +1534,39 @@
       h: Math.max(40, box.h - head - foot)
     };
     var pixelBoxes = findObjectBoxes(data, w, h, work);
+    var cream = paperFrac(data, w, work);
+    var studio = hasStudioFloor(data, w, work);
+    function notFullPage(b) {
+      return !(b.w > work.w * 0.88 && b.h > work.h * 0.88);
+    }
+    if (cream < 0.20 || (studio && cream < 0.28)) {
+      return [];
+    }
+    var gridCells = paperGridCells(data, w, work);
     var agentCut = await detectVisionCut(canvas, work);
-    var aiBoxes = [];
-    if (agentCut && agentCut.boxes && agentCut.boxes.length) aiBoxes = agentCut.boxes;
-    else aiBoxes = await detectCocoBoxes(canvas, work);
+    if (agentCut) {
+      var visBoxes = (agentCut.boxes || []).filter(notFullPage);
+      var agentCells = await photosFromBoxes(photo, canvas, data, w, visBoxes, pageLabels, work);
+      if (agentCells.length >= 2) return agentCells;
+      if (agentCells.length === 1 && visBoxes[0] && (visBoxes[0].w < work.w * 0.75 || visBoxes[0].h < work.h * 0.75)) {
+        return agentCells;
+      }
+    }
+    if (gridCells && gridCells.length >= 2) {
+      var fromGrid = await photosFromBoxes(photo, canvas, data, w, gridCells, pageLabels, work);
+      if (fromGrid.length >= 2) return fromGrid;
+    }
+    var aiBoxes = await detectCocoBoxes(canvas, work);
     aiBoxes = breakWideBoxes(data, w, aiBoxes, work);
     aiBoxes = await explodeGroups(canvas, data, w, h, aiBoxes, work);
-    var gridCells = paperGridCells(data, w, work);
     if (gridCells && gridCells.length >= 2 && gridCells.length > aiBoxes.length) {
       aiBoxes = await explodeGroups(canvas, data, w, h, gridCells, work);
     }
-    var pageWide = aiBoxes.filter(function (b) { return b.w > work.w * 0.55; }).length;
-    if (aiBoxes.length >= 2 && !pageWide) {
-      var agentCells = [];
-      var listedAgent = collectSpecs(pageLabels);
-      aiBoxes.sort(function (a, b) {
-        if (Math.abs(a.y - b.y) > 40) return a.y - b.y;
-        return a.x - b.x;
-      });
-      for (var ai = 0; ai < aiBoxes.length; ai++) {
-        var ab = padBox(aiBoxes[ai], 6, work);
-        if (cellIsJunk(data, w, ab)) continue;
-        var aspec = specForRect(pageLabels, ab);
-        if (!aspec.item && (aiBoxes[ai].item || listedAgent[agentCells.length])) {
-          aspec = {
-            item: aiBoxes[ai].item || (listedAgent[agentCells.length] && listedAgent[agentCells.length].item) || "",
-            name: aiBoxes[ai].name || (listedAgent[agentCells.length] && listedAgent[agentCells.length].name) || "",
-            material: aiBoxes[ai].material || (listedAgent[agentCells.length] && listedAgent[agentCells.length].material) || "",
-            size: aiBoxes[ai].size || (listedAgent[agentCells.length] && listedAgent[agentCells.length].size) || "",
-            price: aiBoxes[ai].price || (listedAgent[agentCells.length] && listedAgent[agentCells.length].price) || "",
-            moq: aiBoxes[ai].moq || (listedAgent[agentCells.length] && listedAgent[agentCells.length].moq) || "",
-            lead: aiBoxes[ai].lead || (listedAgent[agentCells.length] && listedAgent[agentCells.length].lead) || ""
-          };
-        } else {
-          aspec.name = aspec.name || aiBoxes[ai].name || "";
-          aspec.price = aspec.price || aiBoxes[ai].price || "";
-          aspec.moq = aspec.moq || aiBoxes[ai].moq || "";
-          aspec.lead = aspec.lead || aiBoxes[ai].lead || "";
-        }
-        aspec = aspec || {};
-        aspec.lookbook = true;
-        var acut = cropCanvas(canvas, ab);
-        agentCells.push(await photoFromData(
-          photo.name + " · " + (aspec.item || String(agentCells.length + 1)),
-          acut.toDataURL("image/png"),
-          photo.src,
-          aspec
-        ));
-      }
-      if (agentCells.length >= 2) return agentCells;
-    }
+    var cocoCells = await photosFromBoxes(photo, canvas, data, w, aiBoxes.filter(notFullPage), pageLabels, work);
+    if (cocoCells.length >= 2) return cocoCells;
     var objects = mergeBoxes(aiBoxes.concat(pixelBoxes)).filter(function (b) {
       return !cellIsJunk(data, w, b);
     });
-    var studio = hasStudioFloor(data, w, work);
-    var cream = paperFrac(data, w, work);
-    if (studio && cream < 0.28) return [];
     function pieces(rect, depth) {
       if (depth > 3 || rect.w < 140 || rect.h < 110) return [rect];
       var v = findSafeGutters(data, w, rect, true, objects);
@@ -1604,7 +1690,11 @@
           "</div>" +
           "<div class='row2' style='margin-top:4px'>" +
             "<input type='text' data-f='material' placeholder='Material' value='" + esc(p.material || "") + "' />" +
+            "<input type='text' data-f='size' placeholder='Size if in file' value='" + esc(p.size || "") + "' />" +
+          "</div>" +
+          "<div class='row2' style='margin-top:4px'>" +
             "<input type='text' data-f='price' placeholder='Price if in file' value='" + esc(p.price || "") + "' />" +
+            "<input type='text' data-f='moq' placeholder='MOQ if in file' value='" + esc(p.moq || "") + "' />" +
           "</div>" +
           "<input type='text' data-f='note' placeholder='Note / sales line' value='" + esc(p.note || "") + "' style='margin-top:4px' />" +
         "</div>" +
@@ -1668,6 +1758,7 @@
       "<div class='mini-bar'>" +
         "<input type='checkbox' " + (p.on !== false ? "checked" : "") + " />" +
         "<input type='text' data-f='item' placeholder='Item' value='" + esc(p.item || p.nameLabel || "") + "' />" +
+        "<input type='text' data-f='size' placeholder='Size' value='" + esc(p.size || "") + "' />" +
         "<span class='drag'>⋮⋮</span>" +
       "</div>";
     card.querySelector("img").src = p.data;
@@ -1676,9 +1767,11 @@
       card.classList.toggle("off", !this.checked);
       paintIssues();
     };
-    card.querySelector("input[data-f]").onchange = function () {
-      p.item = this.value.trim();
-    };
+    card.querySelectorAll("input[data-f]").forEach(function (inp) {
+      inp.onchange = function () {
+        p[inp.getAttribute("data-f")] = inp.value.trim();
+      };
+    });
     card.addEventListener("dragstart", function (e) {
       e.dataTransfer.setData("text/plain", String(i));
       e.dataTransfer.effectAllowed = "move";
@@ -2001,17 +2094,10 @@
     var factory = ($("factoryName").value || "").trim();
     var customer = ($("customerName").value || "").trim();
     var season = ($("seasonName") && $("seasonName").value || "").trim();
-    var per = g.original ? 1 : g.per;
-    var buckets = groupedPhotos();
+    var groups = groupedPhotos();
     var flat = [];
-    buckets.forEach(function (b) { b.items.forEach(function (p) { flat.push(p); }); });
+    groups.forEach(function (b) { b.items.forEach(function (p) { flat.push(p); }); });
     if (!flat.length) throw new Error("No photos ticked.");
-    var groups = [];
-    buckets.forEach(function (b) {
-      chunk(b.items, per).forEach(function (grp) {
-        groups.push({ key: b.key, items: grp });
-      });
-    });
 
     var pptx = new PptxGenJS();
     pptx.defineLayout({ name: "ALPHA16", width: 13.333, height: 7.5 });
