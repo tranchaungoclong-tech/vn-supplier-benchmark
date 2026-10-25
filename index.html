@@ -743,12 +743,14 @@
   .spark i { width: 4px; background: #93c5fd; border-radius: 1px; display: block; }
   .pres-flow {
     display: grid; grid-template-columns: 1fr 22px 1fr 22px 1fr;
-    gap: 0; align-items: stretch; margin-bottom: 14px;
+    gap: 0; align-items: start; margin-bottom: 14px;
   }
   .pres-stage {
     background: #fff; border: 1.5px solid var(--line); border-radius: 16px;
-    padding: 14px; min-height: 0;
+    padding: 14px; min-height: 0; min-width: 0;
+    display: flex; flex-direction: column;
   }
+  .pres-stage .pipe { margin-top: 10px; flex: 0 0 auto; width: 100%; min-width: 0; }
   .pres-stage.red { border-color: #e8b4aa; }
   .pres-stage.green { border-color: #b7d4c4; }
   .pres-stage.blue { border-color: #bfdbfe; }
@@ -842,6 +844,7 @@
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
     background: #fff; border: 1px solid var(--line);
     border-radius: 10px; padding: 8px 10px; margin: 8px 0 0;
+    min-width: 0; width: 100%;
   }
   .pipe h4 {
     grid-column: 1 / -1; margin: 0 0 2px;
@@ -853,6 +856,7 @@
     border: 1px solid var(--line);
     border-radius: 8px; padding: 5px 8px;
     font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0;
   }
   .pipe-row.off { opacity: .45; }
   .pipe-dot {
@@ -3215,14 +3219,14 @@
       "<label class='pres-drop drop' id='srcDrop'><b>Import PDF, PPT, images</b>" +
       "<span>Drag / copy. Photos come from this file.</span>" +
       "<input id='srcFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
-      "<div class='pres-files files' id='srcList'></div>" +
       "<div class='pipe' id='pipeBox'>" +
       "<h4>" + esc(t("pipeTitle")) + "</h4>" +
       "<div class='pipe-row off' id='pipe1'><span class='pipe-dot'></span><span>" + esc(t("pipe1")) + "</span></div>" +
       "<div class='pipe-row off' id='pipe2'><span class='pipe-dot'></span><span>" + esc(t("pipe2")) + "</span></div>" +
       "<div class='pipe-row off' id='pipe3'><span class='pipe-dot'></span><span>" + esc(t("pipe3")) + "</span></div>" +
       "<div class='pipe-row off' id='pipe4'><span class='pipe-dot'></span><span>" + esc(t("pipe4")) + "</span></div>" +
-      "</div></section>" +
+      "</div>" +
+      "<div class='pres-files files' id='srcList'></div></section>" +
       "<div class='pres-arrow'>→</div>" +
       "<section class='pres-stage blue'><h3>3 · Condition · Generate</h3>" +
       "<div class='pres-cond two'>" +
@@ -3284,20 +3288,20 @@
       "<label class='pres-drop drop' id='srcDrop'><b>Import PDF, PPT, images</b>" +
       "<span>Or pick a catalogue already in stock.</span>" +
       "<input id='srcFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
-      "<div class='pres-files files' id='srcList'></div>" +
-      "<input id='folderPath' type='text' placeholder='" + esc(t("folderPh")) + "' style='width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit' />" +
-      "<button class='pres-ghost' type='button' id='folderBtn'>" + esc(t("folderBtn")) + "</button>" +
-      "<div class='pres-list' id='stockList'></div>" +
-      "<button class='pres-ghost' type='button' id='fromStock'>" + esc(t("stockUse")) + "</button>" +
-      "<button class='pres-ghost' type='button' id='saveStock'>" + esc(t("stockSave")) + "</button>" +
-      "<p class='soon' id='stockNote' style='margin:8px 0 0'></p>" +
       "<div class='pipe' id='pipeBox'>" +
       "<h4>" + esc(t("pipeTitle")) + "</h4>" +
       "<div class='pipe-row off' id='pipe1'><span class='pipe-dot'></span><span>" + esc(t("pipe1")) + "</span></div>" +
       "<div class='pipe-row off' id='pipe2'><span class='pipe-dot'></span><span>" + esc(t("pipe2")) + "</span></div>" +
       "<div class='pipe-row off' id='pipe3'><span class='pipe-dot'></span><span>" + esc(t("pipe3")) + "</span></div>" +
       "<div class='pipe-row off' id='pipe4'><span class='pipe-dot'></span><span>" + esc(t("pipe4")) + "</span></div>" +
-      "</div></section>" +
+      "</div>" +
+      "<div class='pres-files files' id='srcList'></div>" +
+      "<input id='folderPath' type='text' placeholder='" + esc(t("folderPh")) + "' style='width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit' />" +
+      "<button class='pres-ghost' type='button' id='folderBtn'>" + esc(t("folderBtn")) + "</button>" +
+      "<div class='pres-list' id='stockList'></div>" +
+      "<button class='pres-ghost' type='button' id='fromStock'>" + esc(t("stockUse")) + "</button>" +
+      "<button class='pres-ghost' type='button' id='saveStock'>" + esc(t("stockSave")) + "</button>" +
+      "<p class='soon' id='stockNote' style='margin:8px 0 0'></p></section>" +
       "<div class='pres-arrow'>→</div>" +
       "<section class='pres-stage blue'><h3>3 · Condition · Generate</h3>" +
       "<div class='pres-cond two'>" +
@@ -3347,20 +3351,20 @@
       "<label class='pres-drop drop' id='srcDrop'><b>Profile + photos (PDF / PPT / images)</b>" +
       "<span>Printed fields only: people, cert, lead time, customers, revenue.</span>" +
       "<input id='srcFiles' type='file' multiple accept='.pptx,.ppt,.pdf,image/*' /></label>" +
-      "<div class='pres-files files' id='srcList'></div>" +
-      "<input id='folderPath' type='text' placeholder='" + esc(t("folderPh")) + "' style='width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit' />" +
-      "<button class='pres-ghost' type='button' id='folderBtn'>" + esc(t("folderBtn")) + "</button>" +
-      "<div class='pres-list' id='stockList'></div>" +
-      "<button class='pres-ghost' type='button' id='fromStock'>" + esc(t("stockUse")) + "</button>" +
-      "<button class='pres-ghost' type='button' id='saveStock'>" + esc(t("stockSave")) + "</button>" +
-      "<p class='soon' id='stockNote' style='margin:8px 0 0'></p>" +
       "<div class='pipe' id='pipeBox'>" +
       "<h4>" + esc(t("pipeTitle")) + "</h4>" +
       "<div class='pipe-row off' id='pipe1'><span class='pipe-dot'></span><span>" + esc(t("pipe1")) + "</span></div>" +
       "<div class='pipe-row off' id='pipe2'><span class='pipe-dot'></span><span>Pull printed profile</span></div>" +
       "<div class='pipe-row off' id='pipe3'><span class='pipe-dot'></span><span>Sort slides</span></div>" +
       "<div class='pipe-row off' id='pipe4'><span class='pipe-dot'></span><span>Build factory PPT</span></div>" +
-      "</div></section>" +
+      "</div>" +
+      "<div class='pres-files files' id='srcList'></div>" +
+      "<input id='folderPath' type='text' placeholder='" + esc(t("folderPh")) + "' style='width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit' />" +
+      "<button class='pres-ghost' type='button' id='folderBtn'>" + esc(t("folderBtn")) + "</button>" +
+      "<div class='pres-list' id='stockList'></div>" +
+      "<button class='pres-ghost' type='button' id='fromStock'>" + esc(t("stockUse")) + "</button>" +
+      "<button class='pres-ghost' type='button' id='saveStock'>" + esc(t("stockSave")) + "</button>" +
+      "<p class='soon' id='stockNote' style='margin:8px 0 0'></p></section>" +
       "<div class='pres-arrow'>→</div>" +
       "<section class='pres-stage blue'><h3>3 · Condition · Generate</h3>" +
       "<div class='pres-cond two'>" +
