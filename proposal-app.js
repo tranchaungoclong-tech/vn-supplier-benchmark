@@ -428,15 +428,51 @@
   }
   function harvestSize(s) {
     var bits = [];
-    String(s || "").replace(
-      /(?:[LMS]\s*:\s*)?[DLWH]\s*\d+(?:\.\d+)?(?:\s*[x×\/]\s*(?:[DLWH]\s*)?\d+(?:\.\d+)?)*(?:\s+[DLWH]\s*\d+(?:\.\d+)?)*\s*(?:cm)?/gi,
-      function (t) {
-        t = t.replace(/\s+/g, " ").trim();
-        if (t.length >= 4 && !/^\d{4}-/.test(t) && bits.indexOf(t) < 0 && bits.length < 6) bits.push(t);
-        return t;
-      }
-    );
+    var t = String(s || "");
+    function add(v) {
+      v = String(v || "").replace(/\s+/g, " ").trim();
+      if (!v || v.length < 3 || /^\d{4}-/.test(v)) return;
+      if (bits.indexOf(v) < 0 && bits.length < 6) bits.push(v);
+    }
+    t.replace(/\bL\s*\/\s*M\s*\/\s*S\b/gi, function (m) {
+      add(m.replace(/\s+/g, ""));
+      return m;
+    });
+    t.replace(/\b\d+(?:\.\d+)?\s*[x×]\s*\d+(?:\.\d+)?(?:\s*[x×]\s*\d+(?:\.\d+)?)?\s*cm\b/gi, function (m) {
+      add(m);
+      return m;
+    });
+    t.replace(/\b[DLWH]\s*\d+(?:\.\d+)?(?:\s*[x×]\s*(?:[DLWH]\s*)?\d+(?:\.\d+)?)+(?:\s*cm)?/gi, function (m) {
+      add(m);
+      return m;
+    });
+    t.replace(/\b[DLWH]\s*\d+(?:\.\d+)?(?:\s*cm)?(?:\s*\/\s*[DLWH]\s*\d+(?:\.\d+)?(?:\s*cm)?)+/gi, function (m) {
+      add(m.replace(/\s+/g, ""));
+      return m;
+    });
+    t.replace(/\b[DLWH]\s*\d+(?:\.\d+)?(?:\s*cm)?\b/gi, function (m) {
+      var v = m.replace(/\s+/g, "");
+      if (bits.some(function (b) { return b.indexOf(v) >= 0; })) return m;
+      add(v);
+      return m;
+    });
     return bits.join(" · ");
+  }
+  function isScrapText(s) {
+    var t = String(s || "").replace(/\s+/g, " ").trim();
+    if (!t) return false;
+    if (/thank\s*you|thanks\s*!|for\s*watching|please\s*scan|scan\s*me|\bqr\s*code\b/i.test(t)) return true;
+    if (/harvest\s*gather/i.test(t)) return true;
+    if (/^harvest\s*[-–:]?\s*(far\s*eastern|in\s*home)?$/i.test(t)) return true;
+    if (/^alpha\s*fashion$/i.test(t)) return true;
+    return false;
+  }
+  function isThanksSlide(labels) {
+    var blob = (labels || []).map(function (l) { return l.text; }).join(" ");
+    if (/thank\s*you|for\s*watching|please\s*scan/i.test(blob)) return true;
+    var compact = blob.replace(/\s+/g, "");
+    if (/t+h+nks!?/i.test(compact) || /thanks!?/i.test(compact)) return true;
+    return false;
   }
   function collectSpecs(labels) {
     var blob = (labels || []).map(function (l) { return l.text; }).join(" ");
@@ -528,7 +564,7 @@
       || (s.match(/\b([A-Z]{1,4}-[A-Z0-9]{3,}(?:-[A-Z0-9]+)?)\b/) || [])[1];
     var material = (s.match(/MATERIAL\s*:?\s*([A-Z][A-Z0-9\/ &\-]{1,28})/i) || [])[1];
     if (material) material = material.replace(/\s+(ITEM|SIZE|AG-).*$/i, "").trim();
-    var size = (s.match(/SIZE\s*:?\s*([0-9xX×.\s\-cmCMHWlh×x\/]+)/i) || [])[1]
+    var size = (s.match(/SIZE\s*:?\s*(L\s*\/\s*M\s*\/\s*S|[0-9A-Za-zxX×.\s\-cmCMHWlhm×x\/]+)/i) || [])[1]
       || (s.match(/(\d+(?:\.\d+)?\s*[x×]\s*\d+(?:\.\d+)?(?:\s*[x×]\s*\d+(?:\.\d+)?)?\s*cm)/i) || [])[1]
       || harvestSize(s);
     if (size) size = size.replace(/\s+/g, " ").trim();
@@ -695,6 +731,7 @@
         return _;
       });
       harvestFacts(slideText, file.name);
+      if (isThanksSlide(slideText)) continue;
       var slidePhotos = [];
       for (var i = 0; i < pics.length; i++) {
         var pic = pics[i];
@@ -720,14 +757,15 @@
       }
       if (slidePhotos.length >= 3) {
         var slideSpecs = collectSpecs(slideText);
-        slidePhotos.forEach(function (ph, k) {
+        for (var k = 0; k < slidePhotos.length; k++) {
+          var ph = slidePhotos[k];
           var spx = slideSpecs[k] || {};
-          ph.item = ph.item || spx.item || "";
-          ph.size = ph.size || spx.size || "";
+          ph.item = harvestItem(ph.item || spx.item || "") || "";
+          ph.size = harvestSize(ph.size || spx.size || "") || "";
           ph.material = ph.material || spx.material || "";
           photos.push(ph);
           got++;
-        });
+        }
       } else {
         for (var sp = 0; sp < slidePhotos.length; sp++) {
           await explodeIntoPhotos(slidePhotos[sp], slideText);
@@ -760,6 +798,7 @@
     return sel && sel.value === "original";
   }
   async function explodeIntoPhotos(photo, pageLabels) {
+    if (isThanksSlide(pageLabels)) return;
     if (keepOriginalPages() || !photo || photo.nw < 280 || photo.nh < 240) {
       photos.push(photo);
       return;
@@ -956,9 +995,9 @@
     return n ? paper / n : 0;
   }
   function cellIsJunk(data, w, rect) {
-    if (!rect || rect.w < 90 || rect.h < 90) return true;
-    if (rect.h < 130 && rect.w / rect.h > 2.8) return true;
-    if (rect.w < 130 && rect.h / rect.w > 2.8) return true;
+    if (!rect || rect.w < 140 || rect.h < 140) return true;
+    if (rect.h < 160 && rect.w / rect.h > 2.4) return true;
+    if (rect.w < 160 && rect.h / rect.w > 2.4) return true;
     var obj = 0, floor = 0, paper = 0, edge = 0, n = 0, x, y, p;
     var imgH = ((data.length / 4) / w) | 0;
     for (y = rect.y; y < rect.y + rect.h; y += 3) {
@@ -973,8 +1012,15 @@
     }
     if (!n) return true;
     if (obj / n < 0.05 && floor / n > 0.3) return true;
-    if (obj / n < 0.045 && paper / n > 0.55) return true;
+    if (obj / n < 0.08 && paper / n > 0.70) return true;
+    if (rect.w / rect.h > 2.2 && rect.h < 220 && paper / n > 0.58 && obj / n < 0.18) return true;
     if (edge / n < 0.02 && obj / n < 0.12) return true;
+    return false;
+  }
+  function isScrapBox(data, w, rect, spec) {
+    var blob = [spec && spec.item, spec && spec.name, spec && spec.size].filter(Boolean).join(" ");
+    if (isScrapText(blob)) return true;
+    if (cellIsJunk(data, w, rect)) return true;
     return false;
   }
   function gutterHitsObject(cut, vertical, rect, boxes) {
@@ -1015,6 +1061,25 @@
       y: Math.max(rect.y, b.y - pad),
       w: Math.min(rect.x + rect.w, b.x + b.w + pad) - Math.max(rect.x, b.x - pad),
       h: Math.min(rect.y + rect.h, b.y + b.h + pad) - Math.max(rect.y, b.y - pad)
+    };
+  }
+  function includeCaption(data, w, work, box, others) {
+    var maxY = work.y + work.h;
+    var i, o, overlap;
+    for (i = 0; i < (others || []).length; i++) {
+      o = others[i];
+      if (!o || o === box) continue;
+      overlap = Math.min(box.x + box.w, o.x + o.w) - Math.max(box.x, o.x);
+      if (overlap < Math.min(box.w, o.w) * 0.3) continue;
+      if (o.y > box.y + box.h * 0.55 && o.y < maxY) maxY = Math.min(maxY, o.y);
+    }
+    var cap = Math.round(Math.min(work.h * 0.18, Math.max(64, box.h * 0.24)));
+    var extra = Math.max(0, Math.min(cap, maxY - 8 - (box.y + box.h)));
+    return {
+      x: box.x,
+      y: box.y,
+      w: box.w,
+      h: box.h + extra
     };
   }
   var aiModel = st.aiModel;
@@ -1093,7 +1158,11 @@
       mapped.moq = b.moq || "";
       mapped.lead = b.lead || "";
       return mapped;
-    }).filter(function (b) { return b.w >= 40 && b.h >= 40; });
+    }).filter(function (b) {
+      if (b.w < 90 || b.h < 90) return false;
+      if (isScrapText([b.item, b.name, b.size].join(" "))) return false;
+      return true;
+    });
   }
   async function detectVisionCut(canvas, work) {
     if (!$("aiOn") || !$("aiOn").checked) return null;
@@ -1481,9 +1550,11 @@
     var seen = {};
     for (var i = 0; i < sorted.length; i++) {
       var b = sorted[i];
-      var ab = padBox(b, 18, work);
-      if (ab.w < 90 || ab.h < 90) continue;
-      if (cellIsJunk(data, w, ab)) continue;
+      var ab = includeCaption(data, w, work, padBox(b, 18, work), sorted);
+      if (ab.w < 140 || ab.h < 140) continue;
+      var blob = [b.item, b.name, b.size].filter(Boolean).join(" ");
+      if (isScrapText(blob)) continue;
+      if (isScrapBox(data, w, ab, { item: b.item, name: b.name, size: b.size })) continue;
       var key = [Math.round(ab.x / 8), Math.round(ab.y / 8), Math.round(ab.w / 8), Math.round(ab.h / 8)].join(":");
       if (seen[key]) continue;
       seen[key] = true;
@@ -1491,12 +1562,14 @@
       var aspec = specForRect(pageLabels, ab) || {};
       var placed = (pageLabels || []).some(function (l) { return (l.x || 0) > 2 || (l.y || 0) > 2 || (l.w || 0) > 8; });
       var listedRow = placed ? (listed[cells.length] || {}) : {};
-      aspec.item = harvestItem(aspec.item || b.item || listedRow.item || "") || "";
+      var specBlob = [aspec.item, aspec.size, b.item, b.name, b.size, listedRow.item, listedRow.size].filter(Boolean).join(" ");
+      aspec.item = harvestItem(specBlob) || "";
       var nm = aspec.name || b.name || "";
       if (nm && !/\d/.test(nm) && /collection|cottage|rattan|pumpkin|decor|harvest/i.test(nm)) nm = "";
+      if (isScrapText(nm)) nm = "";
       aspec.name = nm;
       aspec.material = aspec.material || b.material || listedRow.material || "";
-      aspec.size = aspec.size || b.size || listedRow.size || "";
+      aspec.size = harvestSize(specBlob) || "";
       aspec.price = aspec.price || b.price || "";
       aspec.moq = aspec.moq || b.moq || "";
       aspec.lead = aspec.lead || b.lead || "";
@@ -1613,15 +1686,17 @@
     var cells = [];
     var listed = collectSpecs(pageLabels);
     for (var i = 0; i < rects.length; i++) {
-      var rc = rects[i];
+      var rc = includeCaption(data, w, work, rects[i], rects);
       var key = [Math.round(rc.x / 8), Math.round(rc.y / 8), Math.round(rc.w / 8), Math.round(rc.h / 8)].join(":");
       if (seen[key]) continue;
       seen[key] = true;
       if (cellBusy(data, w, rc) < 0.03) continue;
-      if (cellIsJunk(data, w, rc)) continue;
-      var spec = specForRect(pageLabels, rc);
-      if (!spec.item && listed[cells.length]) spec = listed[cells.length];
+      var spec = specForRect(pageLabels, rc) || {};
+      if (!spec.item && listed[cells.length]) spec = listed[cells.length] || spec;
       spec = spec || {};
+      spec.item = harvestItem(spec.item || "") || "";
+      spec.size = harvestSize(spec.size || spec.item || "") || "";
+      if (isScrapBox(data, w, rc, spec)) continue;
       spec.lookbook = fromLook;
       var cut = cropCanvas(canvas, rc);
       var label = spec.item || String(cells.length + 1);

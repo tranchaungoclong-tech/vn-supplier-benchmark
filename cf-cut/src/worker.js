@@ -3,9 +3,9 @@ var CUT_PROMPT =
   '{"boxes":[{"x":0,"y":0,"w":1,"h":1,"item":"","name":"","material":"","size":"","price":"","moq":"","lead":""}]}\n' +
   "x,y,w,h = fractions of THIS image, 0-1.\n" +
   "Count separate photographs on the page (photos divided by pale paper, not objects inside one photo).\n" +
-  "If count >= 2: one box per photograph. Title / heading / email / phone / logo / empty paper = not a box. A group of the same product in several sizes with one caption under the group = one photograph. A room shot sitting next to other photos = one photograph.\n" +
-  "If count == 1: exactly one box around that photograph. Do not split a table scene, a garden, a single product, or a size set.\n" +
-  "item = digits printed under that photograph (often NNNN-NNNNN). size = printed size under it. Leave \"\" if you cannot read it. Do not put a heading in item. Do not invent.\n" +
+  "If count >= 2: one box per photograph. The box MUST include the printed caption under that photograph (item code + size). Title / heading / Thank You / FOR WATCHING / QR / email / phone / logo / empty paper = not a box. A group of the same product in several sizes with one caption under the group = one photograph. A room shot sitting next to other photos = one photograph.\n" +
+  "If count == 1: exactly one box around that photograph including its caption. Do not split a table scene, a garden, a single product, or a size set.\n" +
+  "item = digits printed under that photograph (NNNN-NNNNN only). size = printed size under it (L/M/S, SIZE L/M/S, H22, H21/H19, D28xH21, L45). Leave \"\" if you cannot read it. Never put size or a heading in item. Do not invent.\n" +
   "At most 16 boxes.";
 
 function cors(headers) {
@@ -87,10 +87,17 @@ function extractText(body) {
   return text;
 }
 
+function isScrapLabel(b) {
+  var t = [b.item, b.name, b.size].join(" ");
+  return /thank\s*you|thanks\s*!|for\s*watching|please\s*scan|scan\s*me|harvest\s*gather|^alpha\s*fashion$/i.test(t);
+}
+
 function localCritic(boxes) {
   var out = (boxes || []).filter(function (b) {
-    if (b.w < 0.04 || b.h < 0.04) return false;
-    if (b.w / b.h > 6 || b.h / b.w > 6) return false;
+    if (b.w < 0.08 || b.h < 0.08) return false;
+    if (b.w / b.h > 3.5 && Math.min(b.w, b.h) < 0.12) return false;
+    if (b.h / b.w > 3.5 && Math.min(b.w, b.h) < 0.12) return false;
+    if (isScrapLabel(b)) return false;
     return true;
   });
   if (out.length >= 2) {
