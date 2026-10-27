@@ -434,9 +434,14 @@
     var t = String(s || "");
     function add(v) {
       v = String(v || "").replace(/\s+/g, " ").trim();
-      if (!v || v.length < 3 || /^\d{4}-/.test(v)) return;
+      if (!v || /^\d{4}-/.test(v)) return;
+      if (v.length < 3 && !/^[LMS]$/i.test(v) && !/^L\/M\/S$/i.test(v.replace(/\s+/g, ""))) return;
       if (bits.indexOf(v) < 0 && bits.length < 6) bits.push(v);
     }
+    t.replace(/\bSIZE\s*:?\s*(L\s*\/\s*M\s*\/\s*S|[LMS]|[DLWH]\s*\d[\w./\-x× ]{0,20})/gi, function (m, g) {
+      add(String(g || m).replace(/^SIZE\s*:?\s*/i, "").trim());
+      return m;
+    });
     t.replace(/\bL\s*\/\s*M\s*\/\s*S\b/gi, function (m) {
       add(m.replace(/\s+/g, ""));
       return m;
@@ -482,11 +487,16 @@
     var specs = [];
     var re = /ITEM\s*:?\s*([A-Z0-9][A-Z0-9.\-\/]{2,})(?:\s*MATERIAL\s*:?\s*([A-Z][A-Z0-9\/ &\-]{1,28}))?/gi;
     var m;
+    var sizes = [];
+    String(blob).replace(/\bSIZE\s*:?\s*(L\s*\/\s*M\s*\/\s*S|[LMS]|[DLWH]\s*\d[\w./\-x× ]{0,20})/gi, function (_, g) {
+      sizes.push(String(g || "").replace(/\s+/g, " ").trim());
+      return _;
+    });
     while ((m = re.exec(blob))) {
       specs.push({
         item: m[1],
         material: (m[2] || "").replace(/\s+(ITEM|SIZE|AG-).*$/i, "").trim(),
-        size: ""
+        size: harvestSize(sizes[specs.length] || blob) || ""
       });
     }
     if (!specs.length) {
@@ -494,7 +504,7 @@
       var mats = blob.match(/MATERIAL\s*:?\s*([A-Z][A-Z0-9\/ &\-]{1,28})/gi) || [];
       codes.forEach(function (c, i) {
         var mat = mats[i] ? mats[i].replace(/MATERIAL\s*:?\s*/i, "").trim() : "";
-        specs.push({ item: c, material: mat, size: "" });
+        specs.push({ item: c, material: mat, size: harvestSize(sizes[i] || blob) || "" });
       });
     }
     if (!specs.length) {
@@ -503,7 +513,7 @@
         var item = a + "-" + b;
         if (seen[item]) return _;
         seen[item] = true;
-        specs.push({ item: item, material: "", size: "" });
+        specs.push({ item: item, material: "", size: harvestSize(sizes[specs.length] || blob) || "" });
         return _;
       });
     }
@@ -537,7 +547,14 @@
       lt: primary.lt
     };
   }
+  function fillPrintedSize(p) {
+    if (!p) return;
+    if (p.size) p.size = harvestSize(p.size) || p.size;
+    if (p.size) return;
+    p.size = harvestSize([p.size, p.nameLabel, p.name, p.item, p.note, p.lookReason].join(" ")) || "";
+  }
   function specLine(p) {
+    fillPrintedSize(p);
     var L = deckLang();
     var bits = [];
     if (p.item) bits.push(L.item + " " + p.item);
@@ -1076,8 +1093,10 @@
       if (overlap < Math.min(box.w, o.w) * 0.3) continue;
       if (o.y > box.y + box.h * 0.55 && o.y < maxY) maxY = Math.min(maxY, o.y);
     }
-    var cap = Math.round(Math.min(work.h * 0.18, Math.max(64, box.h * 0.24)));
-    var extra = Math.max(0, Math.min(cap, maxY - 8 - (box.y + box.h)));
+    var cap = Math.round(Math.min(work.h * 0.22, Math.max(80, box.h * 0.28)));
+    var room = maxY - 8 - (box.y + box.h);
+    var extra = Math.max(0, Math.min(cap, room));
+    if (extra < 40 && room > 16) extra = Math.min(48, room);
     return {
       x: box.x,
       y: box.y,
@@ -2287,8 +2306,9 @@
         var x = areaX + col * (cellW + gap);
         var y = areaY + row * (cellH + gap);
         var data = g.original ? ph.data : await cropToDataUrl(ph);
+        fillPrintedSize(ph);
         var spec = specLine(ph);
-        var capH = spec && !g.original ? 0.42 : 0;
+        var capH = !g.original && (spec || ph.item || ph.size) ? 0.46 : 0;
         s.addShape(pptx.ShapeType.roundRect, {
           x: x, y: y, w: cellW, h: cellH,
           fill: { color: "F4ECE1" }, rectRadius: 0.06
@@ -2299,11 +2319,11 @@
         s.addImage({
           data: data, x: fit.x, y: fit.y, w: fit.w, h: fit.h
         });
-        if (spec) {
-          s.addText(spec, {
+        if (capH) {
+          s.addText(spec || ((ph.item || "") + (ph.size ? "  ·  SIZE " + ph.size : "")), {
             x: x + 0.04, y: y + cellH - capH - 0.02, w: cellW - 0.08, h: capH,
-            fontFace: "Arial", fontSize: 9, color: "5A4A3A",
-            align: "center", margin: 0
+            fontFace: "Arial", fontSize: 10, color: "3A2A1C",
+            align: "center", bold: true, margin: 0
           });
         }
       }
@@ -2392,8 +2412,9 @@
         var x = areaX + col * (cellW + gap);
         var y = areaY + row * (cellH + gap);
         var data = await cropToDataUrl(ph);
+        fillPrintedSize(ph);
         var spec = specLine(ph);
-        var capH = spec ? 0.32 : 0;
+        var capH = spec || ph.item || ph.size ? 0.36 : 0;
         s.addShape(pptx.ShapeType.roundRect, {
           x: x, y: y, w: cellW, h: cellH,
           fill: { color: "F4ECE1" }, rectRadius: 0.06
@@ -2401,10 +2422,10 @@
         var fit = containRect(x + 0.04, y + 0.04, cellW - 0.08, cellH - 0.08 - capH,
           ph.nw * (ph.crop && ph.crop.w || 1), ph.nh * (ph.crop && ph.crop.h || 1));
         s.addImage({ data: data, x: fit.x, y: fit.y, w: fit.w, h: fit.h });
-        if (spec) {
-          s.addText(spec, {
+        if (capH) {
+          s.addText(spec || ((ph.item || "") + (ph.size ? "  ·  SIZE " + ph.size : "")), {
             x: x + 0.04, y: y + cellH - capH, w: cellW - 0.08, h: capH,
-            fontFace: "Arial", fontSize: 9, color: "5A4A3A", align: "center", margin: 0
+            fontFace: "Arial", fontSize: 10, color: "3A2A1C", align: "center", bold: true, margin: 0
           });
         }
       }
@@ -2810,9 +2831,9 @@
     return w > 0 && h > 0 ? h / w : 0;
   }
   function looksLikeVase(p, look) {
-    var blob = [p.item, p.name, p.nameLabel, p.cat, p.note, look && look.reason, look && look.shape, look && look.construction].join(" ").toLowerCase();
-    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|\bneck\b/.test(blob)) return true;
-    if (photoAspect(p) >= 1.28) return true;
+    var blob = [p.item, p.name, p.nameLabel, p.cat, p.note, look && look.reason, look && look.shape, look && look.construction, look && look.kind].join(" ").toLowerCase();
+    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|\bneck\b|\bbelly\b|hyacinth jug/.test(blob)) return true;
+    if (look && (look.kind === "vase" || look.kind === "planter" || look.kind === "lantern")) return true;
     return false;
   }
   function forceKind(p, look, trendKind) {
@@ -2826,7 +2847,8 @@
     list.forEach(function (p) { p.on = false; });
     var same = list.filter(function (p) {
       if (p.lookKind !== kind || p.canMake === "no") return false;
-      if (kind === "tray" && (p.lookKind === "vase" || p.lookKind === "planter" || looksLikeVase(p, { reason: p.lookReason }))) return false;
+      if (kind === "tray" && looksLikeVase(p, { kind: p.lookKind, reason: p.lookReason, shape: p.lookReason })) return false;
+      if (kind === "tray" && (p.lookKind === "vase" || p.lookKind === "planter" || p.lookKind === "lantern" || p.lookKind === "other")) return false;
       return true;
     }).sort(function (a, b) { return (b.lookScore || 0) - (a.lookScore || 0); });
     if (!same.length) return 0;
@@ -2952,9 +2974,27 @@
       }
     });
     var same = cap.filter(function (p) {
-      return p.lookKind === trend.kind && p.canMake !== "no" && p._lookImg;
+      if (p.canMake === "no" || !p._lookImg) return false;
+      if (trend.kind === "tray" && looksLikeVase(p, { kind: p.lookKind, reason: p.lookReason })) {
+        p.lookKind = "vase";
+        p.lookScore = 0;
+        p.on = false;
+        return false;
+      }
+      return p.lookKind === trend.kind;
     });
-    soon("Kept " + same.length + " " + trend.kind + ". Skipped vases / other kinds. Scoring look…");
+    cap.forEach(function (p) {
+      if (trend.kind === "tray" && looksLikeVase(p, { kind: p.lookKind, reason: p.lookReason })) {
+        p.lookKind = "vase";
+        p.on = false;
+        p.trendHit = 0;
+      }
+    });
+    rest.forEach(function (p) { p.on = false; });
+    photos.forEach(function (p) {
+      if (trend.kind === "tray" && looksLikeVase(p, { kind: p.lookKind, reason: p.lookReason })) p.on = false;
+    });
+    soon("Kept " + same.length + " " + trend.kind + ". Vases stay off. Scoring look…");
     await mapPool(same, 2, async function (p) {
       try {
         var scored = await lookAtImage(p._lookImg, trend);

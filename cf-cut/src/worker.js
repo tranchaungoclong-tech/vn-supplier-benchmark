@@ -12,8 +12,8 @@ var LOOK_KINDS = { tray: 1, vase: 1, basket: 1, pumpkin: 1, lantern: 1, wreath: 
 
 var LOOK_PROMPT =
   "Look at THIS image only. Return JSON, no markdown:\n" +
-  '{"kind":"tray","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
-  "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other.\n" +
+  '{"kind":"other","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
+  "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other. Default kind is other until the silhouette is clear.\n" +
   "Name kind from THIS photo's silhouette. Do not copy a kind from any other product.\n" +
   "tray = low flat serving/display surface, usually wider than tall, often with side handles. NEVER a jug, amphora, pitcher, urn, bottle, or flower vessel.\n" +
   "vase = tall vessel for flowers or water (neck, belly, or two body handles). If the object is taller than it is wide, it is NOT a tray.\n" +
@@ -26,8 +26,8 @@ var LOOK_PROMPT =
 
 var LOOK_COMPARE =
   "Look at THIS factory catalogue photo. Return JSON, no markdown:\n" +
-  '{"kind":"tray","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
-  "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other.\n" +
+  '{"kind":"other","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
+  "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other. Default kind is other until the silhouette is clear.\n" +
   "Name kind from THIS photo only. Do not copy the buyer trend kind. A jug/amphora/pitcher is vase. A low rectangle is tray. If taller than wide, not a tray.\n" +
   "similar is true ONLY if THIS photo is the SAME product kind as the buyer trend AND it is one of the closest looks (same silhouette / weave / handle). Same kind but a different shape, rim, or weave → similar false, score at most 0.45.\n" +
   "score is 0 to 1 for look closeness. 0 if different kind. Do not give 0.7+ just because both are trays.\n" +
