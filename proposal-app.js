@@ -2805,6 +2805,25 @@
     await Promise.all(jobs);
     return out;
   }
+  function pickClosestLooks(list, kind) {
+    list.forEach(function (p) { p.on = false; });
+    var same = list.filter(function (p) {
+      return p.lookKind === kind && p.canMake !== "no";
+    }).sort(function (a, b) { return (b.lookScore || 0) - (a.lookScore || 0); });
+    if (!same.length) return 0;
+    var best = same[0].lookScore || 0;
+    if (best < 0.35) return 0;
+    var hits = 0;
+    same.forEach(function (p, i) {
+      if (hits >= 3) return;
+      if (i === 0) { p.on = true; hits++; return; }
+      if ((p.lookScore || 0) >= best - 0.05 && (p.lookScore || 0) >= 0.78) {
+        p.on = true;
+        hits++;
+      }
+    });
+    return hits;
+  }
   function paintTrendMatch(trend, hits, note) {
     var box = $("matchBox");
     if (box) {
@@ -2812,22 +2831,24 @@
         ? "<p>Trend looks like <b>" + esc(trend.kind) + "</b>"
           + (trend.material ? " · " + esc(trend.material) : "")
           + (trend.shape ? " · " + esc(trend.shape) : "")
-          + ". " + esc(trend.reason || "") + "</p>"
+          + ". Closest look only — not the whole PPT. " + esc(trend.reason || "") + "</p>"
         : "";
-      var shown = photos.filter(function (p) { return p.trendHit; })
-        .sort(function (a, b) { return (b.lookScore || 0) - (a.lookScore || 0); })
-        .slice(0, 16);
+      var shown = photos.slice().sort(function (a, b) {
+        if (!!b.on !== !!a.on) return b.on ? 1 : -1;
+        return (b.lookScore || 0) - (a.lookScore || 0);
+      }).filter(function (p) { return p.lookKind || p.on; }).slice(0, 12);
       box.innerHTML = head + (shown.length
         ? shown.map(function (p) {
             var make = p.canMake === "yes" ? "can make" : p.canMake === "no" ? "cannot make" : "make ?";
             var sc = p.lookScore != null ? Math.round(p.lookScore * 100) + "%" : "";
-            return "<div class='match-row'><span>" + esc(p.item || p.name) + " · " + esc(p.lookKind || "") + "</span><span>" + esc(sc + " · " + make) + "</span></div>";
+            var pick = p.on ? "PICK" : "skip";
+            return "<div class='match-row'><span>" + esc(pick + " · " + (p.item || p.name) + " · " + (p.lookKind || "")) + "</span><span>" + esc(sc + " · " + make) + "</span></div>";
           }).join("")
         : "<p class='soon'>" + esc(note || "No same-kind match. Did not invent a SKU.") + "</p>");
     }
     paintPreview();
     paintIssues();
-    soon(hits ? ("Tick " + hits + " " + ((trend && trend.kind) || "item") + " gần trend.") : (note || "Không khớp. Giữ kho, không bịa."));
+    soon(hits ? ("Chỉ tick " + hits + " " + ((trend && trend.kind) || "item") + " gần look nhất. Không lấy cả PPT.") : (note || "Không khớp. Giữ kho, không bịa."));
   }
   function matchTrendTokens() {
     var tokens = wordTokens(trendText);
@@ -2839,10 +2860,14 @@
       var hit = blob.filter(function (w) { return tokens.indexOf(w) >= 0; });
       p.trendHit = hit.length;
       p.lookKind = "";
-      p.lookScore = 0;
+      p.lookScore = hit.length / Math.max(tokens.length, 1);
       p.canMake = "unknown";
-      if (p.trendHit) { p.on = true; hits++; }
-      else p.on = false;
+      p.on = false;
+    });
+    var ranked = photos.slice().sort(function (a, b) { return (b.trendHit || 0) - (a.trendHit || 0); });
+    var best = ranked[0] ? ranked[0].trendHit : 0;
+    ranked.forEach(function (p, i) {
+      if (i < 3 && p.trendHit && p.trendHit >= Math.max(1, best - 1)) { p.on = true; hits++; }
     });
     paintTrendMatch(null, hits, hits ? "" : "Không khớp chữ in. Không bịa SKU.");
   }
@@ -2895,10 +2920,8 @@
         p.lookScore = look ? Number(look.score) || 0 : 0;
         p.canMake = look ? look.canMake : "unknown";
         p.lookReason = look ? look.reason : "";
-        var same = look && look.kind === trend.kind;
-        var close = look && (look.similar === true || p.lookScore >= 0.55);
-        p.trendHit = same && close ? Math.max(1, Math.round(p.lookScore * 10)) : 0;
-        p.on = !!p.trendHit && p.canMake !== "no";
+        p.trendHit = look && look.kind === trend.kind ? Math.max(1, Math.round(p.lookScore * 10)) : 0;
+        p.on = false;
       } catch (e) {
         p.on = false;
         p.trendHit = 0;
@@ -2907,8 +2930,8 @@
         p.canMake = "unknown";
       }
     });
-    var hits = photos.filter(function (p) { return p.on; }).length;
-    paintTrendMatch(trend, hits, hits ? "" : ("No " + trend.kind + " in this catalogue close to the trend. Did not take vases for a tray."));
+    var hits = pickClosestLooks(photos, trend.kind);
+    paintTrendMatch(trend, hits, hits ? "" : ("No " + trend.kind + " close to this trend. Did not take the whole PPT."));
   }
   function profiles() {
     try { return JSON.parse(localStorage.getItem(PROF_KEY) || "[]"); } catch (e) { return []; }

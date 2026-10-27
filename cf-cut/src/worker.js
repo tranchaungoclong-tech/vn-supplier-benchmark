@@ -25,8 +25,8 @@ var LOOK_COMPARE =
   '{"kind":"tray","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
   "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other.\n" +
   "A tray is never a vase. A water-hyacinth vase is never a tray.\n" +
-  "similar is true ONLY if THIS photo is the SAME product kind as the buyer trend AND the look is close (shape + material family). Different kind → similar false, score 0.\n" +
-  "score is 0 to 1 for look closeness. 0 if different kind.\n" +
+  "similar is true ONLY if THIS photo is the SAME product kind as the buyer trend AND it is one of the closest looks (same silhouette / weave / handle). Same kind but a different shape, rim, or weave → similar false, score at most 0.45.\n" +
+  "score is 0 to 1 for look closeness. 0 if different kind. Do not give 0.7+ just because both are trays.\n" +
   "canMake = yes/no/unknown for a rattan/hyacinth/seagrass weaving factory. Do not invent item code, $, MOQ, or size.\n" +
   "reason = one short sentence.\n" +
   "Buyer trend: ";
