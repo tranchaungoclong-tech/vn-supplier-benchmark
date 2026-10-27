@@ -560,7 +560,7 @@
     if (p.item) bits.push(L.item + " " + p.item);
     if (p.nameLabel) bits.push(p.nameLabel);
     if (p.material) bits.push(L.material + " " + p.material);
-    if (p.size) bits.push(L.size + " " + p.size);
+    bits.push(L.size + (p.size ? " " + p.size : ""));
     if (p.price) bits.push(p.price);
     if (p.moq) bits.push(L.moq + " " + p.moq);
     if (p.lead) bits.push(L.lt + " " + p.lead);
@@ -1776,8 +1776,13 @@
 
   function livePhotos() {
     var mode = $("groupBy") ? $("groupBy").value : "auto";
+    var trayTrend = trendLook && trendLook.kind === "tray";
+    var picked = photos.some(function (p) { return p.lookKind; });
     return photos.filter(function (p) {
       if (p.on === false) return false;
+      if (trayTrend && looksLikeVase(p, { kind: p.lookKind, reason: p.lookReason, shape: p.lookReason })) return false;
+      if (trayTrend && (p.lookKind === "vase" || p.lookKind === "planter" || p.lookKind === "lantern")) return false;
+      if (trayTrend && picked && p.lookKind && p.lookKind !== "tray") return false;
       var cat = p.cat || "Other";
       if (mode === "auto" && hiddenCats[cat]) return false;
       if (mode === "file" && hiddenCats[p.src || "file"]) return false;
@@ -2308,7 +2313,7 @@
         var data = g.original ? ph.data : await cropToDataUrl(ph);
         fillPrintedSize(ph);
         var spec = specLine(ph);
-        var capH = !g.original && (spec || ph.item || ph.size) ? 0.46 : 0;
+        var capH = g.original ? 0 : 0.46;
         s.addShape(pptx.ShapeType.roundRect, {
           x: x, y: y, w: cellW, h: cellH,
           fill: { color: "F4ECE1" }, rectRadius: 0.06
@@ -2414,7 +2419,7 @@
         var data = await cropToDataUrl(ph);
         fillPrintedSize(ph);
         var spec = specLine(ph);
-        var capH = spec || ph.item || ph.size ? 0.36 : 0;
+        var capH = 0.36;
         s.addShape(pptx.ShapeType.roundRect, {
           x: x, y: y, w: cellW, h: cellH,
           fill: { color: "F4ECE1" }, rectRadius: 0.06
@@ -2831,8 +2836,8 @@
     return w > 0 && h > 0 ? h / w : 0;
   }
   function looksLikeVase(p, look) {
-    var blob = [p.item, p.name, p.nameLabel, p.cat, p.note, look && look.reason, look && look.shape, look && look.construction, look && look.kind].join(" ").toLowerCase();
-    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|\bneck\b|\bbelly\b|hyacinth jug/.test(blob)) return true;
+    var blob = [p.item, p.name, p.nameLabel, p.cat, p.note, p.src, look && look.reason, look && look.shape, look && look.construction, look && look.kind].join(" ").toLowerCase();
+    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|\bneck\b|\bbelly\b|hyacinth jug|water[- ]hyacinth vase/.test(blob)) return true;
     if (look && (look.kind === "vase" || look.kind === "planter" || look.kind === "lantern")) return true;
     return false;
   }
