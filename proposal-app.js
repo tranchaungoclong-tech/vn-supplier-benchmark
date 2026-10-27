@@ -2805,10 +2805,29 @@
     await Promise.all(jobs);
     return out;
   }
+  function photoAspect(p) {
+    var w = Number(p.nw) || 0, h = Number(p.nh) || 0;
+    return w > 0 && h > 0 ? h / w : 0;
+  }
+  function looksLikeVase(p, look) {
+    var blob = [p.item, p.name, p.nameLabel, p.cat, p.note, look && look.reason, look && look.shape, look && look.construction].join(" ").toLowerCase();
+    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|\bneck\b/.test(blob)) return true;
+    if (photoAspect(p) >= 1.28) return true;
+    return false;
+  }
+  function forceKind(p, look, trendKind) {
+    var kind = look && look.kind ? look.kind : "";
+    if (looksLikeVase(p, look)) kind = "vase";
+    if (trendKind === "tray" && (kind === "vase" || kind === "planter" || kind === "lantern")) kind = kind || "vase";
+    if (look) look.kind = kind || look.kind;
+    return kind;
+  }
   function pickClosestLooks(list, kind) {
     list.forEach(function (p) { p.on = false; });
     var same = list.filter(function (p) {
-      return p.lookKind === kind && p.canMake !== "no";
+      if (p.lookKind !== kind || p.canMake === "no") return false;
+      if (kind === "tray" && (p.lookKind === "vase" || p.lookKind === "planter" || looksLikeVase(p, { reason: p.lookReason }))) return false;
+      return true;
     }).sort(function (a, b) { return (b.lookScore || 0) - (a.lookScore || 0); });
     if (!same.length) return 0;
     var best = same[0].lookScore || 0;
@@ -2911,16 +2930,18 @@
     var cap = photos.slice(0, 40);
     var rest = photos.slice(40);
     rest.forEach(function (p) { p.on = false; p.trendHit = 0; p.lookKind = ""; p.lookScore = 0; p.canMake = "unknown"; });
-    soon("Trend is a " + trend.kind + ". Looking at catalogue photos…");
+    soon("Trend is a " + trend.kind + ". Reading each catalogue photo…");
     await mapPool(cap, 2, async function (p) {
       try {
         var img = await shrinkDataUrl(await cropToDataUrl(p), 720);
-        var look = await lookAtImage(img, trend);
-        p.lookKind = look ? look.kind : "";
-        p.lookScore = look ? Number(look.score) || 0 : 0;
+        p._lookImg = img;
+        var look = await lookAtImage(img, null);
+        var kind = forceKind(p, look, trend.kind);
+        p.lookKind = kind || (look && look.kind) || "";
+        p.lookScore = 0;
         p.canMake = look ? look.canMake : "unknown";
         p.lookReason = look ? look.reason : "";
-        p.trendHit = look && look.kind === trend.kind ? Math.max(1, Math.round(p.lookScore * 10)) : 0;
+        p.trendHit = 0;
         p.on = false;
       } catch (e) {
         p.on = false;
@@ -2930,8 +2951,36 @@
         p.canMake = "unknown";
       }
     });
+    var same = cap.filter(function (p) {
+      return p.lookKind === trend.kind && p.canMake !== "no" && p._lookImg;
+    });
+    soon("Kept " + same.length + " " + trend.kind + ". Skipped vases / other kinds. Scoring look…");
+    await mapPool(same, 2, async function (p) {
+      try {
+        var scored = await lookAtImage(p._lookImg, trend);
+        if (scored && scored.kind && scored.kind !== trend.kind) {
+          p.lookKind = scored.kind;
+          p.lookScore = 0;
+          p.lookReason = scored.reason;
+          return;
+        }
+        if (looksLikeVase(p, scored)) {
+          p.lookKind = "vase";
+          p.lookScore = 0;
+          return;
+        }
+        p.lookKind = trend.kind;
+        p.lookScore = scored ? Number(scored.score) || 0 : 0;
+        p.canMake = (scored && scored.canMake) || p.canMake || "unknown";
+        p.lookReason = (scored && scored.reason) || p.lookReason || "";
+        p.trendHit = Math.max(1, Math.round(p.lookScore * 10));
+      } catch (e) {
+        p.lookScore = 0;
+      }
+    });
+    cap.forEach(function (p) { delete p._lookImg; });
     var hits = pickClosestLooks(photos, trend.kind);
-    paintTrendMatch(trend, hits, hits ? "" : ("No " + trend.kind + " close to this trend. Did not take the whole PPT."));
+    paintTrendMatch(trend, hits, hits ? "" : ("No " + trend.kind + " close to this trend. Did not take vases."));
   }
   function profiles() {
     try { return JSON.parse(localStorage.getItem(PROF_KEY) || "[]"); } catch (e) { return []; }

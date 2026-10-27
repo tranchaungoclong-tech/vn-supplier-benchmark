@@ -14,7 +14,11 @@ var LOOK_PROMPT =
   "Look at THIS image only. Return JSON, no markdown:\n" +
   '{"kind":"tray","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
   "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other.\n" +
-  "A tray is a low flat serving or display surface, often with handles. A vase is a tall vessel for flowers or water. Tray and vase are NEVER the same kind.\n" +
+  "Name kind from THIS photo's silhouette. Do not copy a kind from any other product.\n" +
+  "tray = low flat serving/display surface, usually wider than tall, often with side handles. NEVER a jug, amphora, pitcher, urn, bottle, or flower vessel.\n" +
+  "vase = tall vessel for flowers or water (neck, belly, or two body handles). If the object is taller than it is wide, it is NOT a tray.\n" +
+  "basket = open container with high walls or a handle arch. planter = pot to hold a plant. bowl = deep round dish.\n" +
+  "Tray and vase are NEVER the same kind. A water-hyacinth jug is a vase, not a tray.\n" +
   "If two products sit in one photo, name the MAIN product that fills the frame. Do not mix them.\n" +
   "material / shape / construction = only what you see. Leave \"\" if unsure.\n" +
   "canMake = yes if this looks like a hand-woven natural-fiber home item (rattan, hyacinth, seagrass, bamboo) a weaving factory already makes. canMake = no if ceramic, glass, metal spinning, injection plastic, or a round/oval lighting body that is not a woven lantern. canMake = unknown if you cannot tell. Do not invent item code, $, MOQ, or size.\n" +
@@ -24,7 +28,7 @@ var LOOK_COMPARE =
   "Look at THIS factory catalogue photo. Return JSON, no markdown:\n" +
   '{"kind":"tray","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
   "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other.\n" +
-  "A tray is never a vase. A water-hyacinth vase is never a tray.\n" +
+  "Name kind from THIS photo only. Do not copy the buyer trend kind. A jug/amphora/pitcher is vase. A low rectangle is tray. If taller than wide, not a tray.\n" +
   "similar is true ONLY if THIS photo is the SAME product kind as the buyer trend AND it is one of the closest looks (same silhouette / weave / handle). Same kind but a different shape, rim, or weave → similar false, score at most 0.45.\n" +
   "score is 0 to 1 for look closeness. 0 if different kind. Do not give 0.7+ just because both are trays.\n" +
   "canMake = yes/no/unknown for a rattan/hyacinth/seagrass weaving factory. Do not invent item code, $, MOQ, or size.\n" +
@@ -145,8 +149,9 @@ function parseLook(text, trendKind) {
   if (trendKind && kind !== trendKind) {
     similar = false;
     score = 0;
+  } else if (!similar) {
+    score = Math.min(score, 0.45);
   }
-  if (!similar) score = Math.min(score, 0.35);
   return {
     kind: kind,
     material: clipLook(o.material, 40),
