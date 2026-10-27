@@ -8,6 +8,29 @@ var CUT_PROMPT =
   "item = digits printed under that photograph (NNNN-NNNNN only). size = printed size under it (L/M/S, SIZE L/M/S, H22, H21/H19, D28xH21, L45). Leave \"\" if you cannot read it. Never put size or a heading in item. Do not invent.\n" +
   "At most 16 boxes.";
 
+var LOOK_KINDS = { tray: 1, vase: 1, basket: 1, pumpkin: 1, lantern: 1, wreath: 1, planter: 1, bowl: 1, other: 1 };
+
+var LOOK_PROMPT =
+  "Look at THIS image only. Return JSON, no markdown:\n" +
+  '{"kind":"tray","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
+  "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other.\n" +
+  "A tray is a low flat serving or display surface, often with handles. A vase is a tall vessel for flowers or water. Tray and vase are NEVER the same kind.\n" +
+  "If two products sit in one photo, name the MAIN product that fills the frame. Do not mix them.\n" +
+  "material / shape / construction = only what you see. Leave \"\" if unsure.\n" +
+  "canMake = yes if this looks like a hand-woven natural-fiber home item (rattan, hyacinth, seagrass, bamboo) a weaving factory already makes. canMake = no if ceramic, glass, metal spinning, injection plastic, or a round/oval lighting body that is not a woven lantern. canMake = unknown if you cannot tell. Do not invent item code, $, MOQ, or size.\n" +
+  "similar = false and score = 0 on this classify call. reason = one short sentence of what you see.";
+
+var LOOK_COMPARE =
+  "Look at THIS factory catalogue photo. Return JSON, no markdown:\n" +
+  '{"kind":"tray","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
+  "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other.\n" +
+  "A tray is never a vase. A water-hyacinth vase is never a tray.\n" +
+  "similar is true ONLY if THIS photo is the SAME product kind as the buyer trend AND the look is close (shape + material family). Different kind → similar false, score 0.\n" +
+  "score is 0 to 1 for look closeness. 0 if different kind.\n" +
+  "canMake = yes/no/unknown for a rattan/hyacinth/seagrass weaving factory. Do not invent item code, $, MOQ, or size.\n" +
+  "reason = one short sentence.\n" +
+  "Buyer trend: ";
+
 function cors(headers) {
   headers.set("Access-Control-Allow-Origin", "*");
   headers.set("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
@@ -106,18 +129,48 @@ function localCritic(boxes) {
   return out;
 }
 
-async function callModel(env, image) {
+function clipLook(v, n) {
+  return String(v || "").replace(/\s+/g, " ").trim().slice(0, n || 80);
+}
+
+function parseLook(text, trendKind) {
+  var o = parseJsonObject(text);
+  var kind = String(o.kind || "other").toLowerCase().replace(/[^a-z]/g, "");
+  if (!LOOK_KINDS[kind]) kind = "other";
+  var canMake = String(o.canMake || o.can_make || "unknown").toLowerCase();
+  if (canMake !== "yes" && canMake !== "no") canMake = "unknown";
+  var similar = o.similar === true || o.similar === "true";
+  var score = Math.max(0, Math.min(1, Number(o.score)));
+  if (!isFinite(score)) score = similar ? 0.6 : 0;
+  if (trendKind && kind !== trendKind) {
+    similar = false;
+    score = 0;
+  }
+  if (!similar) score = Math.min(score, 0.35);
+  return {
+    kind: kind,
+    material: clipLook(o.material, 40),
+    shape: clipLook(o.shape, 24),
+    construction: clipLook(o.construction, 24),
+    canMake: canMake,
+    similar: similar,
+    score: score,
+    reason: clipLook(o.reason, 160)
+  };
+}
+
+async function callModel(env, image, prompt, maxTokens) {
   var key = env.ALPHA_API_KEY;
   if (!key) throw new Error("ALPHA_API_KEY secret missing.");
   var split = splitDataUrl(image);
   var payload = {
     model: env.CUT_MODEL || "claude-sonnet-4-6",
-    max_tokens: 2200,
+    max_tokens: maxTokens || 2200,
     messages: [{
       role: "user",
       content: [
         { type: "image", source: { type: "base64", media_type: split.mediaType, data: split.data } },
-        { type: "text", text: CUT_PROMPT }
+        { type: "text", text: prompt || CUT_PROMPT }
       ]
     }]
   };
@@ -149,14 +202,33 @@ export default {
     var url = new URL(req.url);
     var path = url.pathname;
     if (req.method === "GET" && (path === "/" || path === "/health")) {
-      return json({ ok: !!env.ALPHA_API_KEY, service: "proposal-cut", graph: true });
+      return json({ ok: !!env.ALPHA_API_KEY, service: "proposal-cut", graph: true, look: true });
     }
     if (req.method === "POST" && (path === "/cut" || path === "/vision")) {
       try {
         var body = await req.json();
-        var text = await callModel(env, body.image);
+        var text = await callModel(env, body.image, CUT_PROMPT, 2200);
         var boxes = localCritic(parseBoxes(text));
         return json({ kind: "catalog", boxes: boxes, steps: ["cut:" + boxes.length] });
+      } catch (err) {
+        return json({ error: err.message || String(err) }, 500);
+      }
+    }
+    if (req.method === "POST" && path === "/look") {
+      try {
+        var lookBody = await req.json();
+        var trend = lookBody.trend || null;
+        var trendKind = trend && LOOK_KINDS[String(trend.kind || "").toLowerCase()] ? String(trend.kind).toLowerCase() : "";
+        var prompt = trendKind
+          ? LOOK_COMPARE + JSON.stringify({
+              kind: trendKind,
+              material: clipLook(trend.material, 40),
+              shape: clipLook(trend.shape, 24),
+              construction: clipLook(trend.construction, 24)
+            })
+          : LOOK_PROMPT;
+        var lookText = await callModel(env, lookBody.image, prompt, 400);
+        return json(parseLook(lookText, trendKind));
       } catch (err) {
         return json({ error: err.message || String(err) }, 500);
       }

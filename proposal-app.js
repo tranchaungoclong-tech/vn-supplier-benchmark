@@ -14,6 +14,7 @@
     logoData: null,
     trendFiles: [],
     trendText: "",
+    trendLook: null,
     lastQa: [],
     ingestJob: null,
     aiModel: null,
@@ -38,6 +39,7 @@
   var logoData = st.logoData;
   var trendFiles = st.trendFiles;
   var trendText = st.trendText;
+  var trendLook = st.trendLook;
   var lastQa = st.lastQa;
   var ingestJob = st.ingestJob;
   function persist() {
@@ -52,6 +54,7 @@
     st.logoData = logoData;
     st.trendFiles = trendFiles;
     st.trendText = trendText;
+    st.trendLook = trendLook;
     st.lastQa = lastQa;
     st.ingestJob = ingestJob;
     st.aiModel = aiModel;
@@ -1129,6 +1132,46 @@
       if (c.ok && cj && cj.ok) { visionOk = true; visionUrl = VISION_CLOUD; return true; }
     } catch (e) {}
     return false;
+  }
+  function lookEndpoint(cutUrl) {
+    return String(cutUrl || "").replace(/\/(cut|vision)$/i, "/look");
+  }
+  async function postLook(url, image, trend) {
+    try {
+      var rr = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ image: image, trend: trend || null })
+      });
+      var jj = await rr.json().catch(function () { return {}; });
+      if (!rr.ok || !jj || jj.error || !jj.kind) return null;
+      return jj;
+    } catch (e) {
+      return null;
+    }
+  }
+  async function lookAtImage(image, trend) {
+    if (!(await pingVision())) return null;
+    var urls = visionUrl === VISION_CLOUD
+      ? [lookEndpoint(VISION_CLOUD)]
+      : [lookEndpoint(VISION_URL), lookEndpoint(VISION_CLOUD)];
+    var i, got;
+    for (i = 0; i < urls.length; i++) {
+      got = await postLook(urls[i], image, trend);
+      if (got) return got;
+    }
+    return null;
+  }
+  function shrinkDataUrl(data, maxEdge) {
+    return loadImage(data).then(function (img) {
+      var c = shrinkCanvas(img, maxEdge || 900);
+      if (c && c.toDataURL) return c.toDataURL("image/jpeg", 0.82);
+      var out = document.createElement("canvas");
+      out.width = img.width;
+      out.height = img.height;
+      out.getContext("2d").drawImage(img, 0, 0);
+      return out.toDataURL("image/jpeg", 0.82);
+    });
   }
   function shrinkCanvas(src, maxEdge) {
     var w = src.width, h = src.height;
@@ -2720,15 +2763,99 @@
     }
     return out;
   }
+  function isImageFile(file) {
+    var n = (file && file.name) || "";
+    var t = (file && file.type) || "";
+    return t.indexOf("image/") === 0 || /\.(png|jpe?g|webp|gif|bmp)$/i.test(n);
+  }
+  async function firstTrendImage(file) {
+    if (!file) return "";
+    if (isImageFile(file)) return blobToDataUrl(file);
+    var ext = extOf(file.name);
+    if (ext === "pdf") {
+      var doc = await pdfjsLib.getDocument({ data: await fileToArray(file) }).promise;
+      var page = await doc.getPage(1);
+      var vp = page.getViewport({ scale: 1.4 });
+      var canvas = document.createElement("canvas");
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+      return canvas.toDataURL("image/jpeg", 0.85);
+    }
+    if (ext === "pptx" || ext === "ppt") {
+      var zip = await JSZip.loadAsync(await fileToArray(file));
+      var names = Object.keys(zip.files).filter(function (n) { return /^ppt\/media\/.+\.(png|jpe?g|webp)$/i.test(n); });
+      if (!names.length) return "";
+      names.sort();
+      return blobToDataUrl(await zip.files[names[0]].async("blob"));
+    }
+    return "";
+  }
+  async function mapPool(items, n, fn) {
+    var i = 0, out = new Array(items.length);
+    async function worker() {
+      while (i < items.length) {
+        var k = i++;
+        out[k] = await fn(items[k], k);
+      }
+    }
+    var jobs = [];
+    var w;
+    for (w = 0; w < Math.min(n, items.length); w++) jobs.push(worker());
+    await Promise.all(jobs);
+    return out;
+  }
+  function paintTrendMatch(trend, hits, note) {
+    var box = $("matchBox");
+    if (box) {
+      var head = trend
+        ? "<p>Trend looks like <b>" + esc(trend.kind) + "</b>"
+          + (trend.material ? " · " + esc(trend.material) : "")
+          + (trend.shape ? " · " + esc(trend.shape) : "")
+          + ". " + esc(trend.reason || "") + "</p>"
+        : "";
+      var shown = photos.filter(function (p) { return p.trendHit; })
+        .sort(function (a, b) { return (b.lookScore || 0) - (a.lookScore || 0); })
+        .slice(0, 16);
+      box.innerHTML = head + (shown.length
+        ? shown.map(function (p) {
+            var make = p.canMake === "yes" ? "can make" : p.canMake === "no" ? "cannot make" : "make ?";
+            var sc = p.lookScore != null ? Math.round(p.lookScore * 100) + "%" : "";
+            return "<div class='match-row'><span>" + esc(p.item || p.name) + " · " + esc(p.lookKind || "") + "</span><span>" + esc(sc + " · " + make) + "</span></div>";
+          }).join("")
+        : "<p class='soon'>" + esc(note || "No same-kind match. Did not invent a SKU.") + "</p>");
+    }
+    paintPreview();
+    paintIssues();
+    soon(hits ? ("Tick " + hits + " " + ((trend && trend.kind) || "item") + " gần trend.") : (note || "Không khớp. Giữ kho, không bịa."));
+  }
+  function matchTrendTokens() {
+    var tokens = wordTokens(trendText);
+    var stop = { the:1, and:1, for:1, with:1, from:1, this:1, that:1, collection:1, proposal:1, fashion:1, alpha:1, pdf:1, pptx:1, jpg:1, jpeg:1, png:1, trending:1 };
+    tokens = tokens.filter(function (w) { return !stop[w] && w.length > 2; });
+    var hits = 0;
+    photos.forEach(function (p) {
+      var blob = wordTokens([p.item, p.material, p.cat, p.nameLabel, p.note].join(" "));
+      var hit = blob.filter(function (w) { return tokens.indexOf(w) >= 0; });
+      p.trendHit = hit.length;
+      p.lookKind = "";
+      p.lookScore = 0;
+      p.canMake = "unknown";
+      if (p.trendHit) { p.on = true; hits++; }
+      else p.on = false;
+    });
+    paintTrendMatch(null, hits, hits ? "" : "Không khớp chữ in. Không bịa SKU.");
+  }
   async function ingestTrend() {
     trendText = "";
+    trendLook = null;
     for (var i = 0; i < trendFiles.length; i++) {
       try { trendText += " " + await extractTextFile(trendFiles[i]); } catch (e) {}
     }
     trendText = stripFactoryContact(trendText);
     paintStockNote();
   }
-  function matchTrend() {
+  async function matchTrend() {
     if (!trendFiles.length) {
       soon("Thả file trend trước.");
       return;
@@ -2737,29 +2864,51 @@
       soon("Thả / mở kho catalogue trước.");
       return;
     }
-    var tokens = wordTokens(trendText + " " + trendFiles.map(function (f) { return f.name; }).join(" "));
-    var stop = { the:1, and:1, for:1, with:1, from:1, this:1, that:1, collection:1, proposal:1, fashion:1, alpha:1, pdf:1, pptx:1 };
-    tokens = tokens.filter(function (w) { return !stop[w] && w.length > 2; });
-    var hits = 0;
-    photos.forEach(function (p) {
-      var blob = wordTokens([p.item, p.material, p.cat, p.name, p.src, p.factory, p.note].join(" "));
-      var hit = blob.filter(function (w) { return tokens.indexOf(w) >= 0; });
-      p.trendHit = hit.length;
-      if (p.trendHit) { p.on = true; hits++; }
-      else p.on = false;
-    });
-    var box = $("matchBox");
-    if (box) {
-      var shown = photos.filter(function (p) { return p.trendHit; }).slice(0, 12);
-      box.innerHTML = shown.length
-        ? shown.map(function (p) {
-            return "<div class='match-row'><span>" + esc(p.item || p.name) + "</span><span>" + p.trendHit + " khớp</span></div>";
-          }).join("")
-        : "<p class='soon'>Không khớp token nào trong kho. Không bịa SKU.</p>";
+    soon("Looking at the trend photo…");
+    var trendImg = "";
+    try { trendImg = await firstTrendImage(trendFiles[0]); } catch (e) { trendImg = ""; }
+    var trend = null;
+    if (trendImg) {
+      try {
+        trend = await lookAtImage(await shrinkDataUrl(trendImg, 1000), null);
+      } catch (e) { trend = null; }
     }
-    paintPreview();
-    paintIssues();
-    soon(hits ? ("Tick " + hits + " item khớp trend.") : "Không khớp. Giữ kho, không bịa.");
+    trendLook = trend;
+    if (!trend || !trend.kind) {
+      if (trendImg) {
+        photos.forEach(function (p) { p.on = false; p.trendHit = 0; });
+        paintTrendMatch(null, 0, "Cannot read the photo. Open 4181 or Worker /look. Did not tick from the filename.");
+        return;
+      }
+      matchTrendTokens();
+      return;
+    }
+    var cap = photos.slice(0, 40);
+    var rest = photos.slice(40);
+    rest.forEach(function (p) { p.on = false; p.trendHit = 0; p.lookKind = ""; p.lookScore = 0; p.canMake = "unknown"; });
+    soon("Trend is a " + trend.kind + ". Looking at catalogue photos…");
+    await mapPool(cap, 2, async function (p) {
+      try {
+        var img = await shrinkDataUrl(await cropToDataUrl(p), 720);
+        var look = await lookAtImage(img, trend);
+        p.lookKind = look ? look.kind : "";
+        p.lookScore = look ? Number(look.score) || 0 : 0;
+        p.canMake = look ? look.canMake : "unknown";
+        p.lookReason = look ? look.reason : "";
+        var same = look && look.kind === trend.kind;
+        var close = look && (look.similar === true || p.lookScore >= 0.55);
+        p.trendHit = same && close ? Math.max(1, Math.round(p.lookScore * 10)) : 0;
+        p.on = !!p.trendHit && p.canMake !== "no";
+      } catch (e) {
+        p.on = false;
+        p.trendHit = 0;
+        p.lookKind = "";
+        p.lookScore = 0;
+        p.canMake = "unknown";
+      }
+    });
+    var hits = photos.filter(function (p) { return p.on; }).length;
+    paintTrendMatch(trend, hits, hits ? "" : ("No " + trend.kind + " in this catalogue close to the trend. Did not take vases for a tray."));
   }
   function profiles() {
     try { return JSON.parse(localStorage.getItem(PROF_KEY) || "[]"); } catch (e) { return []; }
