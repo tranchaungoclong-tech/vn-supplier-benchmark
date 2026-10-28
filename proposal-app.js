@@ -2846,29 +2846,47 @@
     var w = Number(p.nw) || 0, h = Number(p.nh) || 0;
     return w > 0 && h > 0 ? h / w : 0;
   }
-  function looksLikeVase(p, look) {
-    if (look && look.kind === "tray") return false;
-    if (look && (look.kind === "vase" || look.kind === "planter" || look.kind === "lantern")) return true;
-    var blob = [p.item, p.nameLabel, p.note, look && look.reason, look && look.shape, look && look.construction].join(" ").toLowerCase();
+  function lookText(p, look) {
+    var blob = [p && p.item, p && p.nameLabel, p && p.note, p && p.lookReason, look && look.reason, look && look.shape, look && look.construction].join(" ").toLowerCase();
     if (/\.(pptx?|pdf|jpe?g|png)\b|proposal|batch\s*\d|far\s*eastern|in\s*home/i.test(blob)) {
-      blob = [p.item, p.nameLabel, look && look.reason, look && look.shape].join(" ").toLowerCase();
+      blob = [p && p.item, p && p.nameLabel, look && look.reason, look && look.shape, look && look.construction, p && p.lookReason].join(" ").toLowerCase();
     }
-    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|hyacinth jug|water[- ]hyacinth vase/.test(blob)) return true;
+    return blob.replace(/\bnot an?\s+(?:tray|vase|basket|platter|charger)[^,.!]*/g, " ").replace(/\bno tray\b|\bunlike the [^,.]*tray/g, " ");
+  }
+  function vaseWords(blob) {
+    return /vase|amphora|pitcher|urn|\bjug\b|\bbottle\b|flower vessel|hyacinth jug|water[- ]hyacinth|lọ hoa|neck.{0,40}handles|handles.{0,40}neck/.test(blob);
+  }
+  function trayWords(blob) {
+    return /\btrays?\b|platter|charger|scalloped plate|handled rect|side handles|serving board/.test(blob);
+  }
+  function looksLikeVase(p, look) {
+    if (look && (look.kind === "vase" || look.kind === "planter" || look.kind === "lantern")) return true;
+    var blob = lookText(p, look);
+    if (vaseWords(blob) && !trayWords(blob)) return true;
     return false;
   }
   function looksLikeTray(p, look) {
+    var blob = lookText(p, look);
+    if (vaseWords(blob) && !trayWords(blob)) return false;
     if (look && look.kind === "tray") return true;
     if (look && (look.kind === "vase" || look.kind === "planter" || look.kind === "lantern")) return false;
-    var blob = [p.item, p.nameLabel, p.note, look && look.reason, look && look.shape, look && look.construction].join(" ").toLowerCase();
     if (/scalloped plate|scallop(?:ed)? (?:plate|charger|platter|tray|rim)|charger|platter|shallow dish/.test(blob)) return true;
     if (/low (?:round |flat )?(?:plate|tray|dish)/.test(blob) && !/high wall|handle arch|neck|belly/.test(blob)) return true;
     return false;
+  }
+  function lockTrendKind(look) {
+    if (!look) return look;
+    var blob = lookText(null, look);
+    if (trayWords(blob) && /(foreground|in front|handled (?:serving )?tray|rectangular tray)/.test(blob)) {
+      look.kind = "tray";
+    }
+    return look;
   }
   function forceKind(p, look, trendKind) {
     var kind = look && look.kind ? look.kind : "";
     if (looksLikeTray(p, look)) kind = "tray";
     if (looksLikeVase(p, look)) kind = "vase";
-    if (trendKind === "tray" && (kind === "vase" || kind === "planter" || kind === "lantern")) kind = kind || "vase";
+    if (trendKind === "tray" && looksLikeVase(p, look)) kind = "vase";
     if (look) look.kind = kind || look.kind;
     return kind;
   }
@@ -2966,7 +2984,7 @@
     var trend = null;
     if (trendImg) {
       try {
-        trend = await lookAtImage(await shrinkDataUrl(trendImg, 1000), null);
+        trend = lockTrendKind(await lookAtImage(await shrinkDataUrl(trendImg, 1000), null));
       } catch (e) { trend = null; }
     }
     trendLook = trend;
@@ -3028,19 +3046,21 @@
     await mapPool(same, 2, async function (p) {
       try {
         var scored = await lookAtImage(p._lookImg, trend);
-        if (scored && scored.kind && scored.kind !== trend.kind) {
-          p.lookKind = scored.kind;
-          p.lookScore = 0;
-          p.lookReason = scored.reason;
-          return;
-        }
-        if (looksLikeVase(p, scored)) {
+        if (trend.kind === "tray" && looksLikeVase(p, scored || { kind: p.lookKind, reason: p.lookReason })) {
           p.lookKind = "vase";
           p.lookScore = 0;
+          p.lookReason = (scored && scored.reason) || p.lookReason || "";
           return;
         }
-        p.lookKind = trend.kind;
-        p.lookScore = scored ? Number(scored.score) || 0 : 0;
+        if (p.lookKind !== trend.kind) {
+          p.lookScore = 0;
+          return;
+        }
+        if (scored && scored.kind && scored.kind !== trend.kind) {
+          p.lookScore = 0.5;
+        } else {
+          p.lookScore = scored ? Number(scored.score) || 0 : 0;
+        }
         p.canMake = (scored && scored.canMake) || p.canMake || "unknown";
         p.lookReason = (scored && scored.reason) || p.lookReason || "";
         p.trendHit = Math.max(1, Math.round(p.lookScore * 10));

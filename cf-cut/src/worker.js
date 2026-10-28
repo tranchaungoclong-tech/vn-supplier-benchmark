@@ -16,11 +16,12 @@ var LOOK_PROMPT =
   "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other. Default kind is other until the silhouette is clear.\n" +
   "Name kind from THIS photo's silhouette. Do not copy a kind from any other product.\n" +
   "tray = low flat serving/display surface, usually wider than tall, often with side handles. A scalloped plate, charger, platter, or shallow dish is a tray. NEVER a jug, amphora, pitcher, urn, bottle, or flower vessel.\n" +
-  "vase = tall vessel for flowers or water (neck, belly, or two body handles). If the object is taller than it is wide, it is NOT a tray.\n" +
+  "vase = tall vessel for flowers or water (neck, belly, or two body handles). If the object is taller than it is wide AND there is no tray in the foreground, it is NOT a tray.\n" +
   "basket = open container with HIGH walls or a handle arch (can hold volume). A low scalloped plate is NOT a basket.\n" +
   "planter = pot to hold a plant. bowl = deep round dish that is not a plate.\n" +
   "Tray and vase are NEVER the same kind. A water-hyacinth jug is a vase, not a tray.\n" +
-  "If two products sit in one photo, name the MAIN product that fills the frame. Do not mix them.\n" +
+  "Buyer trend photos often stage a TRAY in front with bottles, jugs, or baskets behind. If a handled tray / platter / charger is in the foreground, kind = tray. Do not name the background bottles.\n" +
+  "If two products sit in one photo, name the MAIN product that fills the frame. A tray in front wins over bottles behind.\n" +
   "material / shape / construction = only what you see. Leave \"\" if unsure.\n" +
   "canMake = yes if this looks like a hand-woven natural-fiber home item (rattan, hyacinth, seagrass, bamboo) a weaving factory already makes. canMake = no if ceramic, glass, metal spinning, injection plastic, or a round/oval lighting body that is not a woven lantern. canMake = unknown if you cannot tell. Do not invent item code, $, MOQ, or size.\n" +
   "similar = false and score = 0 on this classify call. reason = one short sentence of what you see.";
@@ -29,8 +30,8 @@ var LOOK_COMPARE =
   "Look at THIS factory catalogue photo. Return JSON, no markdown:\n" +
   '{"kind":"other","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
   "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other. Default kind is other until the silhouette is clear.\n" +
-  "Name kind from THIS photo only. Do not copy the buyer trend kind. A jug/amphora/pitcher is vase. A low rectangle, scalloped plate, charger, or platter is tray. If taller than wide, not a tray. A low plate is not a basket.\n" +
-  "similar is true if THIS photo is the SAME product kind as the buyer trend (tray with tray, vase with vase). similar is false if the kind is different.\n" +
+  "Name kind from THIS photo only. Do not copy the buyer trend kind. A jug/amphora/pitcher/bottle/flower vessel is vase even if the buyer trend is a tray. A low rectangle, scalloped plate, charger, or platter is tray. If taller than wide with a neck or belly and no serving surface, not a tray. A low plate is not a basket.\n" +
+  "similar is true only if THIS photo is the SAME product kind as the buyer trend (tray with tray, vase with vase). similar is false if the kind is different. A vase is never similar to a tray.\n" +
   "score is 0 to 1 for look closeness among the SAME kind. Same-kind trays usually 0.55–0.90. A close scalloped or handled tray to a scalloped/handled trend should score 0.75+. Round vs rectangle can stay 0.50–0.65. 0 if different kind. Do not zero a tray just because it is not the single closest.\n" +
   "canMake = yes/no/unknown for a rattan/hyacinth/seagrass weaving factory. Do not invent item code, $, MOQ, or size.\n" +
   "reason = one short sentence.\n" +
@@ -146,16 +147,44 @@ function clipLook(v, n) {
   return String(v || "").replace(/\s+/g, " ").trim().slice(0, n || 80);
 }
 
+function lookText(o) {
+  return String([o && o.reason, o && o.shape, o && o.construction].join(" ").toLowerCase())
+    .replace(/\bnot an?\s+(?:tray|vase|basket|platter|charger)[^,.!]*/g, " ")
+    .replace(/\bno tray\b|\bunlike the [^,.]*tray/g, " ");
+}
+
+function vaseWords(blob) {
+  return /vase|amphora|pitcher|urn|\bjug\b|\bbottle\b|flower vessel|hyacinth jug|water[- ]hyacinth|neck.{0,40}handles|handles.{0,40}neck/.test(blob);
+}
+
+function trayWords(blob) {
+  return /\btrays?\b|platter|charger|scalloped plate|handled rect|side handles|serving board/.test(blob);
+}
+
+function mixedTrayScene(blob) {
+  return trayWords(blob) && /(foreground|in front|handled (?:serving )?tray|rectangular tray)/.test(blob);
+}
+
 function parseLook(text, trendKind) {
   var o = parseJsonObject(text);
   var kind = String(o.kind || "other").toLowerCase().replace(/[^a-z]/g, "");
   if (!LOOK_KINDS[kind]) kind = "other";
+  var reason = clipLook(o.reason, 160);
+  var shape = clipLook(o.shape, 24);
+  var construction = clipLook(o.construction, 24);
+  var blob = lookText({ reason: reason, shape: shape, construction: construction });
+  if (!trendKind && mixedTrayScene(blob)) kind = "tray";
+  if (vaseWords(blob) && !trayWords(blob) && kind === "tray") kind = "vase";
   var canMake = String(o.canMake || o.can_make || "unknown").toLowerCase();
   if (canMake !== "yes" && canMake !== "no") canMake = "unknown";
   var similar = o.similar === true || o.similar === "true";
   var score = Math.max(0, Math.min(1, Number(o.score)));
   if (!isFinite(score)) score = similar ? 0.6 : 0;
-  if (trendKind && kind !== trendKind) {
+  if (trendKind === "tray" && (kind === "vase" || kind === "planter" || kind === "lantern" || (vaseWords(blob) && !trayWords(blob)))) {
+    if (kind === "tray") kind = "vase";
+    similar = false;
+    score = 0;
+  } else if (trendKind && kind !== trendKind) {
     similar = false;
     score = 0;
   } else if (trendKind && kind === trendKind) {
@@ -165,12 +194,12 @@ function parseLook(text, trendKind) {
   return {
     kind: kind,
     material: clipLook(o.material, 40),
-    shape: clipLook(o.shape, 24),
-    construction: clipLook(o.construction, 24),
+    shape: shape,
+    construction: construction,
     canMake: canMake,
     similar: similar,
     score: score,
-    reason: clipLook(o.reason, 160)
+    reason: reason
   };
 }
 
