@@ -3,9 +3,9 @@ var CUT_PROMPT =
   '{"boxes":[{"x":0,"y":0,"w":1,"h":1,"item":"","name":"","material":"","size":"","price":"","moq":"","lead":""}]}\n' +
   "x,y,w,h = fractions of THIS image, 0-1.\n" +
   "Count separate photographs on the page (photos divided by pale paper, not objects inside one photo).\n" +
-  "If count >= 2: one box per photograph. The box MUST include the printed caption under that photograph (item code + size). Title / heading / Thank You / FOR WATCHING / QR / email / phone / logo / empty paper = not a box. A group of the same product in several sizes with one caption under the group = one photograph. A room shot sitting next to other photos = one photograph.\n" +
+  "If count >= 2: one box per photograph. The box MUST include the printed caption under or beside that photograph (item name + size). Title / heading / Thank You / FOR WATCHING / QR / email / phone / logo / empty paper = not a box. A group of the same product in several sizes with one caption under the group = one photograph. A room shot sitting next to other photos = one photograph.\n" +
   "If count == 1: exactly one box around that photograph including its caption. Do not split a table scene, a garden, a single product, or a size set.\n" +
-  "item = digits printed under that photograph (NNNN-NNNNN only). size = printed size under it (L/M/S, SIZE L/M/S, H22, H21/H19, D28xH21, L45). Leave \"\" if you cannot read it. Never put size or a heading in item. Do not invent.\n" +
+  "item = digits printed for that photograph (NNNN-NNNNN only). size = the printed size for that photograph, under it OR beside it (L/M/S, SIZE L, H22, H21/H19, D28 × H6cm, D27 × H25/18cm, D19 × H19/13cm). Copy those printed digits. Leave \"\" only if none is printed. Never put size in item. Do not invent.\n" +
   "At most 16 boxes.";
 
 var LOOK_KINDS = { tray: 1, vase: 1, basket: 1, pumpkin: 1, lantern: 1, wreath: 1, planter: 1, bowl: 1, other: 1 };
@@ -15,9 +15,10 @@ var LOOK_PROMPT =
   '{"kind":"other","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
   "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other. Default kind is other until the silhouette is clear.\n" +
   "Name kind from THIS photo's silhouette. Do not copy a kind from any other product.\n" +
-  "tray = low flat serving/display surface, usually wider than tall, often with side handles. NEVER a jug, amphora, pitcher, urn, bottle, or flower vessel.\n" +
+  "tray = low flat serving/display surface, usually wider than tall, often with side handles. A scalloped plate, charger, platter, or shallow dish is a tray. NEVER a jug, amphora, pitcher, urn, bottle, or flower vessel.\n" +
   "vase = tall vessel for flowers or water (neck, belly, or two body handles). If the object is taller than it is wide, it is NOT a tray.\n" +
-  "basket = open container with high walls or a handle arch. planter = pot to hold a plant. bowl = deep round dish.\n" +
+  "basket = open container with HIGH walls or a handle arch (can hold volume). A low scalloped plate is NOT a basket.\n" +
+  "planter = pot to hold a plant. bowl = deep round dish that is not a plate.\n" +
   "Tray and vase are NEVER the same kind. A water-hyacinth jug is a vase, not a tray.\n" +
   "If two products sit in one photo, name the MAIN product that fills the frame. Do not mix them.\n" +
   "material / shape / construction = only what you see. Leave \"\" if unsure.\n" +
@@ -28,9 +29,9 @@ var LOOK_COMPARE =
   "Look at THIS factory catalogue photo. Return JSON, no markdown:\n" +
   '{"kind":"other","material":"","shape":"","construction":"","canMake":"unknown","similar":false,"score":0,"reason":""}\n' +
   "kind MUST be exactly one of: tray, vase, basket, pumpkin, lantern, wreath, planter, bowl, other. Default kind is other until the silhouette is clear.\n" +
-  "Name kind from THIS photo only. Do not copy the buyer trend kind. A jug/amphora/pitcher is vase. A low rectangle is tray. If taller than wide, not a tray.\n" +
-  "similar is true ONLY if THIS photo is the SAME product kind as the buyer trend AND it is one of the closest looks (same silhouette / weave / handle). Same kind but a different shape, rim, or weave → similar false, score at most 0.45.\n" +
-  "score is 0 to 1 for look closeness. 0 if different kind. Do not give 0.7+ just because both are trays.\n" +
+  "Name kind from THIS photo only. Do not copy the buyer trend kind. A jug/amphora/pitcher is vase. A low rectangle, scalloped plate, charger, or platter is tray. If taller than wide, not a tray. A low plate is not a basket.\n" +
+  "similar is true if THIS photo is the SAME product kind as the buyer trend (tray with tray, vase with vase). similar is false if the kind is different.\n" +
+  "score is 0 to 1 for look closeness among the SAME kind. Same-kind trays usually 0.55–0.90. A close scalloped or handled tray to a scalloped/handled trend should score 0.75+. Round vs rectangle can stay 0.50–0.65. 0 if different kind. Do not zero a tray just because it is not the single closest.\n" +
   "canMake = yes/no/unknown for a rattan/hyacinth/seagrass weaving factory. Do not invent item code, $, MOQ, or size.\n" +
   "reason = one short sentence.\n" +
   "Buyer trend: ";
@@ -61,6 +62,14 @@ function clipField(v, n) {
   return String(v || "").replace(/\s+/g, " ").trim().slice(0, n || 40);
 }
 
+function printedSize(s) {
+  var t = String(s || "");
+  var m = t.match(/\bSIZE\s*:?\s*(L\s*\/\s*M\s*\/\s*S|[LMS])/i)
+    || t.match(/\b[DLWH]\s*\d[\w./\-x× ]{0,28}(?:cm)?/i)
+    || t.match(/\b\d+(?:\.\d+)?\s*[x×]\s*\d+(?:\.\d+)?(?:\s*cm)?/i);
+  return m ? clipField(m[0].replace(/\s+/g, " "), 40) : "";
+}
+
 function onlyItemCode(s) {
   var t = String(s || "");
   var m = t.match(/\b(\d{4})\s*[-–]\s*(\d{4,})\b/);
@@ -86,7 +95,7 @@ function normBox(b) {
     item: onlyItemCode(b.item || b.code || b.name),
     name: dropHeading(b.name),
     material: clipField(b.material, 40),
-    size: clipField(b.size, 40),
+    size: printedSize(b.size) || printedSize(b.name) || clipField(b.size, 40),
     price: clipField(b.price, 24),
     moq: clipField(b.moq, 16),
     lead: clipField(b.lead || b.leadTime, 24)
@@ -149,8 +158,9 @@ function parseLook(text, trendKind) {
   if (trendKind && kind !== trendKind) {
     similar = false;
     score = 0;
-  } else if (!similar) {
-    score = Math.min(score, 0.45);
+  } else if (trendKind && kind === trendKind) {
+    if (score >= 0.5) similar = true;
+    if (similar && score < 0.5) score = 0.55;
   }
   return {
     kind: kind,

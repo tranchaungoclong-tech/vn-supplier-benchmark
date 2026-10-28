@@ -356,6 +356,10 @@
     if (!photos.length) {
       await ingestAll();
     }
+    if (trendFiles.length) {
+      setStatus("Trend file is in. Looking at the photo before Generate…");
+      try { await matchTrend(); } catch (e) {}
+    }
     var live = livePhotos();
     if (!live.length) {
       setStatus("No photos ticked. Tick at least one.", "err");
@@ -452,6 +456,10 @@
     });
     t.replace(/\b[DLWH]\s*\d+(?:\.\d+)?(?:\s*[x×]\s*(?:[DLWH]\s*)?\d+(?:\.\d+)?)+(?:\s*cm)?/gi, function (m) {
       add(m);
+      return m;
+    });
+    t.replace(/\b[DLWH]\s*\d+(?:\.\d+)?\s*[x×]\s*[DLWH]?\s*\d+(?:\.\d+)?(?:\s*\/\s*\d+(?:\.\d+)?)?(?:\s*cm)?/gi, function (m) {
+      add(m.replace(/\s+/g, " ").trim());
       return m;
     });
     t.replace(/\b[DLWH]\s*\d+(?:\.\d+)?(?:\s*cm)?(?:\s*\/\s*[DLWH]\s*\d+(?:\.\d+)?(?:\s*cm)?)+/gi, function (m) {
@@ -1093,10 +1101,10 @@
       if (overlap < Math.min(box.w, o.w) * 0.3) continue;
       if (o.y > box.y + box.h * 0.55 && o.y < maxY) maxY = Math.min(maxY, o.y);
     }
-    var cap = Math.round(Math.min(work.h * 0.22, Math.max(80, box.h * 0.28)));
-    var room = maxY - 8 - (box.y + box.h);
+    var cap = Math.round(Math.min(work.h * 0.32, Math.max(110, box.h * 0.42)));
+    var room = maxY - 4 - (box.y + box.h);
     var extra = Math.max(0, Math.min(cap, room));
-    if (extra < 40 && room > 16) extra = Math.min(48, room);
+    if (extra < 70 && room > 24) extra = Math.min(90, room);
     return {
       x: box.x,
       y: box.y,
@@ -1215,7 +1223,7 @@
       mapped.item = b.item || "";
       mapped.name = b.name || "";
       mapped.material = b.material || "";
-      mapped.size = b.size || "";
+      mapped.size = harvestSize([b.size, b.name, b.item].join(" ")) || b.size || "";
       mapped.price = b.price || "";
       mapped.moq = b.moq || "";
       mapped.lead = b.lead || "";
@@ -1513,13 +1521,12 @@
     var l = paperBand(data, w, rect, true, true);
     var r = paperBand(data, w, rect, true, false);
     var t = paperBand(data, w, rect, false, true);
-    var b = paperBand(data, w, rect, false, false);
     var pad = 3;
     return {
       x: rect.x + l + pad,
       y: rect.y + t + pad,
       w: Math.max(40, rect.w - l - r - pad * 2),
-      h: Math.max(40, rect.h - t - b - pad * 2)
+      h: Math.max(40, rect.h - t - pad)
     };
   }
   function lookbookColumns(data, w, work, boxes) {
@@ -1631,7 +1638,7 @@
       if (isScrapText(nm)) nm = "";
       aspec.name = nm;
       aspec.material = aspec.material || b.material || listedRow.material || "";
-      aspec.size = harvestSize(specBlob) || "";
+      aspec.size = harvestSize(specBlob) || harvestSize(b.size) || "";
       aspec.price = aspec.price || b.price || "";
       aspec.moq = aspec.moq || b.moq || "";
       aspec.lead = aspec.lead || b.lead || "";
@@ -1757,7 +1764,7 @@
       if (!spec.item && listed[cells.length]) spec = listed[cells.length] || spec;
       spec = spec || {};
       spec.item = harvestItem(spec.item || "") || "";
-      spec.size = harvestSize(spec.size || spec.item || "") || "";
+      spec.size = harvestSize(spec.size || spec.item || "") || harvestSize([spec.item, spec.name].join(" ")) || "";
       if (isScrapBox(data, w, rc, spec)) continue;
       spec.lookbook = fromLook;
       var cut = cropCanvas(canvas, rc);
@@ -1781,13 +1788,17 @@
     return photos.filter(function (p) {
       if (p.on === false) return false;
       if (trayTrend && looksLikeVase(p, { kind: p.lookKind, reason: p.lookReason, shape: p.lookReason })) return false;
-      if (trayTrend && (p.lookKind === "vase" || p.lookKind === "planter" || p.lookKind === "lantern")) return false;
-      if (trayTrend && picked && p.lookKind && p.lookKind !== "tray") return false;
+      if (trayTrend && (p.lookKind === "vase" || p.lookKind === "planter" || p.lookKind === "lantern" || p.lookKind === "basket" || p.lookKind === "pumpkin" || p.lookKind === "wreath" || p.lookKind === "bowl" || p.lookKind === "other")) return false;
+      if (trayTrend && picked && p.lookKind !== "tray") return false;
       var cat = p.cat || "Other";
       if (mode === "auto" && hiddenCats[cat]) return false;
       if (mode === "file" && hiddenCats[p.src || "file"]) return false;
       return true;
     });
+  }
+  function previewPhotos() {
+    if (trendLook && trendLook.kind) return livePhotos();
+    return photos;
   }
   function paintChips() {
     var el = $("catChips");
@@ -1887,8 +1898,8 @@
       thumbs.innerHTML = "<p class='sub' style='margin:0'>Drop a factory PDF / PPT — mini photos land here.</p>";
       return;
     }
-    photos.forEach(function (p, i) {
-      thumbs.appendChild(buildMini(p, i));
+    previewPhotos().forEach(function (p) {
+      thumbs.appendChild(buildMini(p, photos.indexOf(p)));
     });
   }
   function buildMini(p, i) {
@@ -1900,7 +1911,7 @@
       "<div class='mini-bar'>" +
         "<input type='checkbox' " + (p.on !== false ? "checked" : "") + " />" +
         "<input type='text' data-f='item' placeholder='Item' value='" + esc(p.item || p.nameLabel || "") + "' />" +
-        "<input type='text' data-f='size' placeholder='Size' value='" + esc(p.size || "") + "' />" +
+        "<input type='text' data-f='size' placeholder='Size' value='" + esc((fillPrintedSize(p), p.size) || "") + "' />" +
         "<span class='drag'>⋮⋮</span>" +
       "</div>";
     card.querySelector("img").src = p.data;
@@ -2836,13 +2847,26 @@
     return w > 0 && h > 0 ? h / w : 0;
   }
   function looksLikeVase(p, look) {
-    var blob = [p.item, p.name, p.nameLabel, p.cat, p.note, p.src, look && look.reason, look && look.shape, look && look.construction, look && look.kind].join(" ").toLowerCase();
-    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|\bneck\b|\bbelly\b|hyacinth jug|water[- ]hyacinth vase/.test(blob)) return true;
+    if (look && look.kind === "tray") return false;
     if (look && (look.kind === "vase" || look.kind === "planter" || look.kind === "lantern")) return true;
+    var blob = [p.item, p.nameLabel, p.note, look && look.reason, look && look.shape, look && look.construction].join(" ").toLowerCase();
+    if (/\.(pptx?|pdf|jpe?g|png)\b|proposal|batch\s*\d|far\s*eastern|in\s*home/i.test(blob)) {
+      blob = [p.item, p.nameLabel, look && look.reason, look && look.shape].join(" ").toLowerCase();
+    }
+    if (/vase|amphora|pitcher|urn|\bjug\b|flower vessel|hyacinth jug|water[- ]hyacinth vase/.test(blob)) return true;
+    return false;
+  }
+  function looksLikeTray(p, look) {
+    if (look && look.kind === "tray") return true;
+    if (look && (look.kind === "vase" || look.kind === "planter" || look.kind === "lantern")) return false;
+    var blob = [p.item, p.nameLabel, p.note, look && look.reason, look && look.shape, look && look.construction].join(" ").toLowerCase();
+    if (/scalloped plate|scallop(?:ed)? (?:plate|charger|platter|tray|rim)|charger|platter|shallow dish/.test(blob)) return true;
+    if (/low (?:round |flat )?(?:plate|tray|dish)/.test(blob) && !/high wall|handle arch|neck|belly/.test(blob)) return true;
     return false;
   }
   function forceKind(p, look, trendKind) {
     var kind = look && look.kind ? look.kind : "";
+    if (looksLikeTray(p, look)) kind = "tray";
     if (looksLikeVase(p, look)) kind = "vase";
     if (trendKind === "tray" && (kind === "vase" || kind === "planter" || kind === "lantern")) kind = kind || "vase";
     if (look) look.kind = kind || look.kind;
@@ -2862,8 +2886,9 @@
     var hits = 0;
     same.forEach(function (p, i) {
       if (hits >= 3) return;
+      var sc = p.lookScore || 0;
       if (i === 0) { p.on = true; hits++; return; }
-      if ((p.lookScore || 0) >= best - 0.05 && (p.lookScore || 0) >= 0.78) {
+      if (sc >= 0.5 && sc >= best - 0.25) {
         p.on = true;
         hits++;
       }
